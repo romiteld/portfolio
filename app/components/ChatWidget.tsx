@@ -4,6 +4,10 @@ import { useState, useRef, useEffect } from "react"
 import { MessageSquare, Send, X, Minimize2, Maximize2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { gsap } from "gsap"
+import { TextPlugin } from "gsap/TextPlugin"
+
+// Register GSAP plugins
+gsap.registerPlugin(TextPlugin)
 
 type Message = {
   role: "user" | "assistant"
@@ -26,16 +30,46 @@ export default function ChatWidget() {
   }, [messages])
 
   useEffect(() => {
+    if (glowButtonRef.current) {
+      gsap.set(glowButtonRef.current, {
+        boxShadow: "0 0 20px 4px rgba(147, 197, 253, 0.2), 0 0 40px 8px rgba(59, 130, 246, 0.15)",
+        scale: 0.95,
+        opacity: 0
+      });
+
+      // Enhanced glow animation
+      const glowTl = gsap.timeline({ repeat: -1 });
+      
+      glowTl.to(glowButtonRef.current, {
+        boxShadow: "0 0 30px 8px rgba(147, 197, 253, 0.4), 0 0 60px 12px rgba(59, 130, 246, 0.3)",
+        scale: 1.02,
+        duration: 1.2,
+        ease: "sine.inOut"
+      })
+      .to(glowButtonRef.current, {
+        boxShadow: "0 0 20px 4px rgba(147, 197, 253, 0.2), 0 0 40px 8px rgba(59, 130, 246, 0.15)",
+        scale: 0.98,
+        duration: 1.2,
+        ease: "sine.inOut"
+      });
+
+      // Fade in animation
+      gsap.to(glowButtonRef.current, {
+        opacity: 1,
+        duration: 0.8,
+        ease: "power2.out"
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     if (isOpen && chatWidgetRef.current) {
       const ctx = gsap.context(() => {
-        // Create a timeline for the opening animation
-        const tl = gsap.timeline({
-          defaults: { ease: "power3.inOut" }
-        });
+        const tl = gsap.timeline();
 
         // Enhanced opening animation
         tl.fromTo(
-          chatWidgetRef.current!,
+          chatWidgetRef.current,
           { 
             opacity: 0,
             scale: 0.8,
@@ -46,14 +80,15 @@ export default function ChatWidget() {
             opacity: 1,
             scale: 1,
             clipPath: "circle(150% at bottom right)",
-            boxShadow: "0 0 25px 5px rgba(147, 197, 253, 0.2), 0 0 50px 10px rgba(59, 130, 246, 0.1)",
-            duration: 1,
+            boxShadow: "0 0 40px 10px rgba(147, 197, 253, 0.3), 0 0 80px 20px rgba(59, 130, 246, 0.2)",
+            duration: 0.8,
+            ease: "power3.out"
           }
         ).fromTo(
-          chatWidgetRef.current!.querySelectorAll('.animate-in'),
+          chatWidgetRef.current.querySelectorAll('.animate-in'),
           { 
             opacity: 0,
-            y: 30,
+            y: 20,
             scale: 0.9
           },
           { 
@@ -62,37 +97,47 @@ export default function ChatWidget() {
             scale: 1,
             stagger: 0.08,
             duration: 0.6,
-            ease: "back.out(1.2)"
+            ease: "back.out(1.7)"
           },
           "-=0.4"
         );
 
-        // Add a pulsing glow after the initial animation
+        // Continuous ambient glow
         gsap.to(chatWidgetRef.current, {
-          boxShadow: "0 0 30px 5px rgba(147, 197, 253, 0.3), 0 0 60px 12px rgba(59, 130, 246, 0.2)",
+          boxShadow: "0 0 50px 15px rgba(147, 197, 253, 0.35), 0 0 100px 30px rgba(59, 130, 246, 0.25)",
           duration: 2,
           repeat: -1,
           yoyo: true,
-          ease: "sine.inOut",
-          delay: 1
+          ease: "sine.inOut"
+        });
+
+        // Subtle hover effect for messages
+        chatWidgetRef.current.querySelectorAll('.message-bubble').forEach(bubble => {
+          gsap.to(bubble, {
+            scale: 1.02,
+            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
+            duration: 0.3,
+            paused: true,
+            ease: "power2.out"
+          });
         });
       }, chatWidgetRef);
 
-      return () => ctx.revert();
+      // Close chat when clicking outside
+      const handleClickOutside = (event: MouseEvent) => {
+        if (chatWidgetRef.current && !chatWidgetRef.current.contains(event.target as Node)) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+
+      return () => {
+        ctx.revert();
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    if (glowButtonRef.current) {
-      gsap.to(glowButtonRef.current, {
-        boxShadow: "0 0 5px 1px rgba(147, 197, 253, 0.3), 0 0 10px 2px rgba(59, 130, 246, 0.15)",
-        duration: 1.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      })
-    }
-  }, [])
 
   const toggleChat = () => {
     if (isOpen && isMaximized) {
@@ -132,9 +177,9 @@ export default function ChatWidget() {
           <motion.button
             ref={glowButtonRef}
             onClick={toggleChat}
-            className="fixed bottom-6 right-6 bg-white/20 backdrop-blur-md text-white p-4 rounded-full shadow-lg hover:bg-white/30 transition-colors animate-glow"
+            className="fixed bottom-6 right-6 bg-white/15 dark:bg-black/15 backdrop-blur-md text-white p-4 rounded-full shadow-lg hover:bg-white/20 dark:hover:bg-white/10 transition-colors"
             style={{
-              boxShadow: "0 0 5px 1px rgba(147, 197, 253, 0.3), 0 0 10px 2px rgba(59, 130, 246, 0.15)"
+              boxShadow: "0 0 30px 8px rgba(147, 197, 253, 0.3), 0 0 60px 12px rgba(59, 130, 246, 0.2)"
             }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -142,7 +187,7 @@ export default function ChatWidget() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
           >
-            <MessageSquare size={24} className="text-blue-500" />
+            <MessageSquare size={24} className="text-blue-400 dark:text-blue-300" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -152,7 +197,7 @@ export default function ChatWidget() {
             ref={chatWidgetRef}
             className={`fixed ${
               isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px] h-[500px]"
-            } bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden chat-widget-container`}
+            } bg-white/15 dark:bg-black/15 backdrop-blur-xl border border-white/30 dark:border-white/20 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden chat-widget-container`}
             initial={false}
             animate="open"
             exit="closed"
@@ -194,10 +239,10 @@ export default function ChatWidget() {
                   transition={{ duration: 0.3 }}
                 >
                   <div
-                    className={`max-w-[75%] p-3 ${
+                    className={`message-bubble max-w-[75%] p-3 ${
                       message.role === "user" 
-                        ? "bg-blue-500/80 backdrop-blur-sm text-white rounded-2xl rounded-tr-sm shadow-md" 
-                        : "bg-white/20 dark:bg-white/10 backdrop-blur-sm text-neutral-800 dark:text-white rounded-2xl rounded-tl-sm shadow-sm"
+                        ? "bg-blue-500/90 backdrop-blur-sm text-white rounded-2xl rounded-tr-sm shadow-lg" 
+                        : "bg-white/30 dark:bg-white/20 backdrop-blur-sm text-neutral-800 dark:text-white rounded-2xl rounded-tl-sm shadow-lg"
                     }`}
                   >
                     {message.content}
