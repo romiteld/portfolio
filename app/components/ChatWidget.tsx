@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { MessageSquare, Mic, Send, X, Minimize2, Maximize2 } from "lucide-react"
+import { MessageSquare, Send, X, Minimize2, Maximize2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { gsap } from "gsap"
 
@@ -14,10 +14,6 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
-  const [isRecording, setIsRecording] = useState(false)
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
-  const [tooltipVisible, setTooltipVisible] = useState(false)
-  const tooltipTimeoutRef = useRef<NodeJS.Timeout>()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isMaximized, setIsMaximized] = useState(false)
   const chatWidgetRef = useRef<HTMLDivElement>(null)
@@ -50,7 +46,7 @@ export default function ChatWidget() {
             opacity: 1,
             scale: 1,
             clipPath: "circle(150% at bottom right)",
-            boxShadow: "0 0 50px 10px rgba(147, 197, 253, 0.3), 0 0 100px 20px rgba(59, 130, 246, 0.2)",
+            boxShadow: "0 0 25px 5px rgba(147, 197, 253, 0.2), 0 0 50px 10px rgba(59, 130, 246, 0.1)",
             duration: 1,
           }
         ).fromTo(
@@ -73,7 +69,7 @@ export default function ChatWidget() {
 
         // Add a pulsing glow after the initial animation
         gsap.to(chatWidgetRef.current, {
-          boxShadow: "0 0 30px 5px rgba(147, 197, 253, 0.4), 0 0 80px 15px rgba(59, 130, 246, 0.3)",
+          boxShadow: "0 0 30px 5px rgba(147, 197, 253, 0.3), 0 0 60px 12px rgba(59, 130, 246, 0.2)",
           duration: 2,
           repeat: -1,
           yoyo: true,
@@ -89,7 +85,7 @@ export default function ChatWidget() {
   useEffect(() => {
     if (glowButtonRef.current) {
       gsap.to(glowButtonRef.current, {
-        boxShadow: "0 0 20px 2px rgba(147, 197, 253, 0.5), 0 0 40px 6px rgba(59, 130, 246, 0.3)",
+        boxShadow: "0 0 5px 1px rgba(147, 197, 253, 0.3), 0 0 10px 2px rgba(59, 130, 246, 0.15)",
         duration: 1.5,
         repeat: -1,
         yoyo: true,
@@ -124,66 +120,6 @@ export default function ChatWidget() {
     }
   }
 
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      setMediaRecorder(recorder)
-      setIsRecording(true)
-
-      const chunks: BlobPart[] = []
-      recorder.ondataavailable = (e) => chunks.push(e.data)
-      recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: "audio/webm" })
-        const formData = new FormData()
-        formData.append("audio", blob, "recording.webm")
-
-        const response = await fetch("/api/transcribe", {
-          method: "POST",
-          body: formData,
-        })
-        const { text } = await response.json()
-        setInput(text)
-      }
-
-      recorder.start()
-    } catch (error) {
-      console.error("Error accessing microphone:", error)
-    }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorder) {
-      mediaRecorder.stop()
-      setIsRecording(false)
-    }
-  }
-
-  const handleTooltipClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setTooltipVisible(true)
-    
-    // Clear any existing timeout
-    if (tooltipTimeoutRef.current) {
-      clearTimeout(tooltipTimeoutRef.current)
-    }
-    
-    // Set new timeout to hide tooltip after 3 seconds
-    tooltipTimeoutRef.current = setTimeout(() => {
-      setTooltipVisible(false)
-    }, 3000)
-  }
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (tooltipTimeoutRef.current) {
-        clearTimeout(tooltipTimeoutRef.current)
-      }
-    }
-  }, [])
-
   const chatVariants = {
     open: { opacity: 1, y: 0, scale: 1 },
     closed: { opacity: 0, y: 20, scale: 0.8 },
@@ -198,7 +134,7 @@ export default function ChatWidget() {
             onClick={toggleChat}
             className="fixed bottom-6 right-6 bg-white/20 backdrop-blur-md text-white p-4 rounded-full shadow-lg hover:bg-white/30 transition-colors animate-glow"
             style={{
-              boxShadow: "0 0 30px 6px rgba(147, 197, 253, 0.7), 0 0 60px 12px rgba(59, 130, 246, 0.5)"
+              boxShadow: "0 0 5px 1px rgba(147, 197, 253, 0.3), 0 0 10px 2px rgba(59, 130, 246, 0.15)"
             }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -225,22 +161,7 @@ export default function ChatWidget() {
           >
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5 animate-in">
               <div className="flex flex-col items-center flex-grow">
-                <div className="flex items-center justify-center gap-1.5 w-full">
-                  <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in text-center">Aether AI</h3>
-                  <div className="relative group">
-                    <button 
-                      className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
-                      aria-label="About Aether AI"
-                      onClick={handleTooltipClick}
-                    >
-                      ?
-                    </button>
-                    <div className={`absolute transform -translate-x-1/2 left-1/2 top-8 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg transition-all duration-200 z-[9999] ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
-                      Inspired by the unseen, intelligent force behind futuristic AI.
-                    </div>
-                  </div>
-                </div>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Powered by OpenAI</p>
+                <h3 className="font-semibold text-black dark:text-white text-lg animate-in text-center">AI Assistant</h3>
               </div>
               <div className="flex space-x-3 animate-in">
                 <motion.button
@@ -295,28 +216,14 @@ export default function ChatWidget() {
                   placeholder="Type your message..."
                   className="flex-1 min-w-0 p-2 bg-transparent border-none text-neutral-800 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:ring-0"
                 />
-                <div className="flex shrink-0 gap-1.5">
-                  <motion.button
-                    onClick={isRecording ? stopRecording : startRecording}
-                    className={`p-2 rounded-lg ${
-                      isRecording
-                        ? "bg-red-500/80 backdrop-blur-sm hover:bg-red-600/80 text-white shadow-md"
-                        : "bg-white/20 dark:bg-white/10 backdrop-blur-sm hover:bg-white/30 dark:hover:bg-white/20 text-neutral-800 dark:text-white"
-                    }`}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Mic size={18} />
-                  </motion.button>
-                  <motion.button
-                    onClick={handleSend}
-                    className="p-2 bg-blue-500/80 backdrop-blur-sm hover:bg-blue-600/80 text-white rounded-lg shadow-md"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <Send size={18} />
-                  </motion.button>
-                </div>
+                <motion.button
+                  onClick={handleSend}
+                  className="p-2 bg-blue-500/80 backdrop-blur-sm hover:bg-blue-600/80 text-white rounded-lg shadow-md"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Send size={18} />
+                </motion.button>
               </div>
             </div>
           </motion.div>
@@ -325,4 +232,3 @@ export default function ChatWidget() {
     </>
   )
 }
-

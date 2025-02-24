@@ -46,7 +46,7 @@ export default function Contact() {
 
         // Set initial path properties
         path.setAttribute("stroke", "#f97316")
-        path.setAttribute("stroke-opacity", "0.15")
+        path.setAttribute("stroke-opacity", "0.1")
         path.setAttribute("stroke-width", "1")
         path.setAttribute("stroke-linecap", "round")
         path.setAttribute("stroke-linejoin", "round")
@@ -66,14 +66,14 @@ export default function Contact() {
           })
           .to(line, {
             strokeDashoffset: 0,
-            duration: 4,
+            duration: 5,
             ease: "none",
           })
           .to(line, {
-            strokeWidth: "+=6", // Animate from 2 to 8
-            duration: 2.5,
+            strokeWidth: "+=4", // Reduced from +=6 to +=4
+            duration: 3,
             ease: "power2.in",
-          }, 1) // Start after 1 second
+          }, 1)
           .to(line, {
             opacity: 1,
             duration: 0.3,
@@ -182,19 +182,19 @@ export default function Contact() {
             <svg className="absolute inset-0 w-full h-full pointer-events-none">
               <defs>
                 <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: "#fef9c3", stopOpacity: 0.4 }} />
-                  <stop offset="100%" style={{ stopColor: "#f97316", stopOpacity: 0.6 }} />
+                  <stop offset="0%" style={{ stopColor: "#fef9c3", stopOpacity: 0.3 }} />
+                  <stop offset="100%" style={{ stopColor: "#f97316", stopOpacity: 0.4 }} />
                 </linearGradient>
                 <linearGradient id="endGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: "#f97316", stopOpacity: 0.8 }} />
-                  <stop offset="100%" style={{ stopColor: "#dc2626", stopOpacity: 0.9 }} />
+                  <stop offset="0%" style={{ stopColor: "#f97316", stopOpacity: 0.5 }} />
+                  <stop offset="100%" style={{ stopColor: "#dc2626", stopOpacity: 0.6 }} />
                 </linearGradient>
                 <filter id="fire" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
                   <feBlend in="SourceGraphic" in2="blur" mode="screen" />
                 </filter>
               </defs>
-              <path className="button-path" d="" stroke="#f97316" strokeOpacity="0.15" fill="none" />
+              <path className="button-path" d="" stroke="#f97316" strokeOpacity="0.1" fill="none" />
               <path className="motion-line" d="" stroke="url(#startGradient)" fill="none" filter="url(#fire)" />
             </svg>
           </motion.button>
