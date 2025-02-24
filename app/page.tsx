@@ -149,7 +149,7 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <span className="text-center">AI Engineering Portfolio</span>
+              <span className="text-center">AI Engineering Demos</span>
               <svg className="absolute inset-0 w-full h-full pointer-events-none">
                 <defs>
                   <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">

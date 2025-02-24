@@ -3,8 +3,8 @@ import "./globals.css"
 import RootLayoutClient from "./layout-client"
 
 export const metadata = {
-  title: "AI Engineer Portfolio",
-  description: "Portfolio showcasing AI engineering and woodworking projects",
+  title: "AI Engineering",
+  description: "Showcasing AI engineering demos, and woodworking projects", 
   generator: "v0.dev",
 }
 
