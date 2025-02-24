@@ -197,7 +197,20 @@ export default function ChatWidget() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5 animate-in">
-              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">AI Engineer Copilot</h3>
+              <div className="flex items-center gap-1.5">
+                <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">Aether</h3>
+                <div className="relative group">
+                  <button 
+                    className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
+                    aria-label="About Aether"
+                  >
+                    ?
+                  </button>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                    Inspired by the unseen, intelligent force behind futuristic AI.
+                  </div>
+                </div>
+              </div>
               <div className="flex space-x-3 animate-in">
                 <motion.button
                   onClick={toggleMaximize}
