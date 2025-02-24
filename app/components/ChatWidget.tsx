@@ -206,7 +206,7 @@ export default function ChatWidget() {
                   >
                     ?
                   </button>
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                     Inspired by the unseen, intelligent force behind futuristic AI.
                   </div>
                 </div>
