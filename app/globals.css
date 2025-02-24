@@ -53,6 +53,9 @@
   transform: translateY(30px) scale(0.9);
   will-change: transform, opacity, scale;
   transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
 }
 
 .chat-widget-container {
@@ -67,18 +70,19 @@
 
 /* Enhance blur in dark mode */
 .dark .backdrop-blur-xl {
+  -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
 }
 
 /* Ensure smooth transitions */
 .chat-widget-container,
 .animate-in {
-  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  transform-style: preserve-3d;
+  backface-visibility: hidden;
   -webkit-transform-style: preserve-3d;
-  perspective: 1000;
+  transform-style: preserve-3d;
   -webkit-perspective: 1000;
+  perspective: 1000;
 }
 
 @layer base {
