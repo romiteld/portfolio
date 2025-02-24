@@ -72,7 +72,7 @@ export default function Navbar() {
               className="flex items-center"
             >
               <Link href="/" className="text-2xl font-bold font-heading text-primary-600 dark:text-primary-400">
-                AI Engineering
+                AI Engineer
               </Link>
             </motion.div>
             <div className="hidden md:block">
@@ -82,7 +82,7 @@ export default function Navbar() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="ml-10 flex items-baseline space-x-4"
               >
-                <NavLink href="/demos">AI Engineering Demos</NavLink>
+                <NavLink href="/demos">AI Engineer Demos</NavLink>
                 <NavLink href="/woodworking">Woodworking</NavLink>
                 <NavLink href="/about">About</NavLink>
                 <NavLink href="/contact">Contact</NavLink>
@@ -122,7 +122,7 @@ export default function Navbar() {
             >
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 <MobileNavLink href="/demos" onClick={handleLinkClick}>
-                  AI Engineering Demos
+                  AI Engineer Demos
                 </MobileNavLink>
                 <MobileNavLink href="/woodworking" onClick={handleLinkClick}>
                   Woodworking

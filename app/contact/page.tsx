@@ -3,11 +3,105 @@
 import type React from "react"
 
 import { motion } from "framer-motion"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
+import { gsap } from "gsap"
+import { MotionPathPlugin } from "gsap/MotionPathPlugin"
+
+// Register GSAP plugin
+gsap.registerPlugin(MotionPathPlugin)
 
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const buttonRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (buttonRef.current) {
+      const svg = buttonRef.current.querySelector("svg")
+      const path = svg?.querySelector(".button-path")
+      const line = svg?.querySelector(".motion-line")
+
+      if (svg && path && line) {
+        const { width, height } = buttonRef.current.getBoundingClientRect()
+        const radius = 12 // Matches the rounded-xl class
+        
+        // Create a rounded rectangle path
+        const d = `
+          M ${radius},0
+          L ${width - radius},0
+          A ${radius},${radius} 0 0 1 ${width},${radius}
+          L ${width},${height - radius}
+          A ${radius},${radius} 0 0 1 ${width - radius},${height}
+          L ${radius},${height}
+          A ${radius},${radius} 0 0 1 0,${height - radius}
+          L 0,${radius}
+          A ${radius},${radius} 0 0 1 ${radius},0
+          Z
+        `.replace(/\s+/g, ' ').trim()
+        
+        path.setAttribute("d", d)
+        line.setAttribute("d", d)
+
+        const pathLength = width * 2 + height * 2 // Total path length
+
+        // Set initial path properties
+        path.setAttribute("stroke", "#f97316")
+        path.setAttribute("stroke-opacity", "0.15")
+        path.setAttribute("stroke-width", "1")
+        path.setAttribute("stroke-linecap", "round")
+        path.setAttribute("stroke-linejoin", "round")
+
+        // Set up the line animation
+        gsap.set(line, {
+          strokeDasharray: pathLength,
+          strokeDashoffset: pathLength,
+          strokeWidth: 2,
+          opacity: 0,
+        })
+
+        // Create timeline for line animation
+        gsap
+          .timeline({
+            repeat: -1,
+          })
+          .to(line, {
+            strokeDashoffset: 0,
+            duration: 4,
+            ease: "none",
+          })
+          .to(line, {
+            strokeWidth: "+=6", // Animate from 2 to 8
+            duration: 2.5,
+            ease: "power2.in",
+          }, 1) // Start after 1 second
+          .to(line, {
+            opacity: 1,
+            duration: 0.3,
+            ease: "power1.in",
+          }, 0)
+          .to(line, {
+            opacity: 0,
+            duration: 0.5,
+            ease: "power1.out",
+          }, 3.5)
+
+        // Create color animation timeline
+        gsap
+          .timeline({
+            repeat: -1,
+          })
+          .to(line, {
+            attr: {
+              stroke: "url(#endGradient)",
+            },
+            duration: 2.5,
+            ease: "power2.in",
+          }, 1)
+          
+        // Remove flickering effect code
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -76,15 +170,33 @@ export default function Contact() {
             required
           ></textarea>
         </div>
-        <div>
+        <div ref={buttonRef} className="relative">
           <motion.button
             type="submit"
-            className="w-full bg-primary-500 hover:bg-primary-600 text-black dark:text-white font-bold py-2 px-4 rounded-lg transition-colors shadow-md"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="w-full bg-primary-500 hover:bg-primary-600 text-black dark:text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-md relative"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             disabled={isSubmitting || isSubmitted}
           >
             {isSubmitting ? "Sending..." : isSubmitted ? "Message Sent!" : "Send Message"}
+            <svg className="absolute inset-0 w-full h-full pointer-events-none">
+              <defs>
+                <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style={{ stopColor: "#fef9c3", stopOpacity: 0.4 }} />
+                  <stop offset="100%" style={{ stopColor: "#f97316", stopOpacity: 0.6 }} />
+                </linearGradient>
+                <linearGradient id="endGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" style={{ stopColor: "#f97316", stopOpacity: 0.8 }} />
+                  <stop offset="100%" style={{ stopColor: "#dc2626", stopOpacity: 0.9 }} />
+                </linearGradient>
+                <filter id="fire" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />
+                  <feBlend in="SourceGraphic" in2="blur" mode="screen" />
+                </filter>
+              </defs>
+              <path className="button-path" d="" stroke="#f97316" strokeOpacity="0.15" fill="none" />
+              <path className="motion-line" d="" stroke="url(#startGradient)" fill="none" filter="url(#fire)" />
+            </svg>
           </motion.button>
         </div>
       </motion.form>

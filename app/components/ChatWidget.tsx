@@ -197,7 +197,7 @@ export default function ChatWidget() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5 animate-in">
-              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">AI Engineering Copilot</h3>
+              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">AI Engineer Copilot</h3>
               <div className="flex space-x-3 animate-in">
                 <motion.button
                   onClick={toggleMaximize}
