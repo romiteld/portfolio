@@ -62,7 +62,7 @@ export default function Home() {
         })
 
         // Keep existing button animations
-        const buttons = gsap.utils.toArray(".hero-buttons > *")
+        const buttons = gsap.utils.toArray(".hero-buttons > *") as Element[]
         buttons.forEach((button: Element) => {
           const svg = button.querySelector("svg")
           const path = svg?.querySelector(".button-path")

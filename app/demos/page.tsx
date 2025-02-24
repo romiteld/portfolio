@@ -99,49 +99,59 @@ export default function DemosPage() {
 
   useEffect(() => {
     if (demoCardsRef.current) {
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: demoCardsRef.current,
-          start: "top 80%",
-          end: "bottom 20%",
-          toggleActions: "play none none reverse",
-        },
-      })
+      // Create context to handle cleanup properly
+      const ctx = gsap.context(() => {
+        // Create main timeline
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: demoCardsRef.current,
+            start: "top 80%",
+            end: "bottom 20%",
+            toggleActions: "play none none none", // Changed to prevent reversal
+            once: true, // Makes the animation play only once
+          },
+        })
 
-      // Loop through each demo card
-      gsap.utils.toArray(demoCardsRef.current.children).forEach((card) => {
-        const svg = card.querySelector(".demo-icon svg")
-        if (svg) {
-          // Set initial state for SVG paths
-          const paths = svg.querySelectorAll("path, polyline, circle, rect, line")
-          paths.forEach((path) => {
-            const length = path.getTotalLength?.() || 100
-            gsap.set(path, {
-              strokeDasharray: length,
-              strokeDashoffset: length,
+        // Get all cards and animate them
+        const cards = demoCardsRef.current.querySelectorAll(".group")
+        cards.forEach((card, index) => {
+          const iconSvg = card.querySelector(".demo-icon svg")
+          
+          if (iconSvg) {
+            // Set initial states
+            gsap.set(card, { opacity: 0, y: 50 })
+            
+            const paths = iconSvg.querySelectorAll("path, polyline, circle, rect, line")
+            paths.forEach(path => {
+              const length = path.getTotalLength?.() || 100
+              gsap.set(path, {
+                strokeDasharray: length,
+                strokeDashoffset: length,
+              })
             })
-          })
 
-          // Animate card entrance and SVG drawing
-          tl.from(card, {
-            opacity: 0,
-            y: 50,
-            duration: 0.8,
-            ease: "power3.out",
-          }).to(
-            paths,
-            {
+            // Add to timeline
+            tl.to(card, {
+              opacity: 1,
+              y: 0,
+              duration: 0.8,
+              ease: "power3.out",
+              delay: index * 0.1,
+            })
+            .to(paths, {
               strokeDashoffset: 0,
               duration: 1,
               ease: "power1.inOut",
               stagger: 0.05,
-            },
-            "-=0.5",
-          )
-        }
-      })
+            }, "-=0.5")
+          }
+        })
+      }, demoCardsRef) // Scope to demoCardsRef
+
+      // Cleanup
+      return () => ctx.revert()
     }
-  }, [])
+  }, []) // Empty dependency array to run once
 
   return (
     <motion.main
@@ -156,7 +166,7 @@ export default function DemosPage() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        AI Demos Portfolio
+        AI Portfolio Demos
       </motion.h1>
       <div ref={demoCardsRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {demos.map((demo) => (
