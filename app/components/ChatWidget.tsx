@@ -224,20 +224,23 @@ export default function ChatWidget() {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5 animate-in">
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">Aether</h3>
-                <div className="relative group">
-                  <button 
-                    className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
-                    aria-label="About Aether"
-                    onClick={handleTooltipClick}
-                  >
-                    ?
-                  </button>
-                  <div className={`fixed transform -translate-x-1/2 left-1/2 top-1/2 -translate-y-1/2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg transition-all duration-200 z-[9999] ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
-                    Inspired by the unseen, intelligent force behind futuristic AI.
+              <div className="flex flex-col items-center flex-grow">
+                <div className="flex items-center justify-center gap-1.5 w-full">
+                  <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in text-center">Aether AI</h3>
+                  <div className="relative group">
+                    <button 
+                      className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
+                      aria-label="About Aether AI"
+                      onClick={handleTooltipClick}
+                    >
+                      ?
+                    </button>
+                    <div className={`absolute transform -translate-x-1/2 left-1/2 top-8 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg transition-all duration-200 z-[9999] ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
+                      Inspired by the unseen, intelligent force behind futuristic AI.
+                    </div>
                   </div>
                 </div>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">Powered by OpenAI</p>
               </div>
               <div className="flex space-x-3 animate-in">
                 <motion.button
