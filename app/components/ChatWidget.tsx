@@ -30,16 +30,59 @@ export default function ChatWidget() {
   useEffect(() => {
     if (isOpen && chatWidgetRef.current) {
       const ctx = gsap.context(() => {
-        gsap.fromTo(
-          chatWidgetRef.current!,
-          { opacity: 0, scale: 0.8 },
-          { opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" },
-        )
-      }, chatWidgetRef)
+        // Create a timeline for the opening animation
+        const tl = gsap.timeline({
+          defaults: { ease: "power3.inOut" }
+        });
 
-      return () => ctx.revert()
+        // Enhanced opening animation
+        tl.fromTo(
+          chatWidgetRef.current!,
+          { 
+            opacity: 0,
+            scale: 0.8,
+            clipPath: "circle(0% at bottom right)",
+            boxShadow: "0 0 0 0 rgba(147, 197, 253, 0)"
+          },
+          { 
+            opacity: 1,
+            scale: 1,
+            clipPath: "circle(150% at bottom right)",
+            boxShadow: "0 0 50px 10px rgba(147, 197, 253, 0.3), 0 0 100px 20px rgba(59, 130, 246, 0.2)",
+            duration: 1,
+          }
+        ).fromTo(
+          chatWidgetRef.current!.querySelectorAll('.animate-in'),
+          { 
+            opacity: 0,
+            y: 30,
+            scale: 0.9
+          },
+          { 
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            stagger: 0.08,
+            duration: 0.6,
+            ease: "back.out(1.2)"
+          },
+          "-=0.4"
+        );
+
+        // Add a pulsing glow after the initial animation
+        gsap.to(chatWidgetRef.current, {
+          boxShadow: "0 0 30px 5px rgba(147, 197, 253, 0.4), 0 0 80px 15px rgba(59, 130, 246, 0.3)",
+          duration: 2,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+          delay: 1
+        });
+      }, chatWidgetRef);
+
+      return () => ctx.revert();
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   useEffect(() => {
     if (glowButtonRef.current) {
@@ -146,19 +189,16 @@ export default function ChatWidget() {
             ref={chatWidgetRef}
             className={`fixed ${
               isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px] h-[500px]"
-            } bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden animate-glow-chat`}
-            initial="closed"
+            } bg-white/10 dark:bg-black/10 backdrop-blur-xl border border-white/20 dark:border-white/10 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden chat-widget-container`}
+            initial={false}
             animate="open"
             exit="closed"
             variants={chatVariants}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            style={{
-              boxShadow: "0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15)"
-            }}
           >
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5">
-              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg">AI Engineering Copilot</h3>
-              <div className="flex space-x-3">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5 animate-in">
+              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg animate-in">AI Engineering Copilot</h3>
+              <div className="flex space-x-3 animate-in">
                 <motion.button
                   onClick={toggleMaximize}
                   className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
@@ -178,7 +218,7 @@ export default function ChatWidget() {
               </div>
             </div>
             <div
-              className={`flex-1 overflow-y-auto px-5 py-4 space-y-4 ${isMaximized ? "h-[calc(100vh-120px)]" : ""}`}
+              className={`flex-1 overflow-y-auto px-5 py-4 space-y-4 animate-in ${isMaximized ? "h-[calc(100vh-120px)]" : ""}`}
             >
               {messages.map((message, index) => (
                 <motion.div
@@ -201,7 +241,7 @@ export default function ChatWidget() {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-5 border-t border-white/10 bg-white/5 dark:bg-white/5">
+            <div className="p-5 border-t border-white/10 bg-white/5 dark:bg-white/5 animate-in">
               <div className="flex items-center gap-2 w-full bg-white/20 dark:bg-white/10 backdrop-blur-sm p-2 rounded-xl shadow-inner">
                 <input
                   type="text"

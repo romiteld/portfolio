@@ -34,6 +34,53 @@
   animation: glow-chat 3s ease-in-out infinite;
 }
 
+@keyframes draw-in {
+  0% {
+    clip-path: circle(0% at bottom right);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0);
+  }
+  50% {
+    box-shadow: 0 0 100px 20px rgba(147, 197, 253, 0.5), 0 0 200px 40px rgba(59, 130, 246, 0.4);
+  }
+  100% {
+    clip-path: circle(150% at bottom right);
+    box-shadow: 0 0 50px 10px rgba(147, 197, 253, 0.3), 0 0 100px 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.animate-in {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  will-change: transform, opacity, scale;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.chat-widget-container {
+  will-change: clip-path, transform, opacity, box-shadow;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.dark .chat-widget-container {
+  box-shadow: 0 0 50px 10px rgba(147, 197, 253, 0.15), 
+              0 0 100px 20px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhance blur in dark mode */
+.dark .backdrop-blur-xl {
+  backdrop-filter: blur(24px);
+}
+
+/* Ensure smooth transitions */
+.chat-widget-container,
+.animate-in {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
+  perspective: 1000;
+  -webkit-perspective: 1000;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
