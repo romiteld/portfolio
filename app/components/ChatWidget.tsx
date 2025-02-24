@@ -126,14 +126,17 @@ export default function ChatWidget() {
           <motion.button
             ref={glowButtonRef}
             onClick={toggleChat}
-            className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
+            className="fixed bottom-6 right-6 bg-white/20 backdrop-blur-md text-white p-4 rounded-full shadow-lg hover:bg-white/30 transition-colors animate-glow"
+            style={{
+              boxShadow: "0 0 30px 6px rgba(147, 197, 253, 0.7), 0 0 60px 12px rgba(59, 130, 246, 0.5)"
+            }}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 20 }}
           >
-            <MessageSquare size={24} />
+            <MessageSquare size={24} className="text-blue-500" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -142,20 +145,23 @@ export default function ChatWidget() {
           <motion.div
             ref={chatWidgetRef}
             className={`fixed ${
-              isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px]"
-            } bg-white border border-neutral-300 rounded-lg shadow-lg flex flex-col z-50 overflow-hidden`}
+              isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px] h-[500px]"
+            } bg-white/10 dark:bg-black/10 backdrop-blur-md border border-white/20 dark:border-white/10 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden animate-glow-chat`}
             initial="closed"
             animate="open"
             exit="closed"
             variants={chatVariants}
             transition={{ duration: 0.3, ease: "easeInOut" }}
+            style={{
+              boxShadow: "0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15)"
+            }}
           >
-            <div className="flex justify-between items-center p-4 border-b border-neutral-300">
-              <h3 className="font-semibold text-primary-600">Chat Assistant</h3>
-              <div className="flex space-x-2">
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 bg-white/5 dark:bg-white/5">
+              <h3 className="font-semibold text-neutral-800 dark:text-white text-lg">AI Engineering Copilot</h3>
+              <div className="flex space-x-3">
                 <motion.button
                   onClick={toggleMaximize}
-                  className="text-neutral-500 hover:text-neutral-700"
+                  className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -163,7 +169,7 @@ export default function ChatWidget() {
                 </motion.button>
                 <motion.button
                   onClick={toggleChat}
-                  className="text-neutral-500 hover:text-neutral-700"
+                  className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -172,7 +178,7 @@ export default function ChatWidget() {
               </div>
             </div>
             <div
-              className={`flex-1 overflow-y-auto p-4 space-y-4 ${isMaximized ? "h-[calc(100vh-120px)]" : "max-h-64"}`}
+              className={`flex-1 overflow-y-auto px-5 py-4 space-y-4 ${isMaximized ? "h-[calc(100vh-120px)]" : ""}`}
             >
               {messages.map((message, index) => (
                 <motion.div
@@ -183,8 +189,10 @@ export default function ChatWidget() {
                   transition={{ duration: 0.3 }}
                 >
                   <div
-                    className={`max-w-[75%] p-2 rounded-lg ${
-                      message.role === "user" ? "bg-primary-500 text-white" : "bg-neutral-200"
+                    className={`max-w-[75%] p-3 ${
+                      message.role === "user" 
+                        ? "bg-blue-500/80 backdrop-blur-sm text-white rounded-2xl rounded-tr-sm shadow-md" 
+                        : "bg-white/20 dark:bg-white/10 backdrop-blur-sm text-neutral-800 dark:text-white rounded-2xl rounded-tl-sm shadow-sm"
                     }`}
                   >
                     {message.content}
@@ -193,36 +201,36 @@ export default function ChatWidget() {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-4 border-t border-neutral-300">
-              <div className="flex items-center gap-2 w-full">
+            <div className="p-5 border-t border-white/10 bg-white/5 dark:bg-white/5">
+              <div className="flex items-center gap-2 w-full bg-white/20 dark:bg-white/10 backdrop-blur-sm p-2 rounded-xl shadow-inner">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Type your message..."
-                  className="flex-1 min-w-0 p-2 border border-neutral-300 bg-white text-neutral-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  className="flex-1 min-w-0 p-2 bg-transparent border-none text-neutral-800 dark:text-white placeholder:text-neutral-500 dark:placeholder:text-neutral-400 focus:outline-none focus:ring-0"
                 />
-                <div className="flex shrink-0 gap-2">
+                <div className="flex shrink-0 gap-1.5">
                   <motion.button
                     onClick={isRecording ? stopRecording : startRecording}
                     className={`p-2 rounded-lg ${
                       isRecording
-                        ? "bg-red-500 hover:bg-red-600 text-white"
-                        : "bg-neutral-100 hover:bg-neutral-200 text-neutral-800"
+                        ? "bg-red-500/80 backdrop-blur-sm hover:bg-red-600/80 text-white shadow-md"
+                        : "bg-white/20 dark:bg-white/10 backdrop-blur-sm hover:bg-white/30 dark:hover:bg-white/20 text-neutral-800 dark:text-white"
                     }`}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Mic size={20} />
+                    <Mic size={18} />
                   </motion.button>
                   <motion.button
                     onClick={handleSend}
-                    className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                    className="p-2 bg-blue-500/80 backdrop-blur-sm hover:bg-blue-600/80 text-white rounded-lg shadow-md"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Send size={20} />
+                    <Send size={18} />
                   </motion.button>
                 </div>
               </div>

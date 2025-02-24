@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 25px 5px rgba(147, 197, 253, 0.6), 0 0 50px 10px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px 8px rgba(147, 197, 253, 0.8), 0 0 70px 15px rgba(59, 130, 246, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 25px 5px rgba(147, 197, 253, 0.6), 0 0 50px 10px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow-chat {
+  0% {
+    box-shadow: 0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px 4px rgba(147, 197, 253, 0.3), 0 0 60px 10px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.animate-glow-chat {
+  animation: glow-chat 3s ease-in-out infinite;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
