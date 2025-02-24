@@ -16,6 +16,8 @@ export default function ChatWidget() {
   const [input, setInput] = useState("")
   const [isRecording, setIsRecording] = useState(false)
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null)
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+  const tooltipTimeoutRef = useRef<NodeJS.Timeout>()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const [isMaximized, setIsMaximized] = useState(false)
   const chatWidgetRef = useRef<HTMLDivElement>(null)
@@ -157,6 +159,31 @@ export default function ChatWidget() {
     }
   }
 
+  const handleTooltipClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setTooltipVisible(true)
+    
+    // Clear any existing timeout
+    if (tooltipTimeoutRef.current) {
+      clearTimeout(tooltipTimeoutRef.current)
+    }
+    
+    // Set new timeout to hide tooltip after 3 seconds
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setTooltipVisible(false)
+    }, 3000)
+  }
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (tooltipTimeoutRef.current) {
+        clearTimeout(tooltipTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const chatVariants = {
     open: { opacity: 1, y: 0, scale: 1 },
     closed: { opacity: 0, y: 20, scale: 0.8 },
@@ -203,10 +230,11 @@ export default function ChatWidget() {
                   <button 
                     className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 text-sm"
                     aria-label="About Aether"
+                    onClick={handleTooltipClick}
                   >
                     ?
                   </button>
-                  <div className="absolute right-0 top-full mt-2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                  <div className={`fixed transform -translate-x-1/2 left-1/2 top-1/2 -translate-y-1/2 w-64 px-4 py-2 bg-white/90 dark:bg-black/90 backdrop-blur-sm text-xs text-neutral-700 dark:text-neutral-300 rounded-lg shadow-lg transition-all duration-200 z-[9999] ${tooltipVisible ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'}`}>
                     Inspired by the unseen, intelligent force behind futuristic AI.
                   </div>
                 </div>
