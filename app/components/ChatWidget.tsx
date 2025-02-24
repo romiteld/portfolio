@@ -126,7 +126,7 @@ export default function ChatWidget() {
           <motion.button
             ref={glowButtonRef}
             onClick={toggleChat}
-            className="fixed bottom-6 right-6 bg-primary-600 text-black dark:text-white p-4 rounded-full shadow-lg hover:bg-primary-700 transition-colors"
+            className="fixed bottom-6 right-6 bg-blue-500 text-white p-4 rounded-full shadow-lg hover:bg-blue-600 transition-colors"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             initial={{ opacity: 0, y: 20 }}
@@ -142,20 +142,20 @@ export default function ChatWidget() {
           <motion.div
             ref={chatWidgetRef}
             className={`fixed ${
-              isMaximized ? "inset-4" : "bottom-6 right-6 w-80"
-            } bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 rounded-lg shadow-lg flex flex-col z-50`}
+              isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px]"
+            } bg-white border border-neutral-300 rounded-lg shadow-lg flex flex-col z-50 overflow-hidden`}
             initial="closed"
             animate="open"
             exit="closed"
             variants={chatVariants}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <div className="flex justify-between items-center p-4 border-b border-neutral-300 dark:border-neutral-700">
-              <h3 className="font-semibold text-primary-600 dark:text-primary-400">Chat Assistant</h3>
+            <div className="flex justify-between items-center p-4 border-b border-neutral-300">
+              <h3 className="font-semibold text-primary-600">Chat Assistant</h3>
               <div className="flex space-x-2">
                 <motion.button
                   onClick={toggleMaximize}
-                  className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  className="text-neutral-500 hover:text-neutral-700"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -163,7 +163,7 @@ export default function ChatWidget() {
                 </motion.button>
                 <motion.button
                   onClick={toggleChat}
-                  className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
+                  className="text-neutral-500 hover:text-neutral-700"
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                 >
@@ -184,7 +184,7 @@ export default function ChatWidget() {
                 >
                   <div
                     className={`max-w-[75%] p-2 rounded-lg ${
-                      message.role === "user" ? "bg-primary-500 text-white" : "bg-neutral-200 dark:bg-neutral-700"
+                      message.role === "user" ? "bg-primary-500 text-white" : "bg-neutral-200"
                     }`}
                   >
                     {message.content}
@@ -193,36 +193,38 @@ export default function ChatWidget() {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-4 border-t border-neutral-300 dark:border-neutral-700">
-              <div className="flex space-x-2">
+            <div className="p-4 border-t border-neutral-300">
+              <div className="flex items-center gap-2 w-full">
                 <input
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSend()}
                   placeholder="Type your message..."
-                  className="flex-1 p-2 border border-neutral-300 dark:border-neutral-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:bg-neutral-700 text-black dark:text-white"
+                  className="flex-1 min-w-0 p-2 border border-neutral-300 bg-white text-neutral-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
                 />
-                <motion.button
-                  onClick={isRecording ? stopRecording : startRecording}
-                  className={`p-2 rounded-lg ${
-                    isRecording
-                      ? "bg-red-500 hover:bg-red-600"
-                      : "bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Mic size={20} />
-                </motion.button>
-                <motion.button
-                  onClick={handleSend}
-                  className="p-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Send size={20} />
-                </motion.button>
+                <div className="flex shrink-0 gap-2">
+                  <motion.button
+                    onClick={isRecording ? stopRecording : startRecording}
+                    className={`p-2 rounded-lg ${
+                      isRecording
+                        ? "bg-red-500 hover:bg-red-600 text-white"
+                        : "bg-neutral-100 hover:bg-neutral-200 text-neutral-800"
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Mic size={20} />
+                  </motion.button>
+                  <motion.button
+                    onClick={handleSend}
+                    className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Send size={20} />
+                  </motion.button>
+                </div>
               </div>
             </div>
           </motion.div>
