@@ -13,6 +13,7 @@ gsap.registerPlugin(MotionPathPlugin)
 export default function Contact() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const buttonRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -70,7 +71,7 @@ export default function Contact() {
             ease: "none",
           })
           .to(line, {
-            strokeWidth: "+=4", // Reduced from +=6 to +=4
+            strokeWidth: "+=4",
             duration: 3,
             ease: "power2.in",
           }, 1)
@@ -97,8 +98,6 @@ export default function Contact() {
             duration: 2.5,
             ease: "power2.in",
           }, 1)
-          
-        // Remove flickering effect code
       }
     }
   }, [])
@@ -106,10 +105,35 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsSubmitting(true)
-    // Simulate form submission
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIsSubmitting(false)
-    setIsSubmitted(true)
+    setError(null)
+
+    const formData = new FormData(e.currentTarget)
+    const data = {
+      name: formData.get('name'),
+      email: formData.get('email'),
+      message: formData.get('message'),
+    }
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to send message')
+      }
+
+      setIsSubmitted(true)
+      e.currentTarget.reset()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to send message')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -170,6 +194,16 @@ export default function Contact() {
             required
           ></textarea>
         </div>
+        {error && (
+          <div className="text-red-500 dark:text-red-400 text-sm">
+            {error}
+          </div>
+        )}
+        {isSubmitted && (
+          <div className="text-green-500 dark:text-green-400 text-sm">
+            Message sent successfully! I'll get back to you soon.
+          </div>
+        )}
         <div ref={buttonRef} className="relative">
           <motion.button
             type="submit"

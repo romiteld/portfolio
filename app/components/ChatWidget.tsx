@@ -123,19 +123,7 @@ export default function ChatWidget() {
         });
       }, chatWidgetRef);
 
-      // Close chat when clicking outside
-      const handleClickOutside = (event: MouseEvent) => {
-        if (chatWidgetRef.current && !chatWidgetRef.current.contains(event.target as Node)) {
-          setIsOpen(false);
-        }
-      };
-
-      document.addEventListener("mousedown", handleClickOutside);
-
-      return () => {
-        ctx.revert();
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
+      return () => ctx.revert();
     }
   }, [isOpen]);
 

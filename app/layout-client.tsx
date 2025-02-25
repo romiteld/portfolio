@@ -18,16 +18,18 @@ export default function RootLayoutClient({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${poppins.variable}`}>
-      <body className="bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-50 min-h-screen flex flex-col">
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
+      <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <BackgroundAnimation />
-          <Navbar />
-          <AnimatePresence mode="wait">
-            <main className="flex-grow">{children}</main>
-          </AnimatePresence>
-          <Footer />
-          <ChatWidget />
+          <div className="bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-50 min-h-screen flex flex-col">
+            <BackgroundAnimation />
+            <Navbar />
+            <AnimatePresence mode="wait">
+              <main className="flex-grow">{children}</main>
+            </AnimatePresence>
+            <Footer />
+            <ChatWidget />
+          </div>
         </ThemeProvider>
       </body>
     </html>
