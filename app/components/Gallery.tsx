@@ -102,26 +102,23 @@ export default function Gallery({ photos: initialPhotos }: GalleryProps) {
       <div ref={galleryRef} className="relative max-w-7xl mx-auto px-4">
         <div className="columns-1 sm:columns-2 md:columns-3 lg:columns-4 gap-4">
           {photos.map((photo, index) => {
-            // Calculate dimensions to maintain aspect ratio
-            const width = Math.min(photo.width, 800) // Cap max width
-            const height = (photo.height / photo.width) * width
-            
             return (
               <div 
                 key={photo.id} 
                 className="gallery-item break-inside-avoid mb-4 cursor-pointer overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800 shadow-md hover:shadow-xl transition-all duration-300 hover:scale-[1.02]"
                 onClick={() => setSelectedPhoto(photo)}
               >
-                <div className="relative" style={{ width: '100%', height: 'auto' }}>
+                <div className="relative aspect-[4/3]">
                   <Image
                     src={photo.src}
                     alt={photo.alt}
-                    width={width}
-                    height={height}
-                    className="w-full h-auto object-cover rounded-lg"
+                    width={800}
+                    height={600}
+                    className="w-full h-full object-cover rounded-lg"
                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                     priority={index < 8}
                     loading={index < 8 ? "eager" : "lazy"}
+                    quality={75}
                   />
                 </div>
               </div>
@@ -156,11 +153,12 @@ export default function Gallery({ photos: initialPhotos }: GalleryProps) {
                 <Image
                   src={selectedPhoto.src}
                   alt={selectedPhoto.alt}
-                  width={selectedPhoto.width}
-                  height={selectedPhoto.height}
-                  className="object-contain"
+                  width={1920}
+                  height={1440}
+                  className="w-full h-full object-contain"
                   sizes="100vw"
                   priority
+                  quality={90}
                 />
               </div>
               <motion.button
