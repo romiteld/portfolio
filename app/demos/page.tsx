@@ -16,6 +16,7 @@ import {
   Youtube,
   BarChart,
   Link2,
+  CircleDollarSign,
 } from "lucide-react"
 
 // Register GSAP plugins
@@ -23,11 +24,11 @@ gsap.registerPlugin(ScrollTrigger)
 
 const demos = [
   {
-    slug: "conversational-ai-chatbot",
-    title: "Conversational AI Chatbot",
-    description: "Experience real-time Q&A with our advanced chatbot.",
+    slug: "financial-assistant",
+    title: "Financial Market Assistant",
+    description: "Get real-time financial analysis, market insights, and investment advice.",
     gradient: "from-blue-500 to-purple-500",
-    icon: <MessageSquare strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <CircleDollarSign strokeWidth={1.5} className="w-10 h-10" />,
   },
   {
     slug: "computer-vision-assistant",
@@ -113,7 +114,7 @@ export default function DemosPage() {
         })
 
         // Get all cards and animate them
-        const cards = demoCardsRef.current.querySelectorAll(".group")
+        const cards = demoCardsRef.current?.querySelectorAll(".group") || []
         cards.forEach((card, index) => {
           const iconSvg = card.querySelector(".demo-icon svg")
           
@@ -123,7 +124,8 @@ export default function DemosPage() {
             
             const paths = iconSvg.querySelectorAll("path, polyline, circle, rect, line")
             paths.forEach(path => {
-              const length = path.getTotalLength?.() || 100
+              // Use type assertion and optional chaining
+              const length = (path as SVGGeometryElement).getTotalLength?.() || 100
               gsap.set(path, {
                 strokeDasharray: length,
                 strokeDashoffset: length,

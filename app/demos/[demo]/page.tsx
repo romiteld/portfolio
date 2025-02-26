@@ -7,9 +7,9 @@ import { X } from "lucide-react"
 
 const demos = [
   {
-    slug: "conversational-ai-chatbot",
-    title: "Conversational AI Chatbot",
-    description: "Experience real-time Q&A with our advanced chatbot.",
+    slug: "financial-assistant",
+    title: "Financial Market Assistant",
+    description: "Get real-time financial analysis, market insights, and investment advice.",
   },
   {
     slug: "computer-vision-assistant",
