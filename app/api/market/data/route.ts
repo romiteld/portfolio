@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { marketDataCache, alpacaRateLimiter } from '@/app/utils/rateLimiter'
 
 // Simulate market data
 // In a real application, this would come from a financial data API
@@ -138,6 +139,14 @@ const fetchAlpacaMarketData = async () => {
       return null
     }
 
+    // Check rate limit before making API call
+    const clientIp = 'alpaca-api-client' // In a real app, use the client IP
+    if (!alpacaRateLimiter.canMakeRequest(clientIp)) {
+      const waitTime = alpacaRateLimiter.getTimeUntilNextSlot(clientIp)
+      console.log(`Rate limit exceeded for Alpaca API. Try again in ${waitTime} seconds.`)
+      return { rateLimit: true, waitTime }
+    }
+
     console.log(`Connecting to Alpaca API at ${apiEndpoint} for account and ${dataEndpoint} for data`)
     console.log(`Using API key: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`)
     
@@ -149,6 +158,10 @@ const fetchAlpacaMarketData = async () => {
     
     // First check if the API is accessible by getting account info
     console.log(`Verifying account access: ${apiEndpoint}/v2/account`)
+    
+    // Track this request for rate limiting
+    alpacaRateLimiter.trackRequest(clientIp)
+    
     const accountResponse = await fetch(`${apiEndpoint}/v2/account`, {
       headers: {
         'APCA-API-KEY-ID': apiKey,
@@ -168,6 +181,9 @@ const fetchAlpacaMarketData = async () => {
     console.log('Account verification successful:', accountData.account_number ? `Account #${accountData.account_number}` : 'Valid account')
     
     // Make a request to Alpaca bars endpoint for latest stock data
+    // Track this request for rate limiting
+    alpacaRateLimiter.trackRequest(clientIp)
+    
     // Using the v2 bars API to get latest data for our symbols
     console.log(`Fetching stock data: ${dataEndpoint}/v2/stocks/bars/latest?symbols=${symbols.join(',')}`)
     const response = await fetch(`${dataEndpoint}/v2/stocks/bars/latest?symbols=${symbols.join(',')}`, {
@@ -227,6 +243,9 @@ const fetchAlpacaMarketData = async () => {
     }
     
     // Fetch indices data
+    // Track this request for rate limiting
+    alpacaRateLimiter.trackRequest(clientIp)
+    
     const indicesResponse = await fetch(`${dataEndpoint}/v2/stocks/bars/latest?symbols=${indicesSymbols.join(',')}`, {
       headers: {
         'APCA-API-KEY-ID': apiKey,
@@ -284,26 +303,58 @@ const fetchAlpacaMarketData = async () => {
     }
   } catch (error) {
     console.error('Error fetching data from Alpaca:', error)
-    return null
+    return error instanceof Error && error.message.includes('Rate limit') 
+      ? { rateLimit: true, error: error.message }
+      : null
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Use cache key based on basic parameters
+    const cacheKey = 'market-data'
+    
+    // Check if we have cached data that's still valid
+    const cachedData = marketDataCache.get(cacheKey)
+    if (cachedData) {
+      console.log(`Using cached market data (expires in ${marketDataCache.getRemainingTtl(cacheKey)}s)`)
+      return NextResponse.json({
+        ...cachedData,
+        fromCache: true
+      })
+    }
+    
     // Try to fetch real data from Alpaca first
     let alpacaData = null
     let authError = false
     let apiError = null
+    let rateLimited = false
+    let rateLimitWaitTime = 0
     
     try {
       console.log('Attempting to fetch data from Alpaca...')
       alpacaData = await fetchAlpacaMarketData()
-      console.log('Alpaca data fetch complete:', alpacaData ? 'successful' : 'failed')
+      
+      // Check if we hit a rate limit
+      if (alpacaData && alpacaData.rateLimit) {
+        rateLimited = true
+        rateLimitWaitTime = alpacaData.waitTime || 60
+        apiError = `Rate limit exceeded. Try again in ${rateLimitWaitTime} seconds.`
+        console.log(apiError)
+        alpacaData = null
+      } else {
+        console.log('Alpaca data fetch complete:', alpacaData ? 'successful' : 'failed')
+      }
     } catch (error: any) {
       console.error('Error fetching data from Alpaca:', error)
       
+      // Check if it's a rate limit error
+      if (error.message && error.message.includes('Rate limit')) {
+        rateLimited = true
+        apiError = error.message
+      }
       // Check if it's an auth error (401/403)
-      if (error.message && (
+      else if (error.message && (
           error.message.includes('401') || 
           error.message.includes('403') ||
           error.message.includes('Unauthorized') || 
@@ -326,13 +377,22 @@ export async function GET() {
     // Add simulation flag for client to know data source
     const isSimulated = !alpacaData
     
-    return NextResponse.json({
+    const responseData = {
       ...marketData,
       isSimulated,
       authError,
       apiError,
+      rateLimited,
+      rateLimitWaitTime,
       lastUpdated: new Date().toISOString()
-    })
+    }
+    
+    // Cache the response data unless we hit a rate limit
+    if (!rateLimited) {
+      marketDataCache.set(cacheKey, responseData)
+    }
+    
+    return NextResponse.json(responseData)
   } catch (error) {
     console.error('Error in market data route:', error)
     return NextResponse.json(

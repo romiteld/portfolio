@@ -158,54 +158,49 @@ export default function FinancialChatWidget() {
   const refreshMarketData = async () => {
     setIsRefreshingData(true)
     setApiStatusMessage("")
-    setError(null)
     
-    console.log('Refreshing market data...')
     try {
-      // Try to fetch from our API endpoint that uses Alpaca if configured
       const response = await fetch('/api/market/data')
-      
-      // Log response status for debugging
-      console.log(`API response status: ${response.status} ${response.statusText}`)
+      console.log(`Market data response status: ${response.status}`)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('Market data received:', data.isSimulated ? 'simulated' : 'real')
         
-        // Validate the data structure to avoid runtime errors
-        if (data.stocks && Array.isArray(data.stocks)) {
+        // Check for rate limiting
+        if (data.rateLimited) {
+          const waitTime = data.rateLimitWaitTime || 60;
+          setApiStatusMessage(`Rate limit exceeded. Try again in ${waitTime} seconds.`);
+          setIsRefreshingData(false);
+          return;
+        }
+        
+        if (data.stocks && data.stocks.length > 0) {
           setMarketData(data.stocks)
-          setIsUsingSimulatedData(data.isSimulated)
-          setRefreshTime(new Date().toLocaleTimeString())
+          setIsUsingSimulatedData(data.isSimulated || false)
           
-          if (data.isSimulated) {
-            if (data.authError) {
-              console.warn('Authentication error detected:', data.apiError)
-              setApiStatusMessage(`Authentication failed: ${data.apiError || 'Check Alpaca API credentials'}`)
-            } else if (data.apiError) {
-              console.warn('API error detected:', data.apiError)
-              setApiStatusMessage(`API error: ${data.apiError}`)
-            } else {
-              setApiStatusMessage("Using simulated data. Add Alpaca credentials for real data.")
-            }
+          // Update time display
+          setRefreshTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }))
+          
+          // Show authentication error message if needed
+          if (data.authError) {
+            setApiStatusMessage("Authentication failed. Please check your Alpaca API credentials.")
+          } else if (data.apiError) {
+            setApiStatusMessage(data.apiError)
+          } else if (data.fromCache) {
+            setApiStatusMessage("Using cached data (refreshes every 30 seconds).")
           } else {
-            console.log('Successfully loaded real market data from Alpaca')
-            setApiStatusMessage(`Using real data from Alpaca as of ${new Date(data.lastUpdated).toLocaleTimeString()}`)
+            setApiStatusMessage("")
           }
         } else {
-          console.error('Invalid market data format:', data)
-          setApiStatusMessage("Error: Invalid market data format received")
-          setIsUsingSimulatedData(true)
+          setApiStatusMessage("Invalid market data format received")
         }
       } else {
-        console.error('Failed to fetch market data:', response.status, response.statusText)
-        setApiStatusMessage(`API Error: ${response.status} ${response.statusText}`)
-        setIsUsingSimulatedData(true)
+        setApiStatusMessage(`API error: ${response.status}`)
+        console.error(`Failed to fetch market data: ${response.status}`)
       }
-    } catch (err) {
-      console.error('Error refreshing market data:', err)
-      setError('Failed to load market data. Please try again later.')
-      setIsUsingSimulatedData(true)
+    } catch (error) {
+      console.error('Error refreshing market data:', error)
+      setApiStatusMessage(error instanceof Error ? error.message : 'Unknown error')
     } finally {
       setIsRefreshingData(false)
     }
@@ -287,6 +282,22 @@ export default function FinancialChatWidget() {
       // Remove typing indicator
       setTypingIndicator(false)
       
+      // Check for rate limiting errors first
+      if (response.status === 429 || data.rateLimited) {
+        const waitTime = data.waitTime || 60;
+        const rateError = data.error || `Rate limit exceeded. Please wait ${waitTime} seconds before trying again.`;
+        setError(rateError);
+        
+        // Add system message about rate limiting
+        const rateMessage: Message = {
+          role: "assistant",
+          content: `⚠️ ${rateError} To prevent API abuse, we limit the number of requests. Please try again shortly.`,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, rateMessage]);
+        return;
+      }
+      
       if (response.ok && data.message) {
         const botResponse: Message = { 
           role: "assistant", 
@@ -306,19 +317,15 @@ export default function FinancialChatWidget() {
         throw new Error(data.error || 'Failed to get response')
       }
     } catch (error) {
-      console.error('Error in chat:', error)
+      console.error('Chat error:', error)
       setTypingIndicator(false)
       
-      // Add error message
-      setError(error instanceof Error ? error.message : 'Unknown error occurred')
-      
-      const errorResponse: Message = { 
-        role: "assistant", 
-        content: "I'm having trouble connecting to my financial data sources right now. Please try again in a moment.",
-        timestamp: new Date()
+      // Display error message to user
+      if (error instanceof Error) {
+        setError(error.message)
+      } else {
+        setError('Failed to send message')
       }
-      
-      setMessages(prev => [...prev, errorResponse])
     } finally {
       setIsLoading(false)
     }

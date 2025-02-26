@@ -1,187 +1,223 @@
 import { NextResponse } from 'next/server'
-import { OpenAI } from 'openai'
+import OpenAI from 'openai'
+import { marketDataCache, chatRateLimiter } from '@/app/utils/rateLimiter'
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || '',
 })
 
-// Simulate database for chat history (in a real app, use a database)
-const chatHistory: { userId: string; messages: any[] }[] = []
+// Simulate a database for chat history
+// In a real app, this would be a real database
+const chatHistory: Record<string, { role: string, content: string }[]> = {}
+const MAX_CONTEXT = 10 // Max number of messages to keep in context
 
-// Maximum number of messages to keep in context
-const MAX_CONTEXT_MESSAGES = 10
+// Fetches the latest market data from our internal API
+async function fetchLatestMarketData() {
+  try {
+    // Check if we have cached data first
+    const cachedData = marketDataCache.get('market-data')
+    if (cachedData) {
+      console.log(`Using cached market data for chat context (expires in ${marketDataCache.getRemainingTtl('market-data')}s)`)
+      return cachedData
+    }
+    
+    const response = await fetch('http://localhost:3000/api/market/data')
+    if (!response.ok) {
+      throw new Error(`Failed to fetch market data: ${response.status}`)
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('Error fetching market data:', error)
+    return null
+  }
+}
 
+// Format market data into a context string for the AI
+function formatMarketContext(data: any): string {
+  let context = ''
+  
+  // Format stock data
+  if (data.stocks && data.stocks.length > 0) {
+    context += 'Current stock prices:\n'
+    data.stocks.slice(0, 5).forEach((stock: any) => {
+      context += `${stock.symbol}: $${stock.price.toFixed(2)} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}, ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%)\n`
+    })
+  }
+  
+  // Format indices data
+  if (data.indices && data.indices.length > 0) {
+    context += '\nCurrent market indices:\n'
+    data.indices.forEach((index: any) => {
+      context += `${index.name}: ${index.value.toFixed(2)} (${index.change >= 0 ? '+' : ''}${index.change}%)\n`
+    })
+  }
+  
+  context += `\nData ${data.isSimulated ? 'is simulated' : 'from Alpaca API'}, as of ${new Date(data.lastUpdated).toLocaleString()}`
+  
+  return context
+}
+
+// Generate dynamic suggestions based on market data
+function generateSuggestions(marketData: any): string[] {
+  // Base suggestions
+  const suggestions = [
+    "What are the best tech stocks to invest in?",
+    "How is the S&P 500 performing today?",
+    "Explain market volatility",
+    "Should I invest in index funds?",
+    "How do rising interest rates affect the stock market?",
+    "What's a good portfolio allocation for a 30-year-old?",
+    "Compare AAPL and MSFT stocks",
+    "What are the risks of cryptocurrency investments?"
+  ]
+  
+  // Add market-specific suggestions if data is available
+  if (marketData.stocks && marketData.stocks.length > 0) {
+    // Add some stock-specific questions
+    const topStocks = marketData.stocks.slice(0, 3)
+    topStocks.forEach((stock: any) => {
+      suggestions.push(`Tell me about ${stock.symbol} stock`)
+    })
+  }
+  
+  return suggestions
+}
+
+// POST handler for chat messages
 export async function POST(request: Request) {
   try {
-    const { message, userId = 'anonymous', marketData } = await request.json()
+    const body = await request.json()
+    const { message, userId, marketData: clientMarketData } = body
     
+    // Validate required fields
     if (!message) {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
-
-    // Find or create user chat history
-    let userChat = chatHistory.find(chat => chat.userId === userId)
-    if (!userChat) {
-      userChat = { userId, messages: [] }
-      chatHistory.push(userChat)
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
+    
+    // Apply rate limiting based on user ID
+    if (!chatRateLimiter.canMakeRequest(userId)) {
+      const waitTime = chatRateLimiter.getTimeUntilNextSlot(userId)
+      return NextResponse.json({ 
+        error: `Rate limit exceeded. Please wait ${waitTime} seconds before sending another message.`,
+        rateLimited: true,
+        waitTime 
+      }, { status: 429 })
+    }
+    
+    // Initialize chat history for this user if it doesn't exist
+    if (!chatHistory[userId]) {
+      chatHistory[userId] = []
+    }
+    
+    // Fetch the latest market data if not provided
+    const marketData = clientMarketData || await fetchLatestMarketData()
+    
+    // Format market data for context
+    const marketContext = marketData ? formatMarketContext(marketData) : ''
     
     // Add user message to history
-    userChat.messages.push({
-      role: 'user',
-      content: message,
-      timestamp: new Date().toISOString()
-    })
+    chatHistory[userId].push({ role: 'user', content: message })
     
-    // Fetch latest market data to provide context
-    let latestMarketData = marketData
-    if (!latestMarketData) {
-      try {
-        const marketResponse = await fetch(new URL('/api/market/data', request.url).toString())
-        if (marketResponse.ok) {
-          latestMarketData = await marketResponse.json()
-        }
-      } catch (error) {
-        console.error('Error fetching market data for context:', error)
-      }
+    // Keep only the last MAX_CONTEXT messages
+    if (chatHistory[userId].length > MAX_CONTEXT) {
+      chatHistory[userId] = chatHistory[userId].slice(-MAX_CONTEXT)
     }
     
-    // Create market data context string
-    let marketContext = ''
-    if (latestMarketData) {
-      try {
-        // Format top stocks
-        if (latestMarketData.stocks && latestMarketData.stocks.length > 0) {
-          marketContext += 'Current stock prices:\n'
-          latestMarketData.stocks.slice(0, 5).forEach((stock: any) => {
-            marketContext += `${stock.symbol}: $${stock.price.toFixed(2)} (${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}, ${stock.changePercent >= 0 ? '+' : ''}${stock.changePercent.toFixed(2)}%)\n`
-          })
-        }
+    // Prepare messages for OpenAI API
+    const messages = [
+      {
+        role: 'system' as const,
+        content: `You are a helpful AI financial assistant with expertise in stock markets, investing, and financial planning. Today is ${new Date().toLocaleDateString()}.
         
-        // Format indices with extra emphasis
-        if (latestMarketData.indices && latestMarketData.indices.length > 0) {
-          marketContext += '\n=== MARKET INDICES (USE THIS DATA FOR INDEX QUESTIONS) ===\n'
-          latestMarketData.indices.forEach((index: any) => {
-            // Add special emphasis to S&P 500
-            if (index.name === 'S&P 500') {
-              marketContext += `>> ${index.name}: ${index.value.toFixed(2)} (${index.change >= 0 ? '+' : ''}${index.change}%) <<\n`
-            } else {
-              marketContext += `${index.name}: ${index.value.toFixed(2)} (${index.change >= 0 ? '+' : ''}${index.change}%)\n`
-            }
-          })
-          marketContext += '=== END OF MARKET INDICES ===\n'
-        }
+        ${marketContext}
         
-        marketContext += `\nData ${latestMarketData.isSimulated ? 'is simulated' : 'from Alpaca API'}, as of ${new Date(latestMarketData.lastUpdated).toLocaleString()}`
-      } catch (error) {
-        console.error('Error formatting market data for context:', error)
-        marketContext = 'Error retrieving current market data details.'
-      }
-    }
+        Provide concise and accurate responses to user inquiries. If asked about specific stocks or market performance, reference the market data provided above.
+        If the user asks about a stock or market not in the data, explain that you don't have real-time data for that specific entity.`
+      },
+      ...chatHistory[userId].map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      }))
+    ]
     
-    // Prepare messages for OpenAI - include limited context to stay within token limits
-    const contextMessages = userChat.messages.slice(-MAX_CONTEXT_MESSAGES).map((msg) => ({
-      role: msg.role,
-      content: msg.content
-    }))
-    
-    // Create system message with financial expertise instructions and market data
-    const systemMessage = {
-      role: 'system',
-      content: `You are a professional Financial Market Assistant with expertise in stocks, investing, market trends, and financial analysis. 
-You provide helpful, accurate financial advice and market insights based on real market data.
-
-${marketContext ? `Here is the latest market data to reference in your response:\n${marketContext}\n\n` : ''}
-
-CRITICAL INSTRUCTIONS FOR MARKET INDEX QUESTIONS:
-1. When users ask about ANY market index (S&P 500, Dow Jones, Nasdaq, Russell 2000), you MUST use the EXACT values shown in the MARKET INDICES section above.
-2. For example, if asked "How is the S&P 500 performing today?", respond with the EXACT value and percentage from the data, such as: "The S&P 500 is currently at 593.83, up +1.01% today."
-3. NEVER state that you don't have market data when the data appears in the context above.
-4. If the data shows real market information, ALWAYS use it to provide specific numeric answers.
-
-Answer questions concisely and accurately. Do not make up specific stock prices or movements unless they are provided in the market data context. 
-If you don't know specific data points not included above, acknowledge this and provide general guidance instead.
-Always consider risk disclosures when giving any investment-related information.`
-    }
+    // Track this chat request for rate limiting
+    chatRateLimiter.trackRequest(userId)
     
     // Call OpenAI API
-    const openAIMessages = [systemMessage, ...contextMessages]
-    
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o", // Using GPT-4o for better financial understanding
-      messages: openAIMessages,
+      model: 'gpt-3.5-turbo',
+      messages,
       temperature: 0.7,
       max_tokens: 500,
     })
     
-    const responseContent = completion.choices[0].message.content || "I apologize, I couldn't generate a response for that query."
+    const reply = completion.choices[0].message.content
     
-    // Add assistant response to history
-    const response = {
-      role: 'assistant',
-      content: responseContent,
-      timestamp: new Date().toISOString()
+    if (reply) {
+      // Add AI response to history
+      chatHistory[userId].push({ role: 'assistant', content: reply })
+      
+      // Return the response
+      return NextResponse.json({ message: reply })
+    } else {
+      throw new Error('Empty response from OpenAI')
     }
-    userChat.messages.push(response)
+  } catch (error: any) {
+    console.error('Error in chat API:', error)
     
-    // Limit history size (keep last 50 messages)
-    if (userChat.messages.length > 50) {
-      userChat.messages = userChat.messages.slice(-50)
+    // Handle rate limiting errors specifically
+    if (error.message && error.message.includes('rate limit')) {
+      return NextResponse.json({ 
+        error: 'OpenAI rate limit exceeded. Please try again later.',
+        rateLimited: true
+      }, { status: 429 })
     }
-    
-    return NextResponse.json({ message: responseContent })
-  } catch (error) {
-    console.error('Error in financial chat API:', error)
-    
-    // Fallback responses for when OpenAI API fails
-    const fallbackResponses = [
-      "I'm having trouble connecting to my financial data sources right now. Please try again in a moment.",
-      "My market data connection is temporarily unavailable. Would you like to ask something else?",
-      "I apologize, but I'm currently unable to process financial queries. Please try again shortly."
-    ]
-    
-    const fallbackResponse = fallbackResponses[Math.floor(Math.random() * fallbackResponses.length)]
     
     return NextResponse.json({ 
-      message: fallbackResponse,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    })
+      error: 'Failed to generate response',
+      details: error.message || 'Unknown error'
+    }, { status: 500 })
   }
 }
 
-// Get chat history for a user
+// GET handler for retrieving chat history and suggestions
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId') || 'anonymous'
+    const url = new URL(request.url)
+    const userId = url.searchParams.get('userId')
     
-    const userChat = chatHistory.find(chat => chat.userId === userId)
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
+    }
     
-    // Dynamic suggestions based on market conditions and popular queries
-    const suggestions = [
-      "What are the best tech stocks to invest in?",
-      "How is the S&P 500 performing today?",
-      "Explain market volatility",
-      "Should I invest in index funds?",
-      "How do rising interest rates affect the stock market?",
-      "What's a good portfolio allocation for a 30-year-old?",
-      "Compare AAPL and MSFT stocks",
-      "What are the risks of cryptocurrency investments?"
-    ]
+    // Apply rate limiting for suggestions (more lenient than chat)
+    const rateLimitKey = `suggestions-${userId}`
+    if (!chatRateLimiter.canMakeRequest(rateLimitKey)) {
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded for suggestions',
+        chatHistory: chatHistory[userId] || [],
+        suggestions: [] 
+      })
+    }
+    
+    // Track this request
+    chatRateLimiter.trackRequest(rateLimitKey)
+    
+    // Fetch market data for generating suggestions
+    const marketData = await fetchLatestMarketData()
+    const suggestions = marketData ? generateSuggestions(marketData) : []
     
     return NextResponse.json({
-      history: userChat?.messages || [],
-      suggestions: suggestions
+      chatHistory: chatHistory[userId] || [],
+      suggestions
     })
   } catch (error) {
-    console.error('Error retrieving chat history:', error)
-    return NextResponse.json(
-      { error: 'Failed to retrieve chat history' },
-      { status: 500 }
-    )
+    console.error('Error in GET chat API:', error)
+    return NextResponse.json({ error: 'Failed to retrieve chat data' }, { status: 500 })
   }
 } 
