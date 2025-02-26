@@ -50,6 +50,20 @@
   }
 }
 
+/* New pulse animation for the circular background */
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Grid pattern for header background */
+.pattern-grid-lg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+}
+
 .financial-page-bg {
   background-size: 400% 400%;
   animation: gradientMove 15s ease infinite;
@@ -57,10 +71,6 @@
 
 .float-animation {
   animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 10s infinite;
 }
 
 .animate-spin-slow {

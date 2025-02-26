@@ -3,12 +3,21 @@
 import { useState, useRef, useEffect } from "react"
 import { motion } from "framer-motion"
 import { BarChart3, TrendingUp, CircleDollarSign, Send, User, MessageSquare, RefreshCw, Clock, AlertCircle, Bot, Zap } from "lucide-react"
+import { gsap } from "gsap"
 
 interface Message {
   role: "user" | "assistant"
   content: string
   timestamp?: Date
   isLoading?: boolean
+  isRealTimeData?: boolean
+  marketData?: {
+    index: string
+    value: string
+    change: number
+    direction: string
+    updated: string
+  }
 }
 
 interface MarketData {
@@ -47,6 +56,16 @@ export default function FinancialChatWidget() {
   const [autoScroll, setAutoScroll] = useState(true)
   const [isScrolledUp, setIsScrolledUp] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  
+  // Refs for GSAP animations
+  const sendButtonRef = useRef<HTMLButtonElement>(null)
+  const stockItemsRef = useRef<HTMLDivElement[]>([])
+  const marketDataContainerRef = useRef<HTMLDivElement>(null)
+  const logoIconRef = useRef<SVGSVGElement>(null)
+  
+  // Add new refs for market indices animations
+  const marketInsightsRef = useRef<HTMLDivElement>(null)
+  const liveDataBadgeRefs = useRef<(HTMLSpanElement | null)[]>([])
   
   // Generate a unique session ID for this chat
   useEffect(() => {
@@ -275,6 +294,13 @@ export default function FinancialChatWidget() {
           timestamp: new Date()
         }
         
+        // Check if this is a response from our specialized market index API
+        if (data.source === 'index_api' && data.raw_data) {
+          // Add a special class to highlight that this is real-time data
+          botResponse.isRealTimeData = true
+          botResponse.marketData = data.raw_data
+        }
+        
         setMessages(prev => [...prev, botResponse])
       } else {
         throw new Error(data.error || 'Failed to get response')
@@ -347,19 +373,271 @@ export default function FinancialChatWidget() {
     }
   }, [])
 
+  // Reset the stock items ref array when market data changes
+  useEffect(() => {
+    stockItemsRef.current = []
+  }, [marketData])
+  
+  // Add hover animation for send button
+  useEffect(() => {
+    if (sendButtonRef.current) {
+      // Initial state
+      gsap.set(sendButtonRef.current, {
+        scale: 1,
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+      })
+      
+      // Hover animation
+      const hoverAnimation = (e: MouseEvent) => {
+        if (!isLoading && input.trim() !== "") {
+          gsap.to(sendButtonRef.current, {
+            scale: 1.1,
+            boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+            duration: 0.3,
+            ease: "power2.out"
+          })
+        }
+      }
+      
+      // Leave animation
+      const leaveAnimation = (e: MouseEvent) => {
+        gsap.to(sendButtonRef.current, {
+          scale: 1,
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          duration: 0.3,
+          ease: "power2.in"
+        })
+      }
+      
+      // Click animation
+      const clickAnimation = (e: MouseEvent) => {
+        if (!isLoading && input.trim() !== "") {
+          gsap.timeline()
+            .to(sendButtonRef.current, {
+              scale: 0.9,
+              duration: 0.1,
+              ease: "power2.in"
+            })
+            .to(sendButtonRef.current, {
+              scale: 1,
+              duration: 0.2,
+              ease: "back.out(3)"
+            })
+        }
+      }
+      
+      // Add event listeners
+      const button = sendButtonRef.current
+      button.addEventListener('mouseenter', hoverAnimation)
+      button.addEventListener('mouseleave', leaveAnimation)
+      button.addEventListener('mousedown', clickAnimation)
+      
+      // Cleanup
+      return () => {
+        button.removeEventListener('mouseenter', hoverAnimation)
+        button.removeEventListener('mouseleave', leaveAnimation)
+        button.removeEventListener('mousedown', clickAnimation)
+      }
+    }
+  }, [isLoading, input])
+  
+  // Animate stock items when market data changes or is refreshed
+  useEffect(() => {
+    if (stockItemsRef.current.length > 0) {
+      // Reset any existing animations
+      gsap.set(stockItemsRef.current, { clearProps: "all" })
+      
+      // Create staggered entrance animation
+      gsap.fromTo(
+        stockItemsRef.current,
+        { 
+          y: 15, 
+          opacity: 0, 
+          scale: 0.95,
+          boxShadow: "0 0 0 rgba(0,0,0,0)"
+        },
+        { 
+          y: 0, 
+          opacity: 1, 
+          scale: 1,
+          boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+          duration: 0.5, 
+          stagger: 0.1,
+          ease: "power2.out" 
+        }
+      )
+    }
+  }, [marketData, refreshTime])
+  
+  // Function to add a stock item element to the ref array
+  const addToStockRefs = (el: HTMLDivElement) => {
+    if (el && !stockItemsRef.current.includes(el)) {
+      stockItemsRef.current.push(el)
+    }
+  }
+  
+  // Animate refreshing effect
+  useEffect(() => {
+    if (isRefreshingData && marketDataContainerRef.current) {
+      // Create refreshing animation
+      gsap.to(marketDataContainerRef.current, {
+        opacity: 0.7,
+        duration: 0.2,
+        yoyo: true,
+        repeat: 1,
+        ease: "power1.inOut"
+      })
+    }
+  }, [isRefreshingData])
+
+  // Reset the badge refs array whenever messages change
+  useEffect(() => {
+    liveDataBadgeRefs.current = []
+  }, [messages])
+  
+  // Function to add a live data badge element to the ref array
+  const addToLiveBadgeRefs = (el: HTMLSpanElement | null) => {
+    if (el && !liveDataBadgeRefs.current.includes(el)) {
+      liveDataBadgeRefs.current.push(el)
+    }
+  }
+  
+  // Add animation for market insights
+  useEffect(() => {
+    if (marketInsightsRef.current) {
+      // Create an animation for the market insights section
+      gsap.fromTo(
+        marketInsightsRef.current,
+        { 
+          opacity: 0,
+          y: 10
+        },
+        { 
+          opacity: 1,
+          y: 0,
+          duration: 0.6,
+          ease: "power2.out",
+          delay: 0.3
+        }
+      )
+      
+      // Add a subtle hover effect to the entire section
+      marketInsightsRef.current.addEventListener('mouseenter', () => {
+        gsap.to(marketInsightsRef.current, {
+          backgroundColor: 'rgba(59, 130, 246, 0.03)', // Very subtle highlight
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+          duration: 0.3
+        })
+      })
+      
+      marketInsightsRef.current.addEventListener('mouseleave', () => {
+        gsap.to(marketInsightsRef.current, {
+          backgroundColor: 'rgba(0, 0, 0, 0)',
+          boxShadow: '0 0 0 rgba(0, 0, 0, 0)',
+          duration: 0.3
+        })
+      })
+    }
+  }, [refreshTime]) // Rerun when data is refreshed
+  
+  // Add animation for live data badges
+  useEffect(() => {
+    if (liveDataBadgeRefs.current.length > 0) {
+      // Animate the dot inside the badge
+      liveDataBadgeRefs.current.forEach(badge => {
+        if (badge) {
+          const dot = badge.querySelector('div')
+          if (dot) {
+            // Create a pulsing animation for the dot
+            gsap.to(dot, {
+              scale: 1.3,
+              opacity: 1,
+              duration: 0.8,
+              repeat: -1,
+              yoyo: true,
+              ease: "sine.inOut"
+            })
+          }
+          
+          // Also add a subtle glow to the badge
+          gsap.to(badge, {
+            boxShadow: '0 0 8px rgba(34, 197, 94, 0.3)',
+            duration: 1.5,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+          })
+        }
+      })
+    }
+  }, [liveDataBadgeRefs.current.length])
+
+  // Add animation for the logo icon
+  useEffect(() => {
+    if (logoIconRef.current) {
+      // Initial state
+      gsap.set(logoIconRef.current, {
+        scale: 1,
+        rotation: 0
+      })
+      
+      // Create a subtle animation for the icon
+      gsap.to(logoIconRef.current, {
+        rotation: 360,
+        duration: 20,
+        repeat: -1,
+        ease: "linear"
+      })
+      
+      // Add hover effect
+      const hoverAnimation = () => {
+        gsap.to(logoIconRef.current, {
+          scale: 1.2,
+          duration: 0.3,
+          ease: "back.out(2)"
+        })
+      }
+      
+      const leaveAnimation = () => {
+        gsap.to(logoIconRef.current, {
+          scale: 1,
+          duration: 0.3,
+          ease: "power1.out"
+        })
+      }
+      
+      // Add event listeners
+      const icon = logoIconRef.current
+      icon.addEventListener('mouseenter', hoverAnimation)
+      icon.addEventListener('mouseleave', leaveAnimation)
+      
+      // Cleanup
+      return () => {
+        icon.removeEventListener('mouseenter', hoverAnimation)
+        icon.removeEventListener('mouseleave', leaveAnimation)
+      }
+    }
+  }, [])
+
   return (
     <div className="grid md:grid-cols-4 gap-4 h-[600px] relative">
       {/* Main chat area */}
       <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden">
-        {/* Header */}
-        <div className="bg-primary-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between">
-          <div className="flex items-center">
-            <CircleDollarSign className="mr-2" />
-            <h2 className="font-bold">Financial Market Assistant</h2>
+        {/* Header - Update the light mode styling */}
+        <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between shadow-sm relative overflow-hidden">
+          {/* Add subtle background pattern for light mode only */}
+          <div className="absolute inset-0 bg-repeat opacity-10 pattern-grid-lg dark:opacity-0"></div>
+          
+          {/* Add animated circle behind the icon */}
+          <div className="absolute left-3 w-10 h-10 rounded-full bg-white/10 animate-pulse-slow"></div>
+          
+          <div className="flex items-center relative z-10">
+            <CircleDollarSign className="mr-2 text-white/90" ref={logoIconRef} />
+            <h2 className="font-bold tracking-wide">Financial Market Assistant</h2>
           </div>
           <div className="flex space-x-2">
             <button 
-              className={`text-xs ${autoScroll ? 'bg-primary-800 dark:bg-primary-900' : 'bg-primary-700 dark:bg-primary-800'} hover:bg-primary-800 dark:hover:bg-primary-900 py-1 px-2 rounded flex items-center`} 
+              className={`text-xs ${autoScroll ? 'bg-primary-800/40 dark:bg-primary-900 backdrop-blur-sm' : 'bg-primary-700/40 dark:bg-primary-800 backdrop-blur-sm'} hover:bg-primary-800/60 dark:hover:bg-primary-900 py-1 px-2 rounded flex items-center`} 
               onClick={(e) => { e.stopPropagation(); setAutoScroll(!autoScroll) }}
               title={autoScroll ? "Disable auto-scroll" : "Enable auto-scroll"}
             >
@@ -367,7 +645,7 @@ export default function FinancialChatWidget() {
               {autoScroll ? "Auto-scroll On" : "Auto-scroll Off"}
             </button>
             <button 
-              className="text-xs bg-primary-700 hover:bg-primary-800 dark:bg-primary-800 dark:hover:bg-primary-900 py-1 px-2 rounded flex items-center" 
+              className="text-xs bg-primary-700/40 hover:bg-primary-800/60 dark:bg-primary-800 dark:hover:bg-primary-900 backdrop-blur-sm py-1 px-2 rounded flex items-center" 
               onClick={(e) => { e.stopPropagation(); refreshMarketData() }}
               disabled={isRefreshingData}
             >
@@ -394,7 +672,9 @@ export default function FinancialChatWidget() {
                 className={`max-w-[85%] p-3 rounded-lg ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
-                    : "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 rounded-tl-none"
+                    : message.isRealTimeData 
+                      ? "bg-gradient-to-r from-primary-800/70 to-primary-600/70 text-white rounded-tl-none border border-primary-400/30" 
+                      : "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 rounded-tl-none"
                 }`}
               >
                 <div className="flex items-center mb-1 justify-between">
@@ -408,6 +688,15 @@ export default function FinancialChatWidget() {
                       <>
                         <span className="font-medium mr-2">Financial Assistant</span>
                         <Bot size={14} />
+                        {message.isRealTimeData && (
+                          <span 
+                            className="ml-2 text-xs py-0.5 px-1.5 bg-green-500/20 rounded-full text-green-200 border border-green-500/30 flex items-center"
+                            ref={addToLiveBadgeRefs}
+                          >
+                            <div className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1"></div>
+                            Live Data
+                          </span>
+                        )}
                       </>
                     )}
                   </div>
@@ -427,6 +716,25 @@ export default function FinancialChatWidget() {
                   ) : null}
                 </div>
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                
+                {/* Display market data details for real-time data */}
+                {message.isRealTimeData && message.marketData && (
+                  <div className="mt-2 pt-2 border-t border-white/20 text-xs">
+                    <div className="flex justify-between items-center">
+                      <span className="opacity-80">Index Value:</span>
+                      <span className="font-mono font-medium">{message.marketData.value}</span>
+                    </div>
+                    <div className="flex justify-between items-center mt-1">
+                      <span className="opacity-80">Change:</span>
+                      <span className={`font-mono font-medium ${message.marketData.change >= 0 ? 'text-green-300' : 'text-red-300'}`}>
+                        {message.marketData.change >= 0 ? '+' : ''}{message.marketData.change}%
+                      </span>
+                    </div>
+                    <div className="text-right mt-1 opacity-70">
+                      Updated: {new Date(message.marketData.updated).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           ))}
@@ -509,6 +817,7 @@ export default function FinancialChatWidget() {
               disabled={isLoading || input.trim() === ""}
               className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Send message"
+              ref={sendButtonRef}
             >
               <Send size={20} />
             </button>
@@ -546,7 +855,7 @@ export default function FinancialChatWidget() {
       </div>
 
       {/* Market data sidebar */}
-      <div className="hidden md:flex md:col-span-1 flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden">
+      <div className="hidden md:flex md:col-span-1 flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden" ref={marketDataContainerRef}>
         <div className="bg-neutral-100 dark:bg-neutral-700 p-3 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-sm flex items-center">
@@ -560,8 +869,12 @@ export default function FinancialChatWidget() {
         
         <div className="flex-1 overflow-y-auto p-3">
           <div className="space-y-3">
-            {marketData.map((stock) => (
-              <div key={stock.symbol} className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800">
+            {marketData.map((stock, index) => (
+              <div 
+                key={stock.symbol} 
+                className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 transition-all duration-300"
+                ref={addToStockRefs}
+              >
                 <div className="flex justify-between items-center">
                   <span className="font-bold">{stock.symbol}</span>
                   <span className="font-mono">${stock.price.toFixed(2)}</span>
@@ -580,13 +893,28 @@ export default function FinancialChatWidget() {
             ))}
           </div>
           
-          <div className="mt-4 p-3 rounded-lg bg-neutral-100 dark:bg-neutral-700">
-            <h4 className="text-xs font-medium mb-2">Market Insights</h4>
+          <div className="mt-4 p-3 rounded-lg bg-neutral-100 dark:bg-neutral-700" ref={marketInsightsRef}>
+            <h4 className="text-xs font-medium mb-2 flex items-center">
+              <BarChart3 size={12} className="mr-1" /> 
+              Market Insights
+            </h4>
             <ul className="text-xs space-y-2">
-              <li>• S&P 500: <span className="text-green-500">+0.4%</span></li>
-              <li>• Nasdaq: <span className="text-green-500">+0.7%</span></li>
-              <li>• Dow Jones: <span className="text-red-500">-0.2%</span></li>
-              <li>• VIX Index: <span className="text-red-500">-1.3%</span></li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• S&P 500:</span>
+                <span className="text-green-500">+0.4%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• Nasdaq:</span>
+                <span className="text-green-500">+0.7%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• Dow Jones:</span>
+                <span className="text-red-500">-0.2%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• VIX Index:</span>
+                <span className="text-red-500">-1.3%</span>
+              </li>
             </ul>
           </div>
         </div>
