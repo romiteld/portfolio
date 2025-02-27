@@ -43,7 +43,7 @@ export default function WoodworkingSlider({ images }: WoodworkingSliderProps) {
     <div className="relative w-full max-w-3xl mx-auto h-64 sm:h-80 md:h-96">
       <animated.div
         style={{
-          opacity: props.opacity,
+          opacity: props.opacity.to((o) => o),
           transform: props.transform.to((t) => t),
         }}
         className="w-full h-full"
