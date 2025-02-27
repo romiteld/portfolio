@@ -41,7 +41,13 @@ export default function WoodworkingSlider({ images }: WoodworkingSliderProps) {
 
   return (
     <div className="relative w-full max-w-3xl mx-auto h-64 sm:h-80 md:h-96">
-      <animated.div style={props} className="w-full h-full">
+      <animated.div
+        style={{
+          opacity: props.opacity,
+          transform: props.transform.to((t) => t),
+        }}
+        className="w-full h-full"
+      >
         <img
           src={images[index].src || "/placeholder.svg"}
           alt={images[index].alt}
