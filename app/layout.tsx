@@ -1,6 +1,8 @@
 import type React from "react"
 import "./globals.css"
 import RootLayoutClient from "./layout-client"
+import { Analytics } from "@vercel/analytics/react"
+
 
 export const metadata = {
   title: "AI Engineer",
