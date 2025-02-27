@@ -85,7 +85,7 @@ export default function ChatWidget() {
             ease: "power3.out"
           }
         ).fromTo(
-          chatWidgetRef.current.querySelectorAll('.animate-in'),
+          chatWidgetRef.current?.querySelectorAll('.animate-in') ?? [],
           { 
             opacity: 0,
             y: 20,
@@ -112,13 +112,12 @@ export default function ChatWidget() {
         });
 
         // Subtle hover effect for messages
-        chatWidgetRef.current.querySelectorAll('.message-bubble').forEach(bubble => {
+        chatWidgetRef.current?.querySelectorAll('.message-bubble')?.forEach(bubble => {
           gsap.to(bubble, {
             scale: 1.02,
             boxShadow: "0 8px 20px rgba(0, 0, 0, 0.2)",
             duration: 0.3,
             paused: true,
-            ease: "power2.out"
           });
         });
       }, chatWidgetRef);
