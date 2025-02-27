@@ -13,10 +13,10 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
   // mode can be 'all', 'even', or 'odd'
   const [mode, setMode] = useState<"all" | "even" | "odd">("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const [loadedImages, setLoadedImages] = useState([]);
+  const [loadedImages, setLoadedImages] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const pageSize = 50;
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const startIndex = page * itemsPerPage;
   const currentImages = images.slice(startIndex, startIndex + itemsPerPage);
@@ -72,7 +72,7 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
   // Add GSAP animation for new images
   useEffect(() => {
     if (loadedImages.length > 0) {
-      const elements = containerRef.current.querySelectorAll('.image-item');
+      const elements = containerRef.current?.querySelectorAll('.image-item') ?? [];
       
       gsap.fromTo(elements, 
         { opacity: 0, y: 20 },
