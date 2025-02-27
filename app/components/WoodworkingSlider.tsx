@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { useSpring, animated } from "react-spring"
+import { useSpring, animated } from "@react-spring/web"
+import type { SpringValue } from "@react-spring/web"
 
 interface IImage {
   src: string
@@ -15,10 +16,19 @@ interface WoodworkingSliderProps {
 export default function WoodworkingSlider({ images }: WoodworkingSliderProps) {
   const [index, setIndex] = useState(0)
 
-  const props = useSpring({
+  interface AnimatedStyle {
+    opacity: SpringValue<number>
+    transform: SpringValue<string>
+  }
+
+  const props = useSpring<AnimatedStyle>({
     opacity: 1,
     transform: "perspective(500px) rotateY(0deg)",
-    from: { opacity: 0, transform: "perspective(500px) rotateY(180deg)" },
+    from: { 
+      opacity: 0, 
+      transform: "perspective(500px) rotateY(180deg)" 
+    },
+    config: { tension: 280, friction: 60 }
   })
 
   const nextSlide = () => {
