@@ -18,8 +18,19 @@ export async function POST(req: Request) {
     // Log environment check
     console.log('Environment check - SENDGRID_API_KEY exists:', !!process.env.SENDGRID_API_KEY);
     
-    const body = await req.json()
-    const { name, email, message } = body
+    // Safely parse the JSON request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (parseError) {
+      console.error('Error parsing request JSON:', parseError);
+      return NextResponse.json(
+        { error: 'Invalid JSON in request body' },
+        { status: 400 }
+      );
+    }
+    
+    const { name, email, message } = body;
 
     // Log request data (excluding sensitive information)
     console.log('Received contact request from:', name);
