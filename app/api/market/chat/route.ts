@@ -22,20 +22,134 @@ async function fetchLatestMarketData() {
       return cachedData
     }
     
-    // Use absolute URL that works in both development and production
-    const baseUrl = process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : process.env.NEXT_PUBLIC_VERCEL_URL
-        ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-        : 'http://localhost:3000';
+    // Make a direct API call to the Alpaca API using the same credentials
+    // This avoids URL construction issues in different environments
+    console.log("Fetching market data directly for chat context")
     
-    const response = await fetch(`${baseUrl}/api/market/data`)
-    if (!response.ok) {
-      throw new Error(`Failed to fetch market data: ${response.status}`)
+    const apiKey = process.env.ALPACA_API_KEY
+    const apiSecret = process.env.ALPACA_API_SECRET
+    const apiEndpoint = process.env.ALPACA_API_ENDPOINT || 'https://paper-api.alpaca.markets'
+    const dataEndpoint = process.env.ALPACA_DATA_ENDPOINT || 'https://data.alpaca.markets'
+    
+    if (!apiKey || !apiSecret) {
+      console.log("Missing Alpaca API credentials, falling back to simulated data")
+      return null 
     }
-    return await response.json()
+    
+    // Define symbols to fetch - keep this in sync with the data API
+    const symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'META', 'TSLA', 'NVDA', 'BRK.B']
+    const indicesSymbols = ['SPY', 'QQQ', 'DIA', 'IWM', 'VIX']
+    
+    try {
+      // Verify account access first 
+      const accountResponse = await fetch(`${apiEndpoint}/v2/account`, {
+        headers: {
+          'APCA-API-KEY-ID': apiKey,
+          'APCA-API-SECRET-KEY': apiSecret
+        }
+      })
+      
+      if (!accountResponse.ok) {
+        console.log(`Account verification failed: ${accountResponse.status}`)
+        return null
+      }
+      
+      // Now fetch the actual market data - similar to what the market data API does
+      const quotesUrl = `${dataEndpoint}/v2/stocks/bars/latest?symbols=${symbols.join(',')}`
+      const quotesResponse = await fetch(quotesUrl, {
+        headers: {
+          'APCA-API-KEY-ID': apiKey,
+          'APCA-API-SECRET-KEY': apiSecret
+        }
+      })
+      
+      if (!quotesResponse.ok) {
+        console.log(`Quotes fetch failed: ${quotesResponse.status}`)
+        return null
+      }
+      
+      const quotesData = await quotesResponse.json()
+      
+      // Transform the data to match the expected format
+      // The Alpaca API returns data in a "bars" format
+      if (!quotesData.bars) {
+        console.log('Unexpected Alpaca data format:', JSON.stringify(quotesData).substring(0, 200) + '...')
+        return null
+      }
+      
+      const stocks = Object.entries(quotesData.bars).map(([symbol, data]: [string, any]) => {
+        // In bars format, 'c' is closing price, 'o' is opening price
+        const price = data.c || 0
+        const previousPrice = data.o || price
+        const change = price - previousPrice
+        const changePercent = previousPrice > 0 ? (change / previousPrice) * 100 : 0
+        
+        return {
+          symbol,
+          price,
+          change,
+          changePercent,
+          name: symbol
+        }
+      })
+      
+      // Fetch market indices
+      const indicesUrl = `${dataEndpoint}/v2/stocks/bars/latest?symbols=${indicesSymbols.join(',')}`
+      const indicesResponse = await fetch(indicesUrl, {
+        headers: {
+          'APCA-API-KEY-ID': apiKey,
+          'APCA-API-SECRET-KEY': apiSecret
+        }
+      })
+      
+      let indices = [
+        { name: 'S&P 500', value: 0, change: 0 },
+        { name: 'Nasdaq', value: 0, change: 0 },
+        { name: 'Dow Jones', value: 0, change: 0 },
+        { name: 'Russell 2000', value: 0, change: 0 }
+      ]
+      
+      if (indicesResponse.ok) {
+        const indicesData = await indicesResponse.json()
+        
+        if (indicesData.bars) {
+          // Map indices symbols to their display names
+          const indexMap: Record<string, string> = {
+            'SPY': 'S&P 500',
+            'QQQ': 'Nasdaq',
+            'DIA': 'Dow Jones',
+            'IWM': 'Russell 2000',
+            'VIX': 'VIX Index'
+          }
+          
+          indices = Object.entries(indicesData.bars)
+            .filter(([symbol]) => indexMap[symbol])
+            .map(([symbol, data]: [string, any]) => {
+              const value = data.c || 0
+              const previousValue = data.o || value
+              const percentChange = previousValue > 0 ? ((value - previousValue) / previousValue) * 100 : 0
+              
+              return {
+                name: indexMap[symbol],
+                value,
+                change: parseFloat(percentChange.toFixed(2))
+              }
+            })
+        }
+      }
+      
+      return {
+        stocks,
+        indices,
+        lastUpdated: new Date().toISOString(),
+        isSimulated: false
+      }
+    } catch (error) {
+      console.error('Error directly fetching from Alpaca:', error)
+      return null
+    }
   } catch (error) {
-    console.error('Error fetching market data:', error)
+    console.error('Error in fetchLatestMarketData:', error)
     return null
   }
 }

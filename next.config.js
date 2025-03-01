@@ -37,6 +37,14 @@ const nextConfig = {
     workerThreads: true,
     cpus: 4
   },
+  // Add these configurations to fix the revalidation URL issue
+  serverRuntimeConfig: {
+    // Will only be available on the server side
+  },
+  publicRuntimeConfig: {
+    // Will be available on both server and client
+    VERCEL_URL: process.env.VERCEL_URL || 'localhost:3000'
+  },
 }
 
 module.exports = nextConfig 
