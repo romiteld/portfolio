@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { marketDataCache, alpacaRateLimiter } from '@/app/utils/rateLimiter'
 
+// Mark this route as always dynamic to avoid static optimization issues
+export const dynamic = 'force-dynamic'
+export const revalidate = 0 // Do not cache this route
+
 // Simulate market data
 // In a real application, this would come from a financial data API
 const generateMarketData = () => {

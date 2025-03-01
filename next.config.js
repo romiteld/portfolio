@@ -35,16 +35,25 @@ const nextConfig = {
     scrollRestoration: true,
     // Enable if using large number of images
     workerThreads: true,
-    cpus: 4
+    cpus: 4,
+    // Add these settings to fix revalidation URL issues
+    runtime: 'nodejs',
+    disableOptimizedLoading: true,
+    isrMemoryCacheSize: 0, // Disable ISR cache
   },
   // Add these configurations to fix the revalidation URL issue
   serverRuntimeConfig: {
     // Will only be available on the server side
+    PROJECT_ROOT: __dirname,
   },
   publicRuntimeConfig: {
     // Will be available on both server and client
     VERCEL_URL: process.env.VERCEL_URL || 'localhost:3000'
   },
+  // Add this to disable automatic static optimization for pages with getServerSideProps
+  reactStrictMode: false,
+  // Set this to false for better build performance during development
+  swcMinify: true
 }
 
 module.exports = nextConfig 
