@@ -115,21 +115,28 @@ export default function Contact() {
     }
 
     try {
+      console.log('Submitting form data:', data);
       const response = await fetch('/api/contact', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(data),
-      })
+      });
+
+      console.log('Response status:', response.status);
+      
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
 
       if (!response.ok) {
-        throw new Error('Failed to send message')
+        throw new Error(responseData.error || 'Failed to send message');
       }
 
       setIsSubmitted(true)
       e.currentTarget.reset()
     } catch (err) {
+      console.error('Contact form error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message')
     } finally {
       setIsSubmitting(false)
