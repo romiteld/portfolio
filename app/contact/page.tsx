@@ -15,6 +15,7 @@ export default function Contact() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const buttonRef = useRef<HTMLDivElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
   useEffect(() => {
     if (buttonRef.current) {
@@ -134,7 +135,9 @@ export default function Contact() {
       }
 
       setIsSubmitted(true)
-      e.currentTarget.reset()
+      if (formRef.current) {
+        formRef.current.reset();
+      }
     } catch (err) {
       console.error('Contact form error:', err);
       setError(err instanceof Error ? err.message : 'Failed to send message')
@@ -159,6 +162,7 @@ export default function Contact() {
         Contact Me
       </motion.h1>
       <motion.form
+        ref={formRef}
         className="space-y-6"
         onSubmit={handleSubmit}
         initial={{ y: 20, opacity: 0 }}
