@@ -63,18 +63,35 @@ export async function POST(req: Request) {
       replyTo: email,
       to: 'danny.romitelli@gmail.com',
       subject: `New Contact Form Message from ${name}`,
+      headers: {
+        'X-Priority': '1',
+        'X-MSMail-Priority': 'High',
+        'Importance': 'High',
+        'Precedence': 'bulk'
+      },
       text: `
 Name: ${name}
 Email: ${email}
 Message:
 ${message}
+
+--
+This email was sent from your portfolio website contact form.
       `,
       html: `
-<h3>New Contact Form Message</h3>
-<p><strong>Name:</strong> ${name}</p>
-<p><strong>Email:</strong> ${email}</p>
-<p><strong>Message:</strong></p>
-<p>${message.replace(/\n/g, '<br>')}</p>
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 5px;">
+  <h2 style="color: #333; border-bottom: 1px solid #eaeaea; padding-bottom: 10px;">New Contact Form Message</h2>
+  <p><strong>Name:</strong> ${name}</p>
+  <p><strong>Email:</strong> <a href="mailto:${email}">${email}</a></p>
+  <p><strong>Message:</strong></p>
+  <div style="background-color: #f9f9f9; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+    ${message.replace(/\n/g, '<br>')}
+  </div>
+  <p style="color: #666; font-size: 12px; margin-top: 30px; padding-top: 10px; border-top: 1px solid #eaeaea;">
+    This email was sent from your portfolio website contact form. 
+    <br>To respond, simply reply to this email.
+  </p>
+</div>
       `
     }
 
