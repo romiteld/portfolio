@@ -15,5 +15,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <RootLayoutClient>{children}</RootLayoutClient>
+  return (
+    <>
+      <RootLayoutClient>{children}</RootLayoutClient>
+      <Analytics />
+    </>
+  )
 }
