@@ -37,9 +37,9 @@ const SpaceBackgroundAnimation: React.FC = () => {
   
   // Adjust moon and planet positions based on screen size
   // For mobile: Move moon more to center, bring orange planet in, center spacecraft
-  const moonTransform = isMobile ? "translate(10, 100)" : "translate(-70, -50)";
+  const moonTransform = isMobile ? "translate(10, 50)" : "translate(-70, -50)";
   const orangePlanetTransform = isMobile ? "translate(-15, 20)" : "translate(80, 20)"; 
-  const spacecraftTransform = isMobile ? "translate(150, 260) scale(0.3)" : "translate(200, 173) scale(0.4)";
+  const spacecraftTransform = isMobile ? "translate(150, 290) scale(0.3)" : "translate(200, 173) scale(0.4)";
   
   return (
     <div 
