@@ -1,6 +1,46 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+
+/**
+ * SpaceBackgroundAnimation
+ * 
+ * A responsive space-themed background animation:
+ * - Adapts element positions for mobile screens
+ * - Optimizes SVG filters for better performance on mobile
+ * - Repositions planets and spacecraft based on screen size
+ * - Uses responsive scaling for visual elements
+ */
 
 const SpaceBackgroundAnimation: React.FC = () => {
+  const [windowWidth, setWindowWidth] = useState<number>(typeof window !== 'undefined' ? window.innerWidth : 0);
+  const svgRef = useRef<SVGSVGElement>(null);
+
+  // Function to handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    // Set initial width
+    handleResize();
+
+    // Add resize event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  // Calculate responsive scaling factor
+  const isMobile = windowWidth < 768;
+  
+  // Adjust moon and planet positions based on screen size
+  // For mobile: Move moon more to center, bring orange planet in, center spacecraft
+  const moonTransform = isMobile ? "translate(10, 100)" : "translate(-70, -50)";
+  const orangePlanetTransform = isMobile ? "translate(-15, 20)" : "translate(80, 20)"; 
+  const spacecraftTransform = isMobile ? "translate(150, 260) scale(0.3)" : "translate(200, 173) scale(0.4)";
+  
   return (
     <div 
       className="fixed inset-0 -z-10 overflow-visible w-full h-full pointer-events-none"
@@ -10,8 +50,9 @@ const SpaceBackgroundAnimation: React.FC = () => {
       }}
     >
       <svg 
+        ref={svgRef}
         xmlns="http://www.w3.org/2000/svg" 
-        viewBox="-20 -20 440 440" 
+        viewBox={isMobile ? "-20 -20 340 440" : "-20 -20 440 440"} 
         className="absolute inset-[-5px] w-[calc(100%+10px)] h-[calc(100%+10px)] border-0 outline-none shadow-none" 
         style={{ 
           display: 'block', 
@@ -35,16 +76,16 @@ const SpaceBackgroundAnimation: React.FC = () => {
           
           {/* Cosmic dust and nebula effects */}
           <filter id="cosmicDust" x="-50%" y="-50%" width="200%" height="200%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.008" numOctaves="5" seed="5" result="noise" />
+            <feTurbulence type="fractalNoise" baseFrequency={isMobile ? "0.01" : "0.008"} numOctaves={isMobile ? "4" : "5"} seed="5" result="noise" />
             <feColorMatrix type="matrix" values="0 0 0 0 0.05 0 0 0 0 0.03 0 0 0 0 0.15 0 0 0 0.5 0" result="coloredNoise" />
-            <feGaussianBlur stdDeviation="3" result="blurredNoise" />
+            <feGaussianBlur stdDeviation={isMobile ? "2" : "3"} result="blurredNoise" />
             <feBlend in="SourceGraphic" in2="blurredNoise" mode="screen" />
           </filter>
           
           <filter id="purpleNebula" x="-50%" y="-50%" width="200%" height="200%">
-            <feTurbulence type="fractalNoise" baseFrequency="0.005" numOctaves="4" seed="10" result="noise" />
+            <feTurbulence type="fractalNoise" baseFrequency={isMobile ? "0.006" : "0.005"} numOctaves={isMobile ? "3" : "4"} seed="10" result="noise" />
             <feColorMatrix type="matrix" values="0 0 0 0 0.2 0 0 0 0 0 0 0 0 0 0.3 0 0 0 0.15 0" result="purpleNoise" />
-            <feGaussianBlur stdDeviation="5" result="blurredNoise" />
+            <feGaussianBlur stdDeviation={isMobile ? "4" : "5"} result="blurredNoise" />
             <feBlend in="SourceGraphic" in2="blurredNoise" mode="screen" />
           </filter>
           
@@ -247,8 +288,8 @@ const SpaceBackgroundAnimation: React.FC = () => {
         {/* Lens flare from bright star */}
         <circle cx="75" cy="70" r="30" fill="url(#lensFlare)" opacity="0.15" />
         
-        {/* Realistic Moon with GSAP-like morph animations - MOVED UP */}
-        <g id="moon" transform="translate(-70, -50)">
+        {/* Realistic Moon with GSAP-like morph animations - MOVED UP AND RESPONSIVE */}
+        <g id="moon" transform={moonTransform}>
           {/* Base lunar surface */}
           <circle cx="100" cy="250" r="40" fill="#e6e6e6">
             {/* Subtle pulsing animation to simulate lunar thermal expansion/contraction */}
@@ -419,8 +460,8 @@ const SpaceBackgroundAnimation: React.FC = () => {
           </circle>
         </g>
         
-        {/* Animated orange planet with GSAP-like morphing effects - MOVED CLOSER */}
-        <g id="orangePlanet" transform="translate(80, 20)">
+        {/* Animated orange planet with GSAP-like morphing effects - MOVED CLOSER AND RESPONSIVE */}
+        <g id="orangePlanet" transform={orangePlanetTransform}>
           {/* Planet base with pulsing animation */}
           <circle cx="300" cy="120" r="20" fill="url(#orangePlanetGradient)">
             <animate attributeName="r" values="20;20.5;20" dur="15s" repeatCount="indefinite" />
@@ -499,8 +540,8 @@ const SpaceBackgroundAnimation: React.FC = () => {
           </circle>
         </g>
         
-        {/* Enhanced spacecraft with GSAP-like morph animations - SMALLER AND CENTERED UNDER CONTACT FORM */}
-        <g id="spacecraft" transform="translate(200, 173) scale(0.4)">
+        {/* Enhanced spacecraft with GSAP-like morph animations - SMALLER AND CENTERED UNDER CONTACT FORM AND RESPONSIVE */}
+        <g id="spacecraft" transform={spacecraftTransform}>
           {/* Engine glow effect with dynamic pulsing */}
           <g filter="url(#rocketEngineGlow)">
             <circle cx="200" cy="250" r="5" fill="#ff5500" opacity="0.3">
