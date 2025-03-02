@@ -45,6 +45,8 @@ const nextConfig = {
   serverRuntimeConfig: {
     // Will only be available on the server side
     PROJECT_ROOT: __dirname,
+    // Add SendGrid API key for server-side access
+    SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   },
   publicRuntimeConfig: {
     // Will be available on both server and client

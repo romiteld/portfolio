@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { Inter, Poppins } from "next/font/google"
+import { usePathname } from "next/navigation"
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
 import ChatWidget from "./components/ChatWidget"
@@ -17,12 +18,15 @@ export default function RootLayoutClient({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isContactPage = pathname === '/contact'
+
   return (
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
-      <body>
+      <body className={isContactPage ? 'bg-slate-900 dark:bg-slate-950' : ''}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <div className="bg-neutral-50 dark:bg-black text-neutral-900 dark:text-neutral-50 min-h-screen flex flex-col">
-            <BackgroundAnimation />
+          <div className={`${isContactPage ? 'bg-transparent' : 'bg-neutral-50 dark:bg-black'} text-neutral-900 dark:text-neutral-50 min-h-screen flex flex-col`}>
+            {!isContactPage && <BackgroundAnimation />}
             <Navbar />
             <AnimatePresence mode="wait">
               <main className="flex-grow">{children}</main>

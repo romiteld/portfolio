@@ -6,6 +6,7 @@ import { motion } from "framer-motion"
 import { useState, useEffect, useRef } from "react"
 import { gsap } from "gsap"
 import { MotionPathPlugin } from "gsap/MotionPathPlugin"
+import SpaceBackgroundAnimation from "../components/SpaceBackgroundAnimation"
 
 // Register GSAP plugin
 gsap.registerPlugin(MotionPathPlugin)
@@ -147,105 +148,115 @@ export default function Contact() {
   }
 
   return (
-    <motion.div
-      className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
-      <motion.h1
-        className="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400"
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+    <>
+      <SpaceBackgroundAnimation />
+      <motion.div
+        className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
       >
-        Contact Me
-      </motion.h1>
-      <motion.form
-        ref={formRef}
-        className="space-y-6"
-        onSubmit={handleSubmit}
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, delay: 0.4 }}
-      >
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Name
-          </label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="message" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-            Message
-          </label>
-          <textarea
-            id="message"
-            name="message"
-            rows={4}
-            className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-            required
-          ></textarea>
-        </div>
-        {error && (
-          <div className="text-red-500 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-        {isSubmitted && (
-          <div className="text-green-500 dark:text-green-400 text-sm">
-            Message sent successfully! I'll get back to you soon.
-          </div>
-        )}
-        <div ref={buttonRef} className="relative">
-          <motion.button
-            type="submit"
-            className="w-full bg-primary-500 hover:bg-primary-600 text-black dark:text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-md relative"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            disabled={isSubmitting || isSubmitted}
+        <motion.div
+          className="bg-white/5 dark:bg-black/25 backdrop-blur-sm rounded-xl p-8 shadow-xl border border-white/20 dark:border-slate-800/50"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+        >
+          <motion.h1
+            className="text-3xl font-bold mb-8 text-primary-600 dark:text-primary-400"
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
-            {isSubmitting ? "Sending..." : isSubmitted ? "Message Sent!" : "Send Message"}
-            <svg className="absolute inset-0 w-full h-full pointer-events-none">
-              <defs>
-                <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: "#fef9c3", stopOpacity: 0.3 }} />
-                  <stop offset="100%" style={{ stopColor: "#f97316", stopOpacity: 0.4 }} />
-                </linearGradient>
-                <linearGradient id="endGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" style={{ stopColor: "#f97316", stopOpacity: 0.5 }} />
-                  <stop offset="100%" style={{ stopColor: "#dc2626", stopOpacity: 0.6 }} />
-                </linearGradient>
-                <filter id="fire" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
-                  <feBlend in="SourceGraphic" in2="blur" mode="screen" />
-                </filter>
-              </defs>
-              <path className="button-path" d="" stroke="#f97316" strokeOpacity="0.1" fill="none" />
-              <path className="motion-line" d="" stroke="url(#startGradient)" fill="none" filter="url(#fire)" />
-            </svg>
-          </motion.button>
-        </div>
-      </motion.form>
-    </motion.div>
+            Contact Me
+          </motion.h1>
+          <motion.form
+            ref={formRef}
+            className="space-y-6"
+            onSubmit={handleSubmit}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
+                required
+              />
+            </div>
+            <div>
+              <label htmlFor="message" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                Message
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                rows={4}
+                className="w-full px-3 py-2 border border-neutral-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
+                required
+              ></textarea>
+            </div>
+            {error && (
+              <div className="text-red-500 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+            {isSubmitted && (
+              <div className="text-green-500 dark:text-green-400 text-sm">
+                Message sent successfully! I'll get back to you soon.
+              </div>
+            )}
+            <div ref={buttonRef} className="relative">
+              <motion.button
+                type="submit"
+                className="w-full bg-primary-500 hover:bg-primary-600 text-black dark:text-white font-bold py-4 px-8 rounded-xl transition-colors shadow-md relative"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                disabled={isSubmitting || isSubmitted}
+              >
+                {isSubmitting ? "Sending..." : isSubmitted ? "Message Sent!" : "Send Message"}
+                <svg className="absolute inset-0 w-full h-full pointer-events-none">
+                  <defs>
+                    <linearGradient id="startGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style={{ stopColor: "#fef9c3", stopOpacity: 0.3 }} />
+                      <stop offset="100%" style={{ stopColor: "#f97316", stopOpacity: 0.4 }} />
+                    </linearGradient>
+                    <linearGradient id="endGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" style={{ stopColor: "#f97316", stopOpacity: 0.5 }} />
+                      <stop offset="100%" style={{ stopColor: "#dc2626", stopOpacity: 0.6 }} />
+                    </linearGradient>
+                    <filter id="fire" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+                      <feBlend in="SourceGraphic" in2="blur" mode="screen" />
+                    </filter>
+                  </defs>
+                  <path className="button-path" d="" stroke="#f97316" strokeOpacity="0.1" fill="none" />
+                  <path className="motion-line" d="" stroke="url(#startGradient)" fill="none" filter="url(#fire)" />
+                </svg>
+              </motion.button>
+            </div>
+          </motion.form>
+        </motion.div>
+      </motion.div>
+    </>
   )
 }
 
