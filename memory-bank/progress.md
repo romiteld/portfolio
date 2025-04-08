@@ -26,6 +26,12 @@
    - Firecrawl API route (`/api/.../firecrawl`) successfully calls Firecrawl API directly
    - Firecrawl API route includes market status check (currently simulated)
 
+5. Demo Page UI:
+   - Cards display with equal height per row.
+   - Cards use updated icons.
+   - Cards have initial load animation.
+   - Cards fade based on scroll position.
+
 ## In Progress
 1. Features:
    - Contact form implementation
@@ -69,6 +75,10 @@
    - Replace simulated market status check with real API call
    - Enhance URL determination logic
    - Add more robust error handling for API failures
+
+5. UI Enhancements:
+   - Apply scroll-based animations to other page sections (optional).
+   - Further refine existing animation timings/effects (optional).
 
 ## Current Status
 - Project is in active development

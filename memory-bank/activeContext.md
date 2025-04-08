@@ -32,6 +32,13 @@ The project is in active development with focus on:
    - Refined URL logic for S&P 500 queries
    - Confirmed `/api/market/data` still uses Alpaca for the ticker
 
+5. Demo Page UI/Animation:
+   - Refactored card animations using GSAP & ScrollTrigger.
+   - Implemented initial staggered fade-in for all cards.
+   - Added scroll-based opacity fade (using scrub) for cards outside the central viewport.
+   - Adjusted card layout CSS to ensure equal height in rows.
+   - Updated demo card icons.
+
 ## Active Decisions
 1. Architecture:
    - Using App Router for all routes
@@ -67,6 +74,9 @@ The project is in active development with focus on:
    - Enhanced admin features
    - Additional portfolio sections
    - Analytics dashboard
+
+4. Demo Page:
+   - Consider adding similar scroll animations to other sections if desired.
 
 ## Current Considerations
 1. Technical:

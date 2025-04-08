@@ -193,4 +193,13 @@ The project follows a modern Next.js 14 architecture with:
 - **Input Validation:** Zod used for form validation, Next.js API routes validate inputs.
 - **Rate Limiting:** IP-based rate limiting implemented using `@upstash/ratelimit` and Vercel KV on demo API endpoints (e.g., `/api/financial-assistant/firecrawl`). The `/api/financial-assistant/firecrawl` endpoint is limited to 3 requests per 60 seconds per IP. Limits for other demo APIs (e.g., `/api/market/data`) TBD.
 - **Error Handling:** Sensitive error details are not exposed to the client; generic messages are returned while detailed errors are logged server-side.
-- **API Key Management:** Keys (e.g., Firecrawl, SendGrid, Alpaca) are managed via environment variables (`.env.local`, Vercel environment settings). 
+- **API Key Management:** Keys (e.g., Firecrawl, SendGrid, Alpaca) are managed via environment variables (`.env.local`, Vercel environment settings).
+
+## UI Patterns & Animations
+- **Layout:** Primarily uses Tailwind CSS utility classes for layout (Flexbox, Grid).
+- **Component Library:** Radix UI for accessible base components, styled with Tailwind.
+- **Motion:** Framer Motion used for page transitions and hover/tap effects on interactive elements (buttons, cards).
+- **Complex Animations:** GSAP with ScrollTrigger used for more intricate scroll-based animations, such as:
+    - Demo page card animations: Initial staggered fade-in on load, followed by opacity changes based on scroll position (fading out near viewport edges, fully opaque in the center) using `scrub`. 
+    - (Add other specific GSAP animations here as implemented)
+- **Responsiveness:** Mobile-first approach using Tailwind's responsive modifiers. 
