@@ -104,7 +104,9 @@ The project follows a modern Next.js 14 architecture with:
        FA_UI[Financial Assistant UI]
        MarketTicker[Market Ticker UI]
 
-       FA_UI -- Chat Query --> FA_Firecrawl_API[API Route: /api/financial-assistant/firecrawl]
+       FA_UI -- Chat Query --> RateLimiter{Rate Limit Check (IP)}
+       RateLimiter -- Allowed --> FA_Firecrawl_API[API Route: /api/financial-assistant/firecrawl]
+       RateLimiter -- Denied --> FA_UI(429 Error)
        FA_Firecrawl_API -- Check Market Status --> MarketStatus[Market Status Check (Simulated/Alpaca)]
        MarketStatus -- Status --> FA_Firecrawl_API
        FA_Firecrawl_API -- Scrape Request --> Firecrawl[Firecrawl Scrape/Extract]
@@ -184,4 +186,11 @@ The project follows a modern Next.js 14 architecture with:
    - Performance monitoring
    - User behavior analytics
    - API usage metrics
-   - System health checks 
+   - System health checks
+
+## API Route Security
+- **Authentication:** Admin routes protected (details TBD).
+- **Input Validation:** Zod used for form validation, Next.js API routes validate inputs.
+- **Rate Limiting:** IP-based rate limiting implemented using `@upstash/ratelimit` and Vercel KV on demo API endpoints (e.g., `/api/financial-assistant/firecrawl`). The `/api/financial-assistant/firecrawl` endpoint is limited to 3 requests per 60 seconds per IP. Limits for other demo APIs (e.g., `/api/market/data`) TBD.
+- **Error Handling:** Sensitive error details are not exposed to the client; generic messages are returned while detailed errors are logged server-side.
+- **API Key Management:** Keys (e.g., Firecrawl, SendGrid, Alpaca) are managed via environment variables (`.env.local`, Vercel environment settings). 

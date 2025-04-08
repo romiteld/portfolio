@@ -1,4 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { Ratelimit } from '@upstash/ratelimit';
+import { kv } from '@vercel/kv';
+
+// Initialize Rate Limiter
+// Allow 3 requests from the same IP in a 60-second window
+const ratelimit = new Ratelimit({
+  redis: kv,
+  limiter: Ratelimit.slidingWindow(3, '60 s'),
+  analytics: true, // Optional: Enable analytics
+  prefix: '@upstash/ratelimit', // Default prefix
+});
 
 // Removed the MCP tool declaration
 // declare const mcp_firecrawl_mcp_firecrawl_scrape: (args: any) => Promise<any>;
@@ -38,6 +49,23 @@ async function getMarketStatus(): Promise<{ isOpen: boolean; message: string }> 
 // --- End Simulated Market Status Check ---
 
 export async function POST(req: NextRequest) {
+  // --- Rate Limiting Check ---
+  const ip = req.ip ?? '127.0.0.1'; // Get IP or fallback for local
+  const { success, limit, remaining, reset } = await ratelimit.limit(ip);
+
+  if (!success) {
+    console.warn(`Rate limit exceeded for IP: ${ip}`);
+    return new NextResponse('Too Many Requests', {
+      status: 429,
+      headers: {
+        'X-RateLimit-Limit': limit.toString(),
+        'X-RateLimit-Remaining': remaining.toString(),
+        'X-RateLimit-Reset': reset.toString(),
+      },
+    });
+  }
+  // --- End Rate Limiting Check ---
+
   let marketStatusMessage = "";
   try {
     // 1. Check Market Status

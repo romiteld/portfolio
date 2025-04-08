@@ -17,6 +17,8 @@
    - Node.js
    - Firecrawl API (for Financial Assistant chat)
    - Alpaca API (for Market Data ticker)
+   - Upstash Ratelimit (@upstash/ratelimit)
+   - Vercel KV (@vercel/kv)
 
 3. Development:
    - ESLint
@@ -71,6 +73,7 @@
    - API route protection
    - Form validation
    - Admin authentication
+   - API Rate Limiting (IP-based, 3 req/min for Firecrawl API, TBD for others)
 
 ## Dependencies
 1. Core Dependencies:
@@ -90,6 +93,7 @@
    - Vercel
    - Alpaca
    - Firecrawl
+   - Upstash/Vercel KV (for Rate Limiting)
 
 4. Development Tools:
    - ESLint
