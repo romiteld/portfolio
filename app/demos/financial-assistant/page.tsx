@@ -914,6 +914,8 @@ export default function FinancialAssistantPage() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
   const sceneRef = useRef<HTMLDivElement>(null)
   const gridRef = useRef<Group>(null)
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
 
   // Load initial messages when component mounts
   useEffect(() => {
@@ -1014,7 +1016,7 @@ export default function FinancialAssistantPage() {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || loading) return
     
     const userMessage: Message = {
       role: "user",
@@ -1022,68 +1024,86 @@ export default function FinancialAssistantPage() {
       timestamp: new Date()
     }
     
-    // Add loading message
-    const loadingMessage: Message = {
-      role: "assistant",
-      content: "Thinking...",
-      timestamp: new Date(),
-      isLoading: true
-    }
-    
-    setMessages(prev => [...prev, userMessage, loadingMessage])
+    // Add user message and a loading indicator for the assistant
+    setMessages(prev => [
+      ...prev,
+      userMessage,
+      {
+        role: "assistant",
+        content: "Analyzing financial data...", // Placeholder content
+        timestamp: new Date(),
+        isLoading: true,
+      },
+    ])
     setInput("")
     setLoading(true)
     
     try {
-      const response = await fetch('/api/market/chat', {
+      // Call the new API route
+      const response = await fetch('/api/financial-assistant/firecrawl', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          message: input,
-          userId,
-          marketData
-        })
+        body: JSON.stringify({ query: userMessage.content }),
       })
-      
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `API request failed with status ${response.status}`)
+      }
+
       const data = await response.json()
-      
-      // Replace loading message with actual response
-      setMessages(prev => {
-        const updated = [...prev]
-        const loadingIndex = updated.findIndex(msg => msg.isLoading)
-        
-        if (loadingIndex !== -1) {
-          updated[loadingIndex] = {
-            role: "assistant",
-            content: data.message,
-            timestamp: new Date()
-          }
+
+      // Format the response from Firecrawl
+      let assistantResponseContent = `**Financial Summary for ${userMessage.content}:**\n\n`
+      if (data.summary) {
+          assistantResponseContent += `${data.summary}\n\n`
+      }
+      if (data.key_metrics && Object.keys(data.key_metrics).length > 0) {
+        assistantResponseContent += "**Key Metrics:**\n"
+        for (const [key, value] of Object.entries(data.key_metrics)) {
+          assistantResponseContent += `- ${key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}: ${value}\n`
         }
-        
-        return updated
-      })
+         assistantResponseContent += "\n"
+      }
+       if (data.recent_news_summary) {
+          assistantResponseContent += `**Recent News Summary:**\n${data.recent_news_summary}`
+      }
+
+      if (assistantResponseContent === `**Financial Summary for ${userMessage.content}:**\n\n`) {
+          // If no specific data was found
+          assistantResponseContent = "I couldn't find specific financial data for that query using Firecrawl. Please try a different company name or stock symbol."
+      }
+
+      const assistantMessage: Message = {
+        role: "assistant",
+        content: assistantResponseContent,
+        timestamp: new Date(),
+      }
+
+      // Replace the loading message with the actual response
+      setMessages(prev => [
+        ...prev.slice(0, -1), // Remove the loading message
+        assistantMessage,
+      ])
+
     } catch (error) {
-      console.error("Error sending message:", error)
-      
-      // Replace loading message with error
-      setMessages(prev => {
-        const updated = [...prev]
-        const loadingIndex = updated.findIndex(msg => msg.isLoading)
-        
-        if (loadingIndex !== -1) {
-          updated[loadingIndex] = {
-            role: "assistant",
-            content: "Sorry, I encountered an error processing your request. Please try again.",
-            timestamp: new Date()
-          }
-        }
-        
-        return updated
-      })
+      console.error("Error fetching financial data:", error)
+      const errorMessage: Message = {
+        role: "assistant",
+        content: `Sorry, I encountered an error trying to fetch financial data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date(),
+      }
+       // Replace the loading message with the error message
+      setMessages(prev => [
+           ...prev.slice(0, -1),
+            errorMessage,
+        ])
     } finally {
       setLoading(false)
+      // Ensure input is focused after submission attempt
+      setTimeout(() => chatContainerRef.current?.focus(), 0)
     }
   }
   
