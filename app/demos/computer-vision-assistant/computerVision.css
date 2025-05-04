@@ -1,0 +1,112 @@
+/* Computer Vision Assistant Demo Styles */
+
+.image-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.image-preview img {
+  object-fit: contain;
+  width: 100%;
+  height: 100%;
+}
+
+.bounding-box {
+  position: absolute;
+  border: 2px solid rgba(0, 120, 255, 0.8);
+  background-color: rgba(0, 120, 255, 0.1);
+  border-radius: 4px;
+  pointer-events: none;
+  transition: all 0.2s ease;
+}
+
+.bounding-box-label {
+  position: absolute;
+  top: -24px;
+  left: 0;
+  background-color: rgba(0, 120, 255, 0.8);
+  color: white;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.color-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  margin-right: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.upload-zone {
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  padding: 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.upload-zone:hover {
+  background-color: rgba(0, 0, 0, 0.02);
+  border-color: #9ca3af;
+}
+
+.dark .upload-zone {
+  border-color: #4b5563;
+}
+
+.dark .upload-zone:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: #6b7280;
+}
+
+.analysis-result-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.dark .analysis-result-card {
+  background-color: #1f2937;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.confidence-bar {
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.tag-item {
+  display: inline-block;
+  background-color: #f3f4f6;
+  color: #374151;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.dark .tag-item {
+  background-color: #374151;
+  color: #f3f4f6;
+} 

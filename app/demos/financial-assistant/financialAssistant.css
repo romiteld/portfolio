@@ -1,0 +1,456 @@
+/* Additional animations for the Financial Assistant page */
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes gradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% { 
+    opacity: 0.3;
+    transform: scale(1); 
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.05); 
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* New pulse animation for the circular background */
+.animate-pulse-slow {
+  animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Grid pattern for header background */
+.pattern-grid-lg {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-position: center center;
+}
+
+.financial-page-bg {
+  background-size: 400% 400%;
+  animation: gradientMove 15s ease infinite;
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.sparkle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Glow effects */
+.glow-text {
+  text-shadow: 0 0 10px rgba(100, 116, 255, 0.5), 0 0 20px rgba(100, 116, 255, 0.3);
+}
+
+.glow-box {
+  box-shadow: 0 0 15px rgba(74, 109, 255, 0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.glow-box:hover {
+  box-shadow: 0 0 25px rgba(74, 109, 255, 0.6), 0 0 40px rgba(74, 109, 255, 0.3);
+}
+
+/* Glass morphism */
+.glass-effect {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode specific */
+.dark .glass-effect {
+  background: rgba(20, 20, 40, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Add some dots and lines background decoration */
+.bg-dots {
+  background-image: radial-gradient(circle, #4a6dff25 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.bg-lines {
+  background-image: linear-gradient(to right, #4a6dff10 1px, transparent 1px),
+                    linear-gradient(to bottom, #4a6dff10 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Enhance transitions */
+.enhanced-transition {
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Media query for reduced animations */
+@media (prefers-reduced-motion: reduce) {
+  .financial-page-bg,
+  .float-animation,
+  .animate-pulse-slow,
+  .animate-spin-slow,
+  .sparkle {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Enhanced animations for financial assistant page */
+
+/* Wave pattern background */
+.wave-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264.888-.14 1.24.19 1.64.39 1.85.39h1.87c.16-.392.37-.782.57-.792h2.02c.765 0 1.322.88 1.872 1.08 2.518.2 4.375.791 5.76.693 1.386-.357 1.983-.692 1.983-.692l.744.443c2.42 1.535 3.806.52 5.682.371.924-.148 2.066-.257 2.898-.38V0H0v20h21.184z' fill='%233b82f6' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+  animation: wave-move 20s linear infinite;
+}
+
+@keyframes wave-move {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Enhanced floating animation */
+.float-animation {
+  animation: enhanced-float 6s ease-in-out infinite;
+}
+
+@keyframes enhanced-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-15px);
+  }
+}
+
+/* Enhanced glowing effects */
+.enhanced-glow {
+  filter: drop-shadow(0 0 15px rgba(74, 109, 255, 0.4));
+  transition: filter 0.3s ease-in-out;
+}
+
+.enhanced-glow-hover:hover {
+  filter: drop-shadow(0 0 20px rgba(74, 109, 255, 0.6));
+}
+
+.button-glow {
+  filter: drop-shadow(0 0 10px rgba(74, 109, 255, 0.5));
+  transition: filter 0.3s ease;
+}
+
+.button-glow:hover {
+  filter: drop-shadow(0 0 25px rgba(74, 109, 255, 0.8));
+}
+
+.icon-glow {
+  transition: all 0.3s ease;
+}
+
+.icon-glow:hover {
+  filter: brightness(1.2) drop-shadow(0 0 5px currentColor);
+  transform: scale(1.1);
+}
+
+/* Enhanced sparkles with different sizes */
+.sparkle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sparkle-sm {
+  width: 4px;
+  height: 4px;
+  background: white;
+  box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
+  animation: sparkle 4s ease-in-out infinite;
+}
+
+.sparkle-md {
+  width: 6px;
+  height: 6px;
+  background: white;
+  box-shadow: 0 0 15px 3px rgba(255, 255, 255, 0.8);
+  animation: sparkle 5s ease-in-out infinite;
+}
+
+.sparkle-lg {
+  width: 8px;
+  height: 8px;
+  background: white;
+  box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.8);
+  animation: sparkle 6s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Enhanced dots background */
+.bg-dots {
+  background-image: radial-gradient(rgba(74, 109, 255, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Enhanced glass effect */
+.glass-effect {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease-out;
+}
+
+.glass-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    45deg,
+    transparent 45%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 55%
+  );
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glass-effect:hover::before {
+  opacity: 1;
+  animation: glass-shimmer 2s infinite;
+}
+
+@keyframes glass-shimmer {
+  0% {
+    background-position: -100% -100%;
+  }
+  100% {
+    background-position: 200% 200%;
+  }
+}
+
+/* Enhanced page background */
+.financial-page-bg::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(76, 128, 241, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(138, 43, 226, 0.1) 0%, transparent 50%);
+  z-index: -1;
+}
+
+/* Transition enhancements */
+.enhanced-transition {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .float-animation {
+    animation-duration: 4s;
+  }
+  
+  .sparkle {
+    display: none;
+  }
+}
+
+/* Accessibility - respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .float-animation,
+  .sparkle,
+  .wave-pattern,
+  .financial-page-bg::before,
+  .enhanced-transition {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* Add this to improve text contrast in chat */
+
+.chat-message-user {
+  color: white !important;
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4) !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
+  background-color: #4866fe !important;
+}
+
+.chat-message-assistant {
+  color: #000000 !important; /* Darker text for assistant messages in light mode */
+  font-weight: 600 !important;
+  border: 2px solid rgba(0, 0, 0, 0.1) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Ensure proper contrast in both modes */
+.dark .chat-message-assistant {
+  color: #ffffff !important; /* Lighter text for assistant messages in dark mode */
+  background-color: rgba(30, 41, 59, 0.95) !important;
+  border: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Make sure the primary elements are visible enough */
+.market-data-item {
+  text-shadow: 0 0 1px rgba(0,0,0,0.1);
+}
+
+.dark .market-data-item {
+  text-shadow: 0 0 1px rgba(255,255,255,0.1);
+}
+
+/* Add background to chat messages for better contrast */
+.chat-message {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  margin-bottom: 16px !important;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  max-width: 90% !important;
+}
+
+.dark .chat-message {
+  background-color: rgba(15, 23, 42, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhance readability of message content */
+.chat-message-content {
+  line-height: 1.6 !important;
+  font-size: 1rem !important;
+}
+
+/* Make symbols and tickers stand out */
+.symbol, .ticker {
+  font-weight: 600;
+}
+
+/* Ensure tables are readable */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+th, td {
+  padding: 8px 12px;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.dark th, .dark td {
+  border-color: #334155;
+}
+
+th {
+  background-color: #f8fafc;
+  font-weight: 600;
+}
+
+.dark th {
+  background-color: #1e293b;
+}
+
+/* Add styling to make the send button more prominent */
+.send-button {
+  position: relative;
+  overflow: hidden;
+  font-weight: 600 !important;
+}
+
+.send-button::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  z-index: -1;
+  background: linear-gradient(45deg, #4866fe, #1a45ff);
+  border-radius: 0.5rem;
+}
+
+/* Ensure the send button is always visible */
+@media (max-width: 640px) {
+  .send-button {
+    min-width: 60px !important;
+    padding: 0.5rem !important;
+    font-size: 0.95rem !important;
+  }
+}
+
+/* High contrast mode support for the button */
+@media (forced-colors: active) {
+  .send-button {
+    border: 2px solid currentColor !important;
+  }
+} 

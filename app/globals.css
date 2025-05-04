@@ -1,0 +1,160 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 25px 5px rgba(147, 197, 253, 0.6), 0 0 50px 10px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 35px 8px rgba(147, 197, 253, 0.8), 0 0 70px 15px rgba(59, 130, 246, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 25px 5px rgba(147, 197, 253, 0.6), 0 0 50px 10px rgba(59, 130, 246, 0.4);
+  }
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow-chat {
+  0% {
+    box-shadow: 0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 30px 4px rgba(147, 197, 253, 0.3), 0 0 60px 10px rgba(59, 130, 246, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 20px 2px rgba(147, 197, 253, 0.2), 0 0 40px 6px rgba(59, 130, 246, 0.15);
+  }
+}
+
+.animate-glow-chat {
+  animation: glow-chat 3s ease-in-out infinite;
+}
+
+@keyframes draw-in {
+  0% {
+    clip-path: circle(0% at bottom right);
+    box-shadow: 0 0 0 0 rgba(147, 197, 253, 0);
+  }
+  50% {
+    box-shadow: 0 0 100px 20px rgba(147, 197, 253, 0.5), 0 0 200px 40px rgba(59, 130, 246, 0.4);
+  }
+  100% {
+    clip-path: circle(150% at bottom right);
+    box-shadow: 0 0 50px 10px rgba(147, 197, 253, 0.3), 0 0 100px 20px rgba(59, 130, 246, 0.2);
+  }
+}
+
+.animate-in {
+  opacity: 0;
+  transform: translateY(30px) scale(0.9);
+  will-change: transform, opacity, scale;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.chat-widget-container {
+  will-change: clip-path, transform, opacity, box-shadow;
+  transition: box-shadow 0.3s ease-in-out;
+}
+
+.dark .chat-widget-container {
+  box-shadow: 0 0 50px 10px rgba(147, 197, 253, 0.15), 
+              0 0 100px 20px rgba(59, 130, 246, 0.1);
+}
+
+/* Enhance blur in dark mode */
+.dark .backdrop-blur-xl {
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* Ensure smooth transitions */
+.chat-widget-container,
+.animate-in {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 85.7% 97.3%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+

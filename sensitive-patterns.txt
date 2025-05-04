@@ -1,0 +1,20 @@
+# This file contains patterns for the BFG Repo-Cleaner to find and replace sensitive data
+# Format is: regex ===> replacement
+
+# OpenAI API Keys
+(?i)sk-[a-zA-Z0-9]{32,} ===> OPENAI_API_KEY_PLACEHOLDER
+(?i)sk-proj[a-zA-Z0-9\-_]{200,} ===> OPENAI_API_KEY_PLACEHOLDER
+
+# Supabase keys
+SUPABASE_SERVICE_ROLE_KEY\s*=\s*["'].*["'] ===> SUPABASE_SERVICE_ROLE_KEY="***REMOVED***"
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJpc3MiOiJzdXBhYmFzZSI[a-zA-Z0-9-_.]{100,} ===> SUPABASE_KEY_PLACEHOLDER
+
+# Firebase/Google keys
+AIzaSy[a-zA-Z0-9_-]{33} ===> FIREBASE_KEY_PLACEHOLDER
+
+# Generic API Keys (adjust as needed for your specific API keys)
+(?i)api[-_]?key\s*[:=]\s*["'].*["'] ===> API_KEY="***REMOVED***"
+(?i)apikey\s*[:=]\s*["'].*["'] ===> APIKEY="***REMOVED***"
+
+# Firecrawl Keys
+fc-[a-zA-Z0-9]{50,} ===> FIRECRAWL_KEY_PLACEHOLDER 

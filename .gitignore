@@ -1,0 +1,58 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules/
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files
+.env*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+sendgrid.env
+.env*.local
+
+# Environment and key files
+.env
+.env.*
+!.env.example
+*.key
+*apikey*
+*api-key*
+*secret*
+.npmrc
+.netrc
+
+# Supabase migration scripts with credentials
+/lib/supabase-migrations/
+lib/supabase-migrations/*.ps1
+lib/supabase-migrations/run_*.ps1
+lib/supabase-migrations/keys/
+
+# Model files
+/model/
+/networks/
+/api/chess-ai-rl/model/
+*.onnx
+*.pb
+*.pb.gz
+*.pth
+*.h5
+*.npz

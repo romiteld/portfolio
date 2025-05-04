@@ -1,0 +1,540 @@
+/* Chess AI Demo Styles */
+
+.chess-board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  max-width: 600px;
+  aspect-ratio: 1 / 1;
+  border: 2px solid #6b4f2e;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  margin: 0 auto;
+}
+
+.chess-square {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.chess-square.white {
+  background-color: #f0d9b5;
+}
+
+.chess-square.black {
+  background-color: #b58863;
+}
+
+.chess-square.selected {
+  background-color: rgba(106, 179, 76, 0.5) !important;
+}
+
+.chess-square.valid-move {
+  position: relative;
+}
+
+.chess-square.valid-move::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: rgba(0, 0, 0, 0.2);
+  z-index: 1;
+}
+
+.chess-square.valid-capture::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid rgba(220, 0, 0, 0.4);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.chess-piece {
+  width: 80%;
+  height: 80%;
+  cursor: pointer;
+  object-fit: contain;
+  z-index: 2;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.chess-piece:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.7));
+}
+
+.chess-piece:active {
+  cursor: grabbing;
+}
+
+.board-coordinates {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2.5%;
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+.files {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  max-width: 600px;
+  padding: 0 2.5%;
+  font-size: 0.75rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}
+
+.ranks {
+  position: absolute;
+  left: -1.5rem;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  height: 100%;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+.move-history {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.move-history-entry {
+  display: flex;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.move-number {
+  flex: 0 0 2rem;
+  font-weight: 600;
+}
+
+.move-text {
+  flex: 1;
+}
+
+.thinking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+  font-style: italic;
+}
+
+.thinking-dots {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.thinking-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #6b7280;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.thinking-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.thinking-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.player-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  margin-right: 0.75rem;
+  object-fit: cover;
+  border: 2px solid #f1f5f9;
+}
+
+.ai-level-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.level-bar {
+  display: flex;
+  width: 100px;
+  height: 0.5rem;
+  background-color: #e5e7eb;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.level-fill {
+  height: 100%;
+  background-color: #3b82f6;
+  transition: width 1s ease;
+}
+
+.level-fill.expert {
+  background-color: #ef4444;
+}
+
+.captured-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-height: 2.5rem;
+}
+
+.dark .captured-pieces {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.captured-piece-icon {
+  transform: scale(0.8);
+  opacity: 0.8;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.captured-piece-icon:hover {
+  transform: scale(0.9);
+  opacity: 1;
+}
+
+.game-result {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+  border-radius: 0.5rem;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.result-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.board-container {
+  position: relative;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.game-controls {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.control-button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .chess-board {
+    max-width: 100%;
+  }
+  
+  .files {
+    max-width: 100%;
+  }
+  
+  .ranks {
+    left: -1.25rem;
+  }
+  
+  .chess-piece {
+    width: 90%;
+    height: 90%;
+  }
+  
+  .captured-piece {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+}
+
+/* Animation for piece movement */
+@keyframes movePiece {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(var(--targetX), var(--targetY));
+  }
+}
+
+.chess-piece.moving {
+  position: absolute;
+  animation: movePiece 0.3s forwards;
+}
+
+/* AI thinking animation */
+.ai-thinking {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(59, 130, 246, 0.1);
+  z-index: 5;
+  pointer-events: none;
+  border-radius: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  animation: aiThinking 1.5s infinite;
+}
+
+.ai-thinking.active {
+  opacity: 1;
+}
+
+.ai-thinking-pulse {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: rgba(59, 130, 246, 0.2);
+  animation: aiThinkingPulse 2s infinite;
+}
+
+@keyframes aiThinkingPulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.7;
+  }
+}
+
+/* Game phase indicator styles */
+.game-phase-indicator {
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.dark .game-phase-indicator {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Add more personality to AI thinking animation */
+@keyframes aiThinking {
+  0% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0.5;
+  }
+}
+
+/* Additional piece styling to enhance visual appeal */
+.chess-piece {
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.chess-piece:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 3px rgba(255, 215, 0, 0.7));
+}
+
+.chess-piece:active {
+  cursor: grabbing;
+}
+
+/* Improved captured pieces display */
+.captured-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  min-height: 2.5rem;
+}
+
+.dark .captured-pieces {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.captured-piece-icon {
+  transform: scale(0.8);
+  opacity: 0.8;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.captured-piece-icon:hover {
+  transform: scale(0.9);
+  opacity: 1;
+}
+
+/* Add Magnus-like themed highlights for the AI */
+.ai-move-highlight {
+  position: relative;
+}
+
+.ai-move-highlight::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 2px solid #3182ce;
+  border-radius: 0.25rem;
+  opacity: 0;
+  animation: moveHighlight 1.5s ease-out;
+}
+
+@keyframes moveHighlight {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+.glow-text {
+  text-shadow: 0 0 15px rgba(59, 130, 246, 0.2), 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+.chess-game {
+  transition: all 0.3s ease;
+}
+
+.chess-game:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Add subtle animations for piece movement */
+@keyframes piece-highlight {
+  0% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0);
+  }
+}
+
+/* Fixed in chess board */
+.board-container {
+  max-width: 650px;
+  margin: 0 auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .board-container {
+    max-width: 100%;
+  }
+}
+
+/* Loading animation for AI thinking */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+} 
