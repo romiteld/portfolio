@@ -4,14 +4,10 @@ import { Metadata } from "next"
 import { useRef, useEffect, useState, RefObject, useMemo, useCallback, Fragment } from "react"
 import FinancialChatWidget from "@/app/components/demos/FinancialChatWidget"
 import { motion, useAnimation, AnimatePresence } from "framer-motion"
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { OrbitControls, Text, Float, Sphere, MeshDistortMaterial, Environment, Trail, PointMaterial, Stars, useTexture, useAspect } from "@react-three/drei"
-import * as THREE from "three"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { TrendingUp, Activity, DollarSign, LineChart, CircleDollarSign, ArrowUp, ChevronUp as ChevronUpIcon, ChevronDown as ChevronDownIcon, BarChart as ChartBarIcon, Filter as FilterIcon, List as ListIcon, TrendingDown } from "lucide-react"
 import "./financialAssistant.css" // Import our custom CSS
-import { Mesh, Vector3, Group, BufferGeometry, Object3D, ColorRepresentation } from "three"
 import { useTheme } from "next-themes"
 import dynamic from 'next/dynamic';
 import UserPreferences, { UserPreferencesData } from './components/UserPreferences';
@@ -21,6 +17,10 @@ import { XMarkIcon } from '@heroicons/react/24/outline'
 // Dynamically import the chart components (client-side only)
 const StockChart = dynamic(() => import('./components/StockChart'), { ssr: false });
 const VolatilityChart = dynamic(() => import('./components/VolatilityChart'), { ssr: false });
+
+// Dynamically import the 3D components with no SSR
+const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { ssr: false });
+const FinancialSceneWrapper = dynamic(() => import('./components/FinancialScene'), { ssr: false });
 
 // Type definitions for data
 interface Message {
@@ -1421,7 +1421,9 @@ export default function FinancialAssistantPage() {
       <div className="w-full min-h-screen bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white relative overflow-hidden" ref={sceneRef}>
         {/* 3D Scene Canvas */}
         <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
-          <Canvas><FinancialScene /></Canvas>
+          <Canvas3D>
+            <FinancialSceneWrapper />
+          </Canvas3D>
         </div>
         
         {/* Content */}
