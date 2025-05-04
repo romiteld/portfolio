@@ -163,7 +163,7 @@ export default function ChessAIDemo() {
           )}
 
           {/* Main content area */}
-          <div className="flex flex-col lg:flex-row gap-8 min-h-[650px]">
+          <div className="flex flex-col lg:flex-row gap-8 min-h-[650px] flex-col-mobile">
             {/* Chess Game */}
             <div className="lg:w-2/3 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 p-6">
               <div className="flex flex-wrap items-center justify-between mb-6">
@@ -234,7 +234,7 @@ export default function ChessAIDemo() {
             </div>
 
             {/* Info Sidebar */}
-            <div className="lg:w-1/3 flex flex-col gap-6">
+            <div className="lg:w-1/3 flex flex-col gap-6 info-sidebar">
               {/* Model Information */}
               <div className="bg-white/95 dark:bg-[#1e293b]/80 rounded-xl shadow-xl border border-gray-300 dark:border-gray-800 backdrop-blur-lg p-6">
                 <div className="flex items-start justify-between">

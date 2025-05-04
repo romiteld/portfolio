@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Create Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+export const dynamic = 'force-dynamic' // Ensure the route is always run dynamically
 
 // Define necessary interfaces
 interface MoveRequest {
@@ -836,6 +833,17 @@ const selectBestMoveBackend = (currentBoard: Board, color: PieceColor, gamePhase
 // --- API Route Handler ---
 
 export async function POST(request: Request) {
+  // MOVE Supabase client initialization here
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Supabase URL or Key is missing in environment variables.');
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+  
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
   try {
     // Parse request body
     const requestData: MoveRequest = await request.json()

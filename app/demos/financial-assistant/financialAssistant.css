@@ -453,4 +453,120 @@ th {
   .send-button {
     border: 2px solid currentColor !important;
   }
+}
+
+/* Enhanced responsive adjustments */
+@media (max-width: 1023px) {
+  /* Adjust layout for tablets and below */
+  .market-data-container {
+    overflow-x: auto;
+  }
+  
+  .market-data-table {
+    min-width: 650px; /* Ensure table can be scrolled horizontally on small screens */
+  }
+  
+  .market-data-filters {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  
+  .sort-button {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Mobile-specific adjustments */
+  .chat-message {
+    max-width: 95% !important; /* Wider chat bubbles on mobile */
+    padding: 12px !important;
+  }
+  
+  .chat-input-container {
+    padding: 8px !important;
+  }
+  
+  .chat-input {
+    font-size: 0.9rem !important;
+  }
+  
+  .send-button {
+    min-width: 40px !important;
+    padding: 8px !important;
+  }
+  
+  /* Adjust margins and padding to use space more efficiently */
+  .market-card {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .news-item {
+    padding: 12px !important;
+  }
+  
+  /* Stack column layout for better mobile readability */
+  .stock-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Adjust font sizes for better readability on mobile */
+  h1 {
+    font-size: 1.75rem !important;
+  }
+  
+  h2 {
+    font-size: 1.4rem !important;
+  }
+  
+  /* Better spacing for preference toggles */
+  .preference-toggle {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  
+  /* Ensure 3D backgrounds don't impact performance on mobile */
+  .canvas-container {
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Small mobile adjustments */
+  .financial-tabs {
+    gap: 2px !important;
+  }
+  
+  .financial-tab {
+    padding: 6px 10px !important;
+    font-size: 0.8rem !important;
+  }
+  
+  /* Simpler UI for very small screens */
+  .market-metrics {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+  }
+  
+  .metric-item {
+    width: 100% !important;
+    margin-bottom: 8px !important;
+  }
+  
+  /* Use screen space more effectively */
+  .chart-container {
+    height: 200px !important; /* Shorter charts on small screens */
+  }
+  
+  .chart-controls {
+    flex-wrap: wrap !important;
+  }
+  
+  /* Hide decorative elements on very small screens to focus on content */
+  .decorative-element {
+    display: none !important;
+  }
 } 

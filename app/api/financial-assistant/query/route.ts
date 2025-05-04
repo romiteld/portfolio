@@ -699,6 +699,19 @@ export async function POST(req: NextRequest) {
   let responseData: any;
 
   try {
+    // Initialize RAG data when needed, not at module load time
+    try {
+      const result = await loadInitialFinancialKnowledge();
+      if (result.success) {
+        console.log(`Loaded ${result.count} financial knowledge documents into RAG system`);
+      } else {
+        console.log("Note: Financial knowledge documents were not loaded");
+      }
+    } catch (err) {
+      console.log("Note: Could not load financial knowledge:", err);
+      // Continue with the request even if this fails
+    }
+
     const marketStatus = await getMarketStatus();
     marketStatusMessage = marketStatus.message;
 
@@ -768,17 +781,4 @@ export async function POST(req: NextRequest) {
            summary: errorMessage 
        }, { status: 500 });
   }
-}
-
-// Initialize RAG data when the module loads
-loadInitialFinancialKnowledge()
-  .then((result) => {
-    if (result.success) {
-      console.log(`Loaded ${result.count} financial knowledge documents into RAG system`);
-    } else {
-      console.error("Failed to load initial financial knowledge:", result.error);
-    }
-  })
-  .catch(err => {
-    console.error("Error initializing RAG data:", err);
-  }); 
+} 

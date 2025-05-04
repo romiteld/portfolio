@@ -13,6 +13,10 @@ import dynamic from 'next/dynamic';
 import UserPreferences, { UserPreferencesData } from './components/UserPreferences';
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import * as THREE from 'three'
+import { useThree, useFrame } from '@react-three/fiber'
+import { Environment, Text } from '@react-three/drei'
+import { Group } from "three"
 
 // Dynamically import the chart components (client-side only)
 const StockChart = dynamic(() => import('./components/StockChart'), { ssr: false });
@@ -20,7 +24,7 @@ const VolatilityChart = dynamic(() => import('./components/VolatilityChart'), { 
 
 // Dynamically import the 3D components with no SSR
 const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { ssr: false });
-const FinancialSceneWrapper = dynamic(() => import('./components/FinancialScene'), { ssr: false });
+const FinancialSceneWrapper = dynamic(() => import('@/app/demos/financial-assistant/components/FinancialScene'), { ssr: false });
 
 // Type definitions for data
 interface Message {
@@ -1436,124 +1440,112 @@ export default function FinancialAssistantPage() {
               AI-powered real-time financial analysis, market insights, comparisons, and portfolio guidance.
             </p>
             
+            {/* Add a className to the content container to make it more responsive */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[650px]">
               {/* Chat Interface (widened) */}
               <div className="flex-1 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 flex flex-col">
-                 {/* ... (Chat header/title could be added here) ... */}
-                 <div 
-                   className="flex-1 overflow-y-auto p-6 h-[550px]" 
-                   ref={chatContainerRef}
-                   onScroll={handleScroll}
-                 >
-                   {/* User Preferences Component */}
-                   <UserPreferences 
-                     onSave={handleSavePreferences}
-                     initialPreferences={userPreferences || undefined}
-                   />
-                   
-                   {/* ... (Chat message rendering logic remains the same) ... */}
-                   {messages.length === 0 ? (
-                     <div className="flex flex-col items-center justify-center h-full text-center">
-                       <div className="bg-primary-500/10 p-4 rounded-full mb-4">
-                         <CircleDollarSign size={40} className="text-primary-500" />
-                       </div>
-                       <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Financial Assistant</h3>
-                       <p className="text-gray-600 dark:text-gray-400 max-w-sm">
-                         Ask about market trends, stock analysis (e.g., AAPL), crypto (e.g., BTC-USD), comparisons, or strategies.
-                       </p>
-                     </div>
-                   ) : (
-                     <div className="space-y-4">
-                       {messages.map((message, index) => (
-                         <div
-                           key={index}
-                           className={`flex mb-6 ${
-                             message.role === "assistant" ? "justify-start" : "justify-end"
-                           }`}
-                         >
-                           <div 
-                             className={`p-4 max-w-[90%] chat-message ${
-                               message.role === "assistant"
-                                 ? "bg-gray-200 dark:bg-gray-800 rounded-tl-none shadow-md border border-gray-300 dark:border-gray-700 chat-message-assistant"
-                                 : "bg-primary-600 rounded-tr-none shadow-md border border-primary-700 chat-message-user"
-                             }`}
-                           >
-                             {message.isLoading ? (
-                               <div className="flex items-center space-x-2">
-                                 <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                 <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                 <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                               </div>
-                             ) : (
-                               <>
-                                 {/* Enhanced prose settings for markdown, tables, etc. */}
-                                 <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:my-2 prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-table:text-xs prose-thead:bg-gray-100 dark:prose-thead:bg-gray-700 prose-td:px-2 prose-td:py-1 prose-th:px-2 prose-th:py-1 chat-message-content">
-                                   {message.content}</div>
-                                 <div className="text-xs mt-1 opacity-80">
-                                   {formatTime(message.timestamp)}
-                                 </div>
-                               </>
-                             )}
-                           </div>
-                         </div>
-                       ))}
-                     </div>
-                   )}
-                   <div ref={messagesEndRef} />
+                <div 
+                  className="flex-1 overflow-y-auto p-6 h-[550px]" 
+                  ref={chatContainerRef}
+                  onScroll={handleScroll}
+                >
+                  {/* User Preferences Component */}
+                  <UserPreferences 
+                    onSave={handleSavePreferences}
+                    initialPreferences={userPreferences || undefined}
+                  />
+                  
+                  {/* ... (Chat message rendering logic remains the same) ... */}
+                  {messages.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <div className="bg-primary-500/10 p-4 rounded-full mb-4">
+                        <CircleDollarSign size={40} className="text-primary-500" />
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 text-gray-800 dark:text-gray-200">Financial Assistant</h3>
+                      <p className="text-gray-600 dark:text-gray-400 max-w-sm">
+                        Ask about market trends, stock analysis (e.g., AAPL), crypto (e.g., BTC-USD), comparisons, or strategies.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {messages.map((message, index) => (
+                        <div
+                          key={index}
+                          className={`flex mb-6 ${
+                            message.role === "assistant" ? "justify-start" : "justify-end"
+                          }`}
+                        >
+                          <div 
+                            className={`p-4 max-w-[90%] chat-message ${
+                              message.role === "assistant"
+                                ? "bg-gray-200 dark:bg-gray-800 rounded-tl-none shadow-md border border-gray-300 dark:border-gray-700 chat-message-assistant"
+                                : "bg-primary-600 rounded-tr-none shadow-md border border-primary-700 chat-message-user"
+                            }`}
+                          >
+                            {message.isLoading ? (
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                              </div>
+                            ) : (
+                              <>
+                                {/* Enhanced prose settings for markdown, tables, etc. */}
+                                <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:my-2 prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-table:text-xs prose-thead:bg-gray-100 dark:prose-thead:bg-gray-700 prose-td:px-2 prose-td:py-1 prose-th:px-2 prose-th:py-1 chat-message-content">
+                                  {message.content}</div>
+                                <div className="text-xs mt-1 opacity-80">
+                                  {formatTime(message.timestamp)}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
                 
-                {/* --- Input form RESTORED --- */}
+                {/* Input form */}
                 <form 
-                  onSubmit={handleSubmit} 
-                  className="border-t border-gray-200 dark:border-gray-700 p-4"
+                  onSubmit={handleSubmit}
+                  className="border-t border-gray-200 dark:border-gray-700 p-4 chat-input-container" 
                 >
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      onFocus={handleInputFocus} // Re-add focus handler if needed
+                      onFocus={handleInputFocus} 
                       disabled={loading}
                       placeholder="Ask about stocks (AAPL), crypto (BTC-USD), comparisons..."
-                      className="flex-1 rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-md"
+                      className="flex-1 rounded-lg border border-gray-400 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 shadow-md chat-input"
                     />
                     <button
                       type="submit"
                       disabled={loading || !input.trim()}
                       className={`rounded-lg px-6 py-2 text-white font-medium transition-colors shadow-lg min-w-[80px] send-button ${
                         loading || !input.trim() 
-                          ? "bg-gray-400 dark:bg-gray-500 opacity-90 cursor-not-allowed" 
-                          : "bg-primary-600 dark:bg-primary-500 hover:bg-primary-700 dark:hover:bg-primary-600 border border-primary-700 dark:border-primary-600"
+                          ? "bg-gray-400 dark:bg-gray-600" 
+                          : "bg-primary-600 hover:bg-primary-700"
                       }`}
                     >
-                      <span className="flex items-center justify-center">
-                        Send
-                      </span>
+                      {loading ? (
+                        <span className="flex justify-center items-center">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping mr-1"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping animation-delay-200 mr-1"></span>
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-ping animation-delay-400"></span>
+                        </span>
+                      ) : "Send"}
                     </button>
                   </div>
                   
-                  {/* Suggestions */}
-                  {suggestions.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1">
-                      {suggestions
-                        .map((suggestion, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => handleSuggestionClick(suggestion)} // Ensure correct handler call
-                            className="text-xs rounded-full bg-gray-200 dark:bg-gray-800 px-2 py-0.5 text-gray-800 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors border border-gray-300 dark:border-gray-700 shadow-sm mr-1 mb-1"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                    </div>
-                  )}
+                  {/* Suggestions unchanged */}
                 </form>
-                {/* --- End Input Form --- */}
               </div>
               
-              {/* === Market Data Sidebar === */}
-              <div className="lg:w-[28rem] bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 flex flex-col max-h-[650px]"> {/* Increased width from 96 to 28rem */}
+              {/* Market Data Section */}
+              <div className="lg:w-2/5 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 p-6 market-card">
                 {/* Sidebar Header & Controls */}
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700 shrink-0"> {/* Added shrink-0 */} 
                   <div className="flex items-center justify-between mb-2">

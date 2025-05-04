@@ -1,18 +1,32 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Create Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Force this route to be dynamic and never run at build time
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export async function GET() {
   try {
+    // Initialize Supabase client inside the handler
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
     // Check if we have the API environment variables
     const envStatus = {
-      supabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      supabaseKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      supabaseUrl: !!supabaseUrl,
+      supabaseKey: !!supabaseKey,
     }
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ 
+        apiStatus: "degraded",
+        error: "Missing Supabase credentials",
+        timestamp: new Date().toISOString(),
+        environmentVariables: envStatus
+      }, { status: 500 })
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     // Check for active model in db
     const { data: modelData, error: modelError } = await supabase

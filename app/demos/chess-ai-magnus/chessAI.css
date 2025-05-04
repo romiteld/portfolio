@@ -537,4 +537,130 @@
   50% {
     opacity: 1;
   }
+}
+
+/* Enhanced responsive adjustments */
+@media (max-width: 1023px) {
+  /* Tablet adjustments */
+  .chess-board {
+    max-width: 90%;
+  }
+  
+  .files, .board-container {
+    max-width: 90%;
+  }
+  
+  /* Adjust the layout for sidebar content */
+  .info-sidebar {
+    padding: 1rem;
+  }
+  
+  /* Improve spacing for controls */
+  .ai-level-indicator,
+  .player-color-selector {
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (max-width: 767px) {
+  /* Mobile adjustments */
+  /* Stack the chess board and controls for mobile view */
+  .flex-col-mobile {
+    flex-direction: column !important;
+  }
+  
+  /* Ensure the chess board takes full width on mobile */
+  .chess-board,
+  .files,
+  .board-container {
+    max-width: 100%;
+  }
+  
+  /* Make the board squares more touch-friendly */
+  .chess-piece {
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Adjust the sidebar to stack below chess board on mobile */
+  .info-sidebar {
+    width: 100% !important;
+    margin-top: 1.5rem;
+  }
+  
+  /* Better spacing for game controls */
+  .game-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  
+  .control-button {
+    flex: 0 0 calc(50% - 0.5rem);
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  /* Make coordinate labels smaller on mobile */
+  .files, .ranks {
+    font-size: 0.65rem;
+  }
+  
+  .ranks {
+    left: -1rem;
+  }
+  
+  /* Collapse move history on mobile to save space */
+  .move-history {
+    max-height: 150px;
+  }
+  
+  /* Make checkmate/stalemate notification more mobile-friendly */
+  .game-result {
+    padding: 1rem;
+  }
+  
+  .result-text {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Small mobile screens */
+  /* Further reduce padding to maximize board size */
+  .board-container {
+    padding: 0 !important;
+  }
+  
+  /* Hide coordinates on very small screens */
+  .files, .ranks {
+    display: none;
+  }
+  
+  /* Make game controls more compact */
+  .control-button {
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+  }
+  
+  /* Simplify any decorative elements */
+  .ai-thinking-pulse {
+    display: none;
+  }
+  
+  /* Make AI model info collapsible by default on small screens */
+  .model-info-container:not(.expanded) .model-details {
+    display: none !important;
+  }
+  
+  /* Ensure the board is fully visible and touch-friendly */
+  .chess-board {
+    margin-top: 1rem;
+  }
+  
+  /* Ensure text is readable on small screens */
+  .model-info-text {
+    font-size: 0.85rem !important;
+  }
 } 

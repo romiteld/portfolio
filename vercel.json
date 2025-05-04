@@ -1,4 +1,6 @@
 {
-  "installCommand": "npm install --no-audit",
-  "buildCommand": "npm run build"
+  "version": 2,
+  "buildCommand": "npm run build",
+  "installCommand": "npm install --no-audit --no-fund",
+  "framework": "nextjs"
 } 
