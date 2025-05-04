@@ -461,3 +461,173 @@ flowchart TD
    - Level of detail (LOD) for piece models
    - Reduced polygon count for mobile devices
    - Optimized lighting and shadow calculations
+
+## React Three Fiber Integration Patterns
+
+To properly integrate React Three Fiber (R3F) with Next.js and avoid server-side rendering (SSR) issues, a specific pattern is used throughout the application:
+
+```mermaid
+flowchart TD
+    subgraph Next.js
+        Server[Server Components]
+        Client[Client Components]
+        Dynamic[Dynamic Imports]
+        
+        Server --> Client
+        Client --> Dynamic
+        Dynamic --> R3F[React Three Fiber Components]
+    end
+    
+    subgraph Rendering
+        R3F --> Canvas[Canvas Element]
+        Canvas --> Scene[Scene Setup]
+        Scene --> |Only on Client| ThreeJS[Three.js Rendering]
+    end
+```
+
+### React Three Fiber SSR Solution
+
+1. **Dynamic Imports with SSR Disabled**:
+   ```typescript
+   // Import the Three.js components dynamically with SSR disabled
+   const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { ssr: false });
+   const ThreeDScene = dynamic(() => import('./components/ThreeDScene'), { ssr: false });
+   ```
+
+2. **Component Separation Pattern**:
+   - Page components are server components by default
+   - 3D visualization logic is isolated in separate client components
+   - `"use client"` directive marks components that contain React Three Fiber code
+   - Main page imports the 3D components dynamically to avoid SSR issues
+
+3. **ClientOnly Wrapper Component**:
+   ```typescript
+   // Helper component to ensure client-only rendering
+   const ClientOnly = ({ children }: { children: React.ReactNode }) => {
+     const [hasMounted, setHasMounted] = useState(false);
+     
+     useEffect(() => {
+       setHasMounted(true);
+     }, []);
+     
+     if (!hasMounted) {
+       return <div className="h-screen flex items-center justify-center">
+         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+       </div>;
+     }
+     
+     return <>{children}</>;
+   };
+   ```
+
+4. **Isolated Three.js Dependencies**:
+   - Three.js imports and dependencies are kept in dedicated files
+   - Dependencies are never imported directly in page components
+   - Main UI state is managed separately from 3D rendering logic
+
+### Next.js Configuration for 3D Rendering
+
+To optimize Next.js for 3D rendering with React Three Fiber:
+
+1. **Webpack Configuration**:
+   ```javascript
+   // next.config.mjs
+   const nextConfig = {
+     // ...other config
+     experimental: {
+       webpackBuildWorker: true,
+       optimizePackageImports: ['lucide-react']
+     }
+   }
+   ```
+
+2. **Module Optimization**:
+   - Adjusted Webpack configuration to properly handle large 3D libraries
+   - Proper code splitting for 3D components to reduce initial bundle size
+   - Ensured tree-shaking for Three.js to remove unused code
+
+3. **Error Handling**:
+   - Error boundaries wrap 3D components to prevent whole-page crashes
+   - Fallback UI shown when 3D rendering fails
+   - Diagnostic logging for 3D rendering issues
+
+### Implementation Examples
+
+1. **Financial Assistant 3D Background**:
+   ```jsx
+   // In page.tsx
+   "use client";
+   
+   // Dynamic import with SSR disabled
+   const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { ssr: false });
+   const FinancialSceneWrapper = dynamic(() => import('./components/FinancialScene'), { ssr: false });
+   
+   export default function FinancialAssistantPage() {
+     return (
+       <div className="relative">
+         {/* 3D Scene Canvas */}
+         <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
+           <Canvas3D>
+             <FinancialSceneWrapper />
+           </Canvas3D>
+         </div>
+         
+         {/* Rest of the UI */}
+         <div className="relative z-10">
+           {/* UI content here */}
+         </div>
+       </div>
+     );
+   }
+   ```
+
+2. **Chess 3D Visualization**:
+   ```jsx
+   // In page.tsx
+   "use client";
+   
+   import dynamic from 'next/dynamic';
+   import ChessGame from "@/app/chess/components/ChessGame";
+   
+   // Dynamic import with SSR disabled
+   const Chess3D = dynamic(() => import('@/app/chess/components/Chess3D'), { ssr: false });
+   
+   export default function ChessAIDemo() {
+     const [is3DMode, setIs3DMode] = useState(false);
+     
+     return (
+       <div className="relative">
+         {/* View toggle */}
+         <div className="mb-4">
+           <button onClick={() => setIs3DMode(false)}>2D View</button>
+           <button onClick={() => setIs3DMode(true)}>3D View</button>
+         </div>
+         
+         {/* Conditional rendering */}
+         {is3DMode ? (
+           // Only load the 3D component when in 3D mode
+           <Chess3D />
+         ) : (
+           <ChessGame />
+         )}
+       </div>
+     );
+   }
+   ```
+
+### Key Benefits
+
+1. **Performance**:
+   - Reduced initial page load times by avoiding SSR of complex 3D scenes
+   - Smaller JavaScript bundle sizes through dynamic imports
+   - Better code splitting and tree shaking
+
+2. **Reliability**:
+   - Eliminated "Cannot read properties of undefined (reading 'ReactCurrentOwner')" errors
+   - Prevented React context-related errors in SSR environments
+   - More stable application across different rendering environments (dev, production)
+
+3. **Development Experience**:
+   - Clear separation between server and client components
+   - Easier debugging of 3D rendering issues
+   - More predictable component behavior

@@ -1,13 +1,4 @@
 {
   "installCommand": "npm install --no-audit",
-  "buildCommand": "npm run build",
-  "functions": {
-    "api/chess-ai/*.py": {
-      "runtime": "@vercel/python@3.1.0",
-      "maxDuration": 30
-    }
-  },
-  "routes": [
-    { "src": "/api/chess-ai/(.*)", "dest": "/api/chess-ai/$1" }
-  ]
+  "buildCommand": "npm run build"
 } 

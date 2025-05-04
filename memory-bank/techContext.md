@@ -1,5 +1,72 @@
 # Technical Context
 
+## 3D Rendering Integration
+
+### React Three Fiber & Three.js Usage
+
+React Three Fiber is integrated throughout the application for 3D visualizations, but requires specific implementation patterns to avoid Server-Side Rendering (SSR) issues in Next.js:
+
+1. **Dynamic Import Pattern**:
+   ```typescript
+   // Dynamically import R3F components with SSR disabled
+   const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { 
+     ssr: false,
+     loading: () => <div className="h-screen flex items-center justify-center">
+       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+     </div>
+   });
+   
+   const ThreeDScene = dynamic(() => import('./components/ThreeDScene'), { 
+     ssr: false 
+   });
+   ```
+
+2. **Client Component Isolation**:
+   - All components that use React Three Fiber are marked with `"use client"` directive
+   - 3D rendering logic is isolated in separate files
+   - Page components dynamically import 3D components to avoid SSR issues
+   - Loading indicators are shown while 3D components are being loaded
+
+3. **Next.js Configuration Adjustments**:
+   ```javascript
+   // next.config.mjs
+   const nextConfig = {
+     // ...existing config
+     experimental: {
+       webpackBuildWorker: true,
+       optimizePackageImports: ['lucide-react']
+     }
+   };
+   ```
+
+4. **Known SSR Issues Fixed**:
+   - "Cannot read properties of undefined (reading 'ReactCurrentOwner')" errors
+   - Maximum update depth exceeded errors in Chess components
+   - Build failures with React Three Fiber components
+   - Duplicate key errors in component lists
+
+### Three.js Library Usage
+
+The application uses Three.js for various 3D visualizations:
+
+1. **Chess 3D Visualization**:
+   - Chess board and pieces rendered in 3D
+   - Lighting and shadows for realistic appearance
+   - Camera controls for viewing the board from different angles
+   - Materials and textures for chess pieces and board
+
+2. **Financial Assistant Background**:
+   - 3D particle systems for data visualization
+   - Animated grid background for depth
+   - Dynamic lighting based on theme (light/dark)
+   - Interactive camera movements
+
+3. **Common Patterns**:
+   - Scene setup with proper lighting
+   - Material configuration for optimal appearance
+   - Performance considerations for mobile devices
+   - State synchronization between 2D UI and 3D visuals
+
 ## Technology Stack
 1. Frontend:
    - Next.js 14.2.16
