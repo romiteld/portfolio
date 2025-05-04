@@ -17,6 +17,7 @@ import * as THREE from 'three'
 import { useThree, useFrame } from '@react-three/fiber'
 import { Environment, Text } from '@react-three/drei'
 import { Group } from "three"
+import ClientOnly from '@/app/components/ClientOnly'
 
 // Dynamically import the chart components (client-side only)
 const StockChart = dynamic(() => import('./components/StockChart'), { ssr: false });
@@ -1425,9 +1426,11 @@ export default function FinancialAssistantPage() {
       <div className="w-full min-h-screen bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white relative overflow-hidden" ref={sceneRef}>
         {/* 3D Scene Canvas */}
         <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
-          <Canvas3D>
-            <FinancialSceneWrapper />
-          </Canvas3D>
+          <ClientOnly>
+            <Canvas3D>
+              <FinancialSceneWrapper />
+            </Canvas3D>
+          </ClientOnly>
         </div>
         
         {/* Content */}

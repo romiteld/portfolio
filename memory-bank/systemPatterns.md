@@ -631,3 +631,119 @@ To optimize Next.js for 3D rendering with React Three Fiber:
    - Clear separation between server and client components
    - Easier debugging of 3D rendering issues
    - More predictable component behavior
+
+## Component Architecture
+
+1. **Page Components**
+   - Located in `/app/[route]/page.tsx`
+   - Use server components by default for performance
+   - Use client components for interactive elements
+   - Structure follows Next.js 13+ App Router conventions
+   - Pages delegate to specialized components for different sections
+
+2. **UI Components**
+   - Located in `/components/ui` for shared elements
+   - Located in `/app/components` for page-specific elements
+   - Follow Atomic Design principles (atoms, molecules, organisms)
+   - Use TypeScript interfaces for props
+   - Implement responsive design through Tailwind classes
+   - Use composition over inheritance
+
+3. **3D Visualization Components**
+   - Always use dynamic imports with `{ ssr: false }` to prevent SSR issues
+   - Main 3D components in dedicated files with proper Three.js imports
+   - Use absolute imports for Three.js components to improve module resolution
+   - Proper type definitions for Three.js elements (Group, Vector3, etc.)
+   - Separate Three.js scene setup from React component logic
+   - Use useFrame hook for animations instead of componentDidUpdate
+   - Include proper error boundaries around 3D components
+   - Always import Three.js namespaces with `import * as THREE from 'three'`
+   - Import specific Three.js types with `import { Group } from 'three'`
+
+4. **Layout Components**
+   - Located in `/app/[route]/layout.tsx`
+   - Provide consistent structure across pages
+   - Handle metadata and viewport settings
+   - Implement responsive container sizing
+   - Manage theme context
+
+5. **Context Providers**
+   - Located in `/app/contexts/[name]Context.tsx`
+   - Manage global state and theme
+   - Implement user preferences
+   - Handle authentication state
+   - Provide consistent API for state management
+
+6. **Hooks**
+   - Located in `/hooks/use[Name].ts`
+   - Follow React Hooks naming convention
+   - Abstract common functionality
+   - Handle side effects consistently
+   - Implement proper cleanup
+   - Use TypeScript for return types
+
+7. **Utility Functions**
+   - Located in `/lib` or `/utils`
+   - Pure functions without side effects
+   - Well-typed with TypeScript
+   - Unit tested
+   - Named exports for tree-shaking
+
+8. **API Routes**
+   - Located in `/app/api/[route]/route.ts`
+   - Use Next.js 13+ Route Handlers
+   - Implement proper request validation
+   - Structure responses consistently
+   - Handle errors gracefully
+   - Support streaming where appropriate
+
+## Responsive Design Patterns
+
+1. **Mobile-First Approach**
+   - Base styles for mobile devices
+   - Media queries for larger screens
+   - Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:)
+   - Test across multiple device sizes
+
+2. **Fluid Typography**
+   - Scale text based on viewport width
+   - Min and max sizes to prevent extremes
+   - Maintain proper text hierarchy at all sizes
+   - Ensure readability on all devices
+
+3. **Grid and Flex Layouts**
+   - CSS Grid for two-dimensional layouts
+   - Flexbox for one-dimensional layouts
+   - Auto-fill and auto-fit for responsive grids
+   - Gap properties for consistent spacing
+
+4. **Component-Based Media Queries**
+   - Inline responsive design with Tailwind
+   - Component-specific breakpoints when needed
+   - Use clamp() for fluid sizing
+
+5. **Responsive Images**
+   - Next.js Image component for optimization
+   - Srcset for different resolutions
+   - Art direction with picture element
+   - Lazy loading for off-screen images
+
+6. **Container Queries**
+   - Component sizing based on parent container
+   - Used for reusable components in different contexts
+   - Implemented with CSS container queries or JS resize observers
+
+7. **3D Content Responsiveness**
+   - Scale 3D scenes based on container size, not viewport
+   - Adjust camera properties based on screen dimensions
+   - Reduce complexity of 3D scenes on mobile devices
+   - Provide fallback 2D views for low-end devices
+   - Use device capabilities detection for optimal performance
+   - Implement responsive canvas sizing with useThree hook
+
+8. **Accessibility Considerations**
+   - Touch targets at least 44×44px on mobile
+   - Focus states visible and enhanced
+   - Proper contrast ratios maintained at all sizes
+   - Keyboard navigation support
+   - Screen reader compatibility
