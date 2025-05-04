@@ -8,6 +8,7 @@ The project follows a modern Next.js 14 architecture with:
 - Supabase for data storage
 - SendGrid for email handling
 - Vercel for deployment and analytics
+- Three.js and React Three Fiber for 3D rendering
 
 ## Design Patterns
 1. Component Architecture:
@@ -50,6 +51,7 @@ The project follows a modern Next.js 14 architecture with:
    - TypeScript for type safety
    - Tailwind CSS for styling
    - Radix UI for accessible components
+   - Three.js and React Three Fiber for 3D visualizations
 
 2. Performance Optimizations:
    - Image optimization with next/image
@@ -309,5 +311,153 @@ The financial assistant maintains several types of state:
 5. Market data, RAG results, and user preferences are combined
 6. OpenAI generates comprehensive response with attribution
 7. Response is sent back to user with appropriate formatting
-``` 
-</rewritten_file>
+
+## Chess Game 3D Visualization Architecture
+
+The 3D chess board implementation uses React Three Fiber (R3F) and @react-three/drei to create an interactive 3D visualization that works alongside the existing 2D board:
+
+```mermaid
+flowchart TD
+  subgraph ChessGame[Chess Game Component]
+    Board2D[2D Chess Board]
+    Board3D[3D Chess Board]
+    ViewToggle[View Toggle]
+    GameState[Game State]
+    
+    ViewToggle --> Board2D
+    ViewToggle --> Board3D
+    
+    GameState --> Board2D
+    GameState --> Board3D
+    
+    Board2D --> GameState
+  end
+  
+  subgraph Board3D[3D Chess Board]
+    Canvas[R3F Canvas]
+    Scene[Three.js Scene]
+    Camera[OrbitControls Camera]
+    Lighting[Ambient/Directional Lights]
+    Board[Chess Board Mesh]
+    Pieces[Chess Piece Meshes]
+    
+    Canvas --> Scene
+    Scene --> Camera
+    Scene --> Lighting
+    Scene --> Board
+    Scene --> Pieces
+  end
+  
+  subgraph Interactions
+    MoveEvent[Move Event]
+    StateSync[State Synchronization]
+    
+    Board2D --> MoveEvent
+    MoveEvent --> GameState
+    GameState --> StateSync
+    StateSync --> Board3D
+  end
+```
+
+### Core Components
+
+1. **Canvas Container**: The R3F Canvas component creates the WebGL context and manages the Three.js scene.
+
+2. **Scene Setup**:
+   - `OrbitControls` for camera manipulation
+   - `AmbientLight` for global illumination
+   - `DirectionalLight` for shadows and directional lighting
+   - `PerspectiveCamera` positioned to view the board at a 45° angle
+
+3. **Chess Board**: 
+   - Grid of alternating colored squares
+   - Material with wood-like textures
+   - Shadow receiving plane
+
+4. **Chess Pieces**:
+   - Currently using basic geometric shapes (cylinders, cones, spheres)
+   - Material with different colors for black and white pieces
+   - Positioned based on the game state
+   - Cast shadows for depth perception
+
+5. **State Management**:
+   - One-way data flow from 2D board to 3D visualization
+   - Game state shared between both views
+   - Move validation and game logic handled by 2D board component
+   - 3D board functions primarily as a spectator view
+
+### Implementation Details
+
+1. **Piece Representation**:
+   ```typescript
+   interface ChessPiece3D {
+     type: 'p' | 'r' | 'n' | 'b' | 'q' | 'k';
+     color: 'w' | 'b';
+     position: { row: number; col: number };
+     mesh: React.MutableRefObject<THREE.Group | null>;
+   }
+   ```
+
+2. **Camera Position**:
+   ```typescript
+   const cameraPosition = [3, 4, 5] as [number, number, number];
+   const cameraTarget = [3.5, 0, 3.5] as [number, number, number];
+   ```
+
+3. **Board Coordinates**:
+   - Chess board centered at origin (0,0,0)
+   - Each square is 1x1 unit
+   - Board spans from 0,0,0 to 8,0,8
+   - y-axis used for height
+
+4. **Lighting Setup**:
+   ```jsx
+   <ambientLight intensity={0.4} />
+   <directionalLight 
+     position={[10, 10, 5]} 
+     intensity={0.7} 
+     castShadow 
+     shadow-mapSize={[2048, 2048]} 
+   />
+   ```
+
+5. **View Toggle**:
+   ```jsx
+   <div className="flex space-x-2 mb-4">
+     <button 
+       onClick={() => setView('2d')} 
+       className={`px-3 py-1 ${view === '2d' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+     >
+       2D
+     </button>
+     <button 
+       onClick={() => setView('3d')} 
+       className={`px-3 py-1 ${view === '3d' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}
+     >
+       3D
+     </button>
+   </div>
+   ```
+
+### Planned Enhancements
+
+1. **Detailed Models**: Replace geometric shapes with detailed 3D models for each piece type
+
+2. **Animations**: Add smooth transitions for:
+   - Piece movement
+   - Captures
+   - Special moves (castling, en passant)
+   - Game state changes (check, checkmate)
+
+3. **Interaction**: Enable direct piece selection and movement in 3D view
+
+4. **Visual Effects**:
+   - Improved materials and textures
+   - Particle effects for captures
+   - Highlighting for selected pieces and legal moves
+   - Visual indication for check and checkmate
+
+5. **Performance Optimization**:
+   - Level of detail (LOD) for piece models
+   - Reduced polygon count for mobile devices
+   - Optimized lighting and shadow calculations

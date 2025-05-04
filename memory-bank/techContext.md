@@ -8,6 +8,9 @@
    - Tailwind CSS 3.4.17
    - Radix UI Components
    - Three.js 0.161.0
+   - React Three Fiber 8.15.16
+   - @react-three/drei 9.97.3
+   - @react-three/postprocessing 2.15.12
    - Framer Motion 11.0.14
 
 2. Backend:
@@ -190,6 +193,8 @@
    - Radix UI
    - Framer Motion
    - Three.js
+   - React Three Fiber (for 3D chess implementation)
+   - @react-three/drei (for 3D chess helper components)
 
 3. Backend Services:
    - Supabase

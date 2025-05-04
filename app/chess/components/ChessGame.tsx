@@ -1,10 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import ChessBoard, { Board, Move, PieceColor, PieceType, Piece, CastlingRights } from './ChessBoard'
-import { Clock, RotateCcw, Settings, Crown, Share, FileCog, Undo, Medal, Loader2 } from 'lucide-react'
+import { Clock, RotateCcw, Settings, Crown, Share, FileCog, Undo, Medal, Loader2, ChevronDown, ChevronUp, Info, TrendingUp, Target, Shield, Zap, Code, MessageCircle, AlertTriangle, Check, X, Lightbulb, User, Send } from 'lucide-react'
 import ChatBox, { ChatMessage } from './ChatBox'
 import * as chessAnalysis from '../utils/chessAnalysis'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
+import { useGLTF, OrbitControls, Stars } from '@react-three/drei'
+import * as THREE from 'three'
 
 // Constants
 const INITIAL_BOARD: Board = [
@@ -74,6 +77,216 @@ const findKing = (board: Board, color: PieceColor): { row: number, col: number }
     }
   }
   return null
+}
+
+// Death Star component
+const DeathStar = () => {
+  const deathStarRef = useRef<THREE.Mesh>(null)
+  
+  useFrame(({clock}) => {
+    if (deathStarRef.current) {
+      // Slow rotation
+      deathStarRef.current.rotation.y = clock.getElapsedTime() * 0.1
+    }
+  })
+  
+  return (
+    <mesh ref={deathStarRef} position={[0, 0, 0]}>
+      <sphereGeometry args={[2, 32, 32]} />
+      <meshStandardMaterial color="#444444" metalness={0.7} roughness={0.3} emissive="#111111" />
+      {/* Add the equatorial trench */}
+      <mesh position={[0, 0, 0]} rotation={[Math.PI/2, 0, 0]}>
+        <torusGeometry args={[2.05, 0.15, 16, 100]} />
+        <meshStandardMaterial color="#333333" emissive="#222222" />
+      </mesh>
+      {/* Add the super laser */}
+      <mesh position={[0, -1.8, 0.9]} rotation={[Math.PI/8, 0, 0]}>
+        <cylinderGeometry args={[0.5, 0.5, 0.2, 32]} />
+        <meshStandardMaterial color="#222222" emissive="#333333" />
+      </mesh>
+      {/* Add green laser effect */}
+      <pointLight position={[0, -1.8, 0.9]} color="#00ff00" intensity={2} distance={5} />
+    </mesh>
+  )
+}
+
+// X-Wing component
+const XWing = ({ index }: { index: number }) => {
+  const xWingRef = useRef<THREE.Group>(null)
+  const speed = 0.2 + Math.random() * 1
+  
+  // Create more varied flight paths across the entire scene
+  const startPosition = useMemo(() => {
+    // Random position from outer edge
+    const dist = 50 + Math.random() * 30
+    const angle = Math.random() * Math.PI * 2
+    const heightVar = Math.random() * 40 - 20
+    return [
+      Math.cos(angle) * dist,
+      heightVar,
+      Math.sin(angle) * dist
+    ]
+  }, [])
+  
+  const endPosition = useMemo(() => {
+    // Either fly toward Death Star or another random point
+    if (Math.random() > 0.6) {
+      // Fly near Death Star
+      const offset = (Math.random() - 0.5) * 10
+      return [20 + offset, (Math.random() - 0.5) * 10, -30 + offset]
+    } else {
+      // Random flight path across the scene
+      const dist = 50 + Math.random() * 30
+      const angle = Math.random() * Math.PI * 2
+      const heightVar = Math.random() * 40 - 20
+      return [
+        Math.cos(angle) * dist,
+        heightVar,
+        Math.sin(angle) * dist
+      ]
+    }
+  }, [])
+  
+  const [currentPosition, setCurrentPosition] = useState(startPosition)
+  const [targetPosition, setTargetPosition] = useState(endPosition)
+  const [leaving, setLeaving] = useState(false)
+  
+  useFrame(({ clock }) => {
+    if (xWingRef.current) {
+      // Move toward target
+      const newPos = currentPosition.map((coord, i) => {
+        return coord + (targetPosition[i] - coord) * 0.005 * speed
+      }) as [number, number, number]
+      
+      setCurrentPosition(newPos)
+      xWingRef.current.position.set(newPos[0], newPos[1], newPos[2])
+      
+      // Look at next position
+      const direction = new THREE.Vector3(
+        targetPosition[0] - newPos[0],
+        targetPosition[1] - newPos[1],
+        targetPosition[2] - newPos[2]
+      ).normalize()
+      
+      const lookAt = new THREE.Vector3(
+        newPos[0] + direction.x,
+        newPos[1] + direction.y,
+        newPos[2] + direction.z
+      )
+      
+      xWingRef.current.lookAt(lookAt)
+      
+      // Check if we're close to target
+      const distance = Math.sqrt(
+        Math.pow(newPos[0] - targetPosition[0], 2) +
+        Math.pow(newPos[1] - targetPosition[1], 2) +
+        Math.pow(newPos[2] - targetPosition[2], 2)
+      )
+      
+      if (distance < 2) {
+        // Pick a new random destination
+        const dist = 50 + Math.random() * 30
+        const angle = Math.random() * Math.PI * 2
+        const heightVar = Math.random() * 40 - 20
+        setTargetPosition([
+          Math.cos(angle) * dist,
+          heightVar,
+          Math.sin(angle) * dist
+        ])
+        
+        // After several path changes, reset to a new X-wing to avoid stuttering
+        if (Math.random() > 0.7) {
+          const farDist = 80 + Math.random() * 30
+          const farAngle = Math.random() * Math.PI * 2
+          setCurrentPosition([
+            Math.cos(farAngle) * farDist,
+            (Math.random() - 0.5) * 40,
+            Math.sin(farAngle) * farDist
+          ])
+        }
+      }
+    }
+  })
+  
+  // X-wing appearance remains the same
+  return (
+    <group ref={xWingRef} scale={[0.2, 0.2, 0.2]}>
+      {/* X-Wing body */}
+      <mesh>
+        <boxGeometry args={[1, 0.3, 3]} />
+        <meshStandardMaterial color="#aaaaaa" metalness={0.7} roughness={0.3} />
+      </mesh>
+      {/* Wings */}
+      <mesh position={[1, 0, 0]}>
+        <boxGeometry args={[2, 0.1, 1.5]} />
+        <meshStandardMaterial color="#cc0000" emissive="#330000" />
+      </mesh>
+      <mesh position={[-1, 0, 0]}>
+        <boxGeometry args={[2, 0.1, 1.5]} />
+        <meshStandardMaterial color="#cc0000" emissive="#330000" />
+      </mesh>
+      {/* Engines with glowing effect */}
+      <mesh position={[1.5, 0, -0.5]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.2, 0.2, 1, 16]} />
+        <meshStandardMaterial color="#333333" />
+      </mesh>
+      <pointLight position={[1.5, 0, -1]} color="#ff6600" intensity={0.5} distance={2} />
+      
+      <mesh position={[-1.5, 0, -0.5]} rotation={[0, 0, 0]}>
+        <cylinderGeometry args={[0.2, 0.2, 1, 16]} />
+        <meshStandardMaterial color="#333333" />
+      </mesh>
+      <pointLight position={[-1.5, 0, -1]} color="#ff6600" intensity={0.5} distance={2} />
+      
+      {/* Cockpit */}
+      <mesh position={[0, 0.3, 0.5]}>
+        <sphereGeometry args={[0.3, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+        <meshStandardMaterial color="#88ccff" transparent opacity={0.7} emissive="#003366" />
+      </mesh>
+    </group>
+  )
+}
+
+// Scene component
+const SpaceScene = () => {
+  return (
+    <Canvas 
+      camera={{ position: [5, 2, 15], fov: 60 }}
+      style={{ 
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        zIndex: -1,
+        background: 'linear-gradient(to bottom, #000000, #050520)'
+      }}
+    >
+      {/* Add more light sources for better visibility */}
+      <ambientLight intensity={0.4} />
+      <pointLight position={[10, 10, 10]} intensity={1.5} />
+      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#6666ff" />
+      <spotLight 
+        position={[5, 5, 5]} 
+        angle={0.3} 
+        penumbra={0.8} 
+        intensity={2} 
+        castShadow 
+        color="#ffffff"
+      />
+      
+      {/* Position Death Star to the side */}
+      <group position={[20, 0, -30]}>
+        <DeathStar />
+      </group>
+      
+      {Array.from({ length: 15 }).map((_, index) => (
+        <XWing key={index} index={index} />
+      ))}
+      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0.5} fade speed={1.5} />
+      <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.1} />
+    </Canvas>
+  )
 }
 
 // Main component
@@ -260,6 +473,98 @@ const ChessGame = ({
     type: 'info',
     timestamp: new Date()
   }])
+  
+  // Player analysis state
+  const [analysisExpanded, setAnalysisExpanded] = useState<{[key: string]: boolean}>({
+    performance: true,
+    style: true,
+    statistics: false,
+    technical: false
+  });
+  
+  // Calculate player metrics based on move history
+  const playerMetrics = useMemo(() => {
+    // Default starting values
+    const metrics = {
+      openingPreparation: 70,
+      tacticalAwareness: 65,
+      endgameSkill: 60,
+      positionalUnderstanding: 75,
+      aggressiveness: 60,
+      defensiveness: 70,
+      blunderRate: 15,
+      accuracy: 80,
+      moveTimes: [] as number[],
+      captureRate: 25,
+      checkRate: 20
+    };
+    
+    // Skip calculation if no moves yet
+    if (moveHistory.length === 0) return metrics;
+    
+    // We'll use move history to dynamically adjust these values
+    // (This is a simplified simulation - in a real app you'd do deeper analysis)
+    
+    // Opening preparation increases with standard opening moves
+    if (moveHistory.length >= 6 && gamePhase === 'opening') {
+      metrics.openingPreparation += 15;
+    }
+    
+    // Tactical awareness increases with checks, captures, and threats
+    const captures = moveHistory.filter(m => m.captured !== null).length;
+    const checks = moveHistory.filter(m => m.check).length;
+    metrics.tacticalAwareness += Math.min(25, (captures + checks) * 2);
+    
+    // Endgame skill increases in endgame phase
+    if (gamePhase === 'endgame') {
+      metrics.endgameSkill += 20;
+    }
+    
+    // Calculate capture and check rates
+    if (moveHistory.length > 0) {
+      metrics.captureRate = Math.round((captures / moveHistory.length) * 100);
+      metrics.checkRate = Math.round((checks / moveHistory.length) * 100);
+    }
+    
+    // Limit all metrics to 0-100 range
+    Object.keys(metrics).forEach(key => {
+      const metricKey = key as keyof typeof metrics;
+      // Skip moveTimes array
+      if (metricKey !== 'moveTimes' && typeof metrics[metricKey] === 'number') {
+        // Ensure we're only updating number values, not arrays
+        metrics[metricKey] = Math.min(100, Math.max(0, metrics[metricKey] as number));
+      }
+    });
+    
+    return metrics;
+  }, [moveHistory, gamePhase]);
+  
+  // Function to toggle sections
+  const toggleSection = (section: string) => {
+    setAnalysisExpanded(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+  
+  // Function to get rating text based on score
+  const getRatingText = (score: number) => {
+    if (score >= 90) return "Exceptional";
+    if (score >= 80) return "Very Strong";
+    if (score >= 70) return "Strong";
+    if (score >= 60) return "Good";
+    if (score >= 50) return "Average";
+    if (score >= 40) return "Developing";
+    return "Needs Work";
+  };
+  
+  // Function to determine color based on score
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "bg-green-600";
+    if (score >= 65) return "bg-blue-600";
+    if (score >= 50) return "bg-yellow-500";
+    return "bg-orange-500";
+  };
   
   // Handle move execution
   const makeMove = useCallback((move: Move) => {
@@ -497,12 +802,8 @@ const ChessGame = ({
         } else if (piece.type === 'b' || piece.type === 'r' || piece.type === 'q') {
           // Sliding pieces (bishop, rook, queen)
           const directions: { r: number, c: number }[] = []
-          if (piece.type === 'b' || piece.type === 'q') {
-            directions.push({ r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 })
-          }
-          if (piece.type === 'r' || piece.type === 'q') {
-            directions.push({ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 })
-          }
+          if (piece.type === 'b' || piece.type === 'q') directions.push({ r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 })
+          if (piece.type === 'r' || piece.type === 'q') directions.push({ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 })
           
           for (const dir of directions) {
             let tr = r + dir.r, tc = c + dir.c
@@ -1000,12 +1301,7 @@ const ChessGame = ({
         <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
           <h3 className="text-sm font-medium">Move History</h3>
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {gameStatus === 'playing' || gameStatus === 'check' 
-              ? `${turn === 'w' ? 'White' : 'Black'} to move`
-              : gameStatus === 'checkmate'
-                ? `${turn === 'w' ? 'Black' : 'White'} wins by checkmate`
-                : 'Game drawn'
-            }
+            Based on {moveHistory.length} move{moveHistory.length !== 1 ? 's' : ''}
           </div>
         </div>
         <div className="p-2 max-h-[200px] overflow-y-auto">
@@ -1016,6 +1312,293 @@ const ChessGame = ({
       </div>
     )
   }
+  
+  // Render player analysis panel
+  const renderPlayerAnalysis = () => {
+    return (
+      <div className="mt-4 bg-white dark:bg-gray-800 rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+        <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <h3 className="text-sm font-medium flex items-center">
+            <Medal className="mr-1.5 h-4 w-4 text-yellow-500" />
+            Player Analysis
+          </h3>
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            Based on {moveHistory.length} move{moveHistory.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+        
+        <div className="divide-y divide-gray-200 dark:divide-gray-700 flex-grow overflow-auto">
+          {/* Rest of the player analysis content */}
+          {/* Performance Metrics Section */}
+          <div>
+            <button 
+              onClick={() => toggleSection('performance')}
+              className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+            >
+              <span className="font-medium text-sm flex items-center">
+                <TrendingUp className="mr-1.5 h-4 w-4 text-blue-500" />
+                Performance Metrics
+              </span>
+              {analysisExpanded.performance ? 
+                <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              }
+            </button>
+            
+            {analysisExpanded.performance && (
+              <div className="p-3 pt-0 space-y-3">
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium flex items-center">
+                      Opening Preparation
+                      <span className="group relative ml-1">
+                        <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                        <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Knowledge of standard opening theory
+                        </span>
+                      </span>
+                    </span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      {getRatingText(playerMetrics.openingPreparation)}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${getScoreColor(playerMetrics.openingPreparation)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.openingPreparation}%` }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium flex items-center">
+                      Tactical Awareness
+                      <span className="group relative ml-1">
+                        <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                        <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Ability to spot combinations and tactics
+                        </span>
+                      </span>
+                    </span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      {getRatingText(playerMetrics.tacticalAwareness)}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${getScoreColor(playerMetrics.tacticalAwareness)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.tacticalAwareness}%` }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium flex items-center">
+                      Positional Understanding
+                      <span className="group relative ml-1">
+                        <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                        <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Strategic piece placement and pawn structure
+                        </span>
+                      </span>
+                    </span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      {getRatingText(playerMetrics.positionalUnderstanding)}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${getScoreColor(playerMetrics.positionalUnderstanding)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.positionalUnderstanding}%` }}></div>
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium flex items-center">
+                      Endgame Skill
+                      <span className="group relative ml-1">
+                        <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                        <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          Technical precision in simplified positions
+                        </span>
+                      </span>
+                    </span>
+                    <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                      {getRatingText(playerMetrics.endgameSkill)}
+                    </span>
+                  </div>
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                    <div className={`h-full ${getScoreColor(playerMetrics.endgameSkill)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.endgameSkill}%` }}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Playing Style Section */}
+          <div>
+            <button 
+              onClick={() => toggleSection('style')}
+              className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+            >
+              <span className="font-medium text-sm flex items-center">
+                <Target className="mr-1.5 h-4 w-4 text-red-500" />
+                Playing Style
+              </span>
+              {analysisExpanded.style ? 
+                <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              }
+            </button>
+            
+            {analysisExpanded.style && (
+              <div className="p-3 pt-0">
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium">Aggressive</span>
+                      <span className="text-xs">{playerMetrics.aggressiveness}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-red-500 rounded-full" style={{ width: `${playerMetrics.aggressiveness}%` }}></div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium">Defensive</span>
+                      <span className="text-xs">{playerMetrics.defensiveness}%</span>
+                    </div>
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className="h-full bg-blue-500 rounded-full" style={{ width: `${playerMetrics.defensiveness}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-2 mt-4">
+                  <div className="text-xs font-medium mb-2">Style Characteristics</div>
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="bg-yellow-500 dark:bg-yellow-700 text-white px-3 py-2 rounded-md hover:bg-yellow-600 dark:hover:bg-yellow-600 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-white flex-shrink-0" />
+                        <span className="text-sm font-medium">Prefers positional play</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-blue-600 dark:bg-blue-700 text-white px-3 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-4 w-4 text-white flex-shrink-0" />
+                        <span className="text-sm font-medium">Solid defender</span>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-green-500 dark:bg-green-700 text-white px-3 py-2 rounded-md hover:bg-green-600 dark:hover:bg-green-600 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Crown className="h-4 w-4 text-white flex-shrink-0" />
+                        <span className="text-sm font-medium">Strong endgame player</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Statistics Section */}
+          <div>
+            <button 
+              onClick={() => toggleSection('statistics')}
+              className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+            >
+              <span className="font-medium text-sm flex items-center">
+                <FileCog className="mr-1.5 h-4 w-4 text-purple-500" />
+                Game Statistics
+              </span>
+              {analysisExpanded.statistics ? 
+                <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              }
+            </button>
+            
+            {analysisExpanded.statistics && (
+              <div className="p-3 pt-0">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Capture Rate:</span>
+                    <span className="text-xs font-medium">{playerMetrics.captureRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Check Rate:</span>
+                    <span className="text-xs font-medium">{playerMetrics.checkRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Blunder Rate:</span>
+                    <span className="text-xs font-medium">{playerMetrics.blunderRate}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Move Accuracy:</span>
+                    <span className="text-xs font-medium">{playerMetrics.accuracy}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Time Phase:</span>
+                    <span className="text-xs font-medium capitalize">{gamePhase}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Moves Played:</span>
+                    <span className="text-xs font-medium">{moveHistory.length}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Technical Implementation Section */}
+          <div>
+            <button 
+              onClick={() => toggleSection('technical')}
+              className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+            >
+              <span className="font-medium text-sm flex items-center">
+                <Code className="mr-1.5 h-4 w-4 text-emerald-500" />
+                Technical Implementation
+              </span>
+              {analysisExpanded.technical ? 
+                <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                <ChevronDown className="h-4 w-4 text-gray-400" />
+              }
+            </button>
+            
+            {analysisExpanded.technical && (
+              <div className="p-3 pt-0">
+                <div className="space-y-3">
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
+                    Client-side React chessboard with server-side AI move generation via a Next.js API route.
+                  </p>
+                  
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      Next.js
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      React
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      TypeScript
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      Supabase
+                    </span>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                      ONNX Runtime
+                    </span>
+                  </div>
+                  
+                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">
+                    Neural network model is stored in Supabase and dynamically loaded for inference.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
   
   // Add a useEffect to provide game phase tips periodically
   useEffect(() => {
@@ -1335,44 +1918,433 @@ const ChessGame = ({
   }, [board, lastMove, legalMoves, gameStatus, turn, onMove])
   
   return (
-    <div className={className}>
-      {message && (
-        <div className={`p-2.5 rounded-md mb-3 text-sm font-medium ${
-          gameStatus === 'checkmate' 
-            ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' 
-            : gameStatus === 'stalemate' || gameStatus === 'draw'
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
-              : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
-        }`}>
-          {message}
-        </div>
-      )}
+    <div className={`relative ${className}`}>
+      {/* Space background */}
+      <SpaceScene />
       
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="md:flex-1">
-          <ChessBoard 
-            board={board}
-            onMove={handlePlayerMove}
-            orientation={playerColor}
-            legalMoves={turn === playerColor ? legalMoves : []}
-            lastMove={lastMove}
-            isCheck={gameStatus === 'check' || gameStatus === 'checkmate'}
-            checkPosition={findKing(board, turn)}
-            disabled={turn !== playerColor || gameStatus !== 'playing' || thinking}
-          />
-          {renderControls()}
+      {/* Content with slight transparency for readability */}
+      <div className="relative z-10">
+        {message && (
+          <div className={`p-2.5 rounded-md mb-3 text-sm font-medium ${
+            gameStatus === 'checkmate' 
+              ? 'bg-red-100/90 dark:bg-red-900/90 text-red-800 dark:text-red-200' 
+              : gameStatus === 'stalemate' || gameStatus === 'draw'
+                ? 'bg-blue-100/90 dark:bg-blue-900/90 text-blue-800 dark:text-blue-200'
+                : 'bg-blue-100/90 dark:bg-blue-900/90 text-blue-800 dark:text-blue-200'
+          }`}>
+            {message}
+          </div>
+        )}
+        
+        <div className="flex flex-col gap-6">
+          {/* Main board area with backdrop blur for better visibility */}
+          <div className="w-full p-6 rounded-xl bg-black/30 backdrop-blur-sm">
+            <div className="mx-auto max-w-[600px]">
+              <ChessBoard 
+                board={board}
+                onMove={handlePlayerMove}
+                orientation={playerColor}
+                legalMoves={turn === playerColor ? legalMoves : []}
+                lastMove={lastMove}
+                isCheck={gameStatus === 'check' || gameStatus === 'checkmate'}
+                checkPosition={findKing(board, turn)}
+                disabled={turn !== playerColor || gameStatus !== 'playing' || thinking}
+              />
+            </div>
+            {renderControls()}
+          </div>
+          
+          {/* Analysis and assistance section with improved layout */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left column */}
+            <div className="flex flex-col gap-4">
+              {/* Player Analysis Panel */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <Medal className="mr-1.5 h-4 w-4 text-yellow-500" />
+                    Player Analysis
+                  </h3>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Based on {moveHistory.length} move{moveHistory.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                
+                <div className="divide-y divide-gray-200 dark:divide-gray-700 flex-grow overflow-auto max-h-[500px]">
+                  {/* Performance Metrics Section */}
+                  <div>
+                    <button 
+                      onClick={() => toggleSection('performance')}
+                      className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+                    >
+                      <span className="font-medium text-sm flex items-center">
+                        <TrendingUp className="mr-1.5 h-4 w-4 text-blue-500" />
+                        Performance Metrics
+                      </span>
+                      {analysisExpanded.performance ? 
+                        <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      }
+                    </button>
+                    
+                    {analysisExpanded.performance && (
+                      <div className="p-3 pt-0 space-y-3">
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium flex items-center">
+                              Opening Preparation
+                              <span className="group relative ml-1">
+                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                  Knowledge of standard opening theory
+                                </span>
+                              </span>
+                            </span>
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              {getRatingText(playerMetrics.openingPreparation)}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className={`h-full ${getScoreColor(playerMetrics.openingPreparation)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.openingPreparation}%` }}></div>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium flex items-center">
+                              Tactical Awareness
+                              <span className="group relative ml-1">
+                                <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
+                                <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                  Ability to spot combinations and tactics
+                                </span>
+                              </span>
+                            </span>
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              {getRatingText(playerMetrics.tacticalAwareness)}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                            <div className={`h-full ${getScoreColor(playerMetrics.tacticalAwareness)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.tacticalAwareness}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Playing Style Section */}
+                  <div>
+                    <button 
+                      onClick={() => toggleSection('style')}
+                      className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+                    >
+                      <span className="font-medium text-sm flex items-center">
+                        <Target className="mr-1.5 h-4 w-4 text-red-500" />
+                        Playing Style
+                      </span>
+                      {analysisExpanded.style ? 
+                        <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      }
+                    </button>
+                    
+                    {analysisExpanded.style && (
+                      <div className="p-3 pt-0">
+                        <div className="grid grid-cols-2 gap-3 mb-3">
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-medium">Aggressive</span>
+                              <span className="text-xs">{playerMetrics.aggressiveness}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-red-500 rounded-full" style={{ width: `${playerMetrics.aggressiveness}%` }}></div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="flex justify-between items-center mb-1">
+                              <span className="text-xs font-medium">Defensive</span>
+                              <span className="text-xs">{playerMetrics.defensiveness}%</span>
+                            </div>
+                            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${playerMetrics.defensiveness}%` }}></div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 mt-4">
+                          <div className="text-xs font-medium mb-2">Style Characteristics</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            <div className="bg-yellow-500 dark:bg-yellow-700 text-white px-3 py-2 rounded-md hover:bg-yellow-600 dark:hover:bg-yellow-600 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Zap className="h-4 w-4 text-white flex-shrink-0" />
+                                <span className="text-sm font-medium">Prefers positional play</span>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-blue-600 dark:bg-blue-700 text-white px-3 py-2 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Shield className="h-4 w-4 text-white flex-shrink-0" />
+                                <span className="text-sm font-medium">Solid defender</span>
+                              </div>
+                            </div>
+                            
+                            <div className="bg-green-500 dark:bg-green-700 text-white px-3 py-2 rounded-md hover:bg-green-600 dark:hover:bg-green-600 transition-colors">
+                              <div className="flex items-center gap-2">
+                                <Crown className="h-4 w-4 text-white flex-shrink-0" />
+                                <span className="text-sm font-medium">Strong endgame player</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Statistics Section */}
+                  <div>
+                    <button 
+                      onClick={() => toggleSection('statistics')}
+                      className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+                    >
+                      <span className="font-medium text-sm flex items-center">
+                        <FileCog className="mr-1.5 h-4 w-4 text-purple-500" />
+                        Game Statistics
+                      </span>
+                      {analysisExpanded.statistics ? 
+                        <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      }
+                    </button>
+                    
+                    {analysisExpanded.statistics && (
+                      <div className="p-3 pt-0">
+                        <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Capture Rate:</span>
+                            <span className="text-xs font-medium">{playerMetrics.captureRate}%</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Check Rate:</span>
+                            <span className="text-xs font-medium">{playerMetrics.checkRate}%</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Blunder Rate:</span>
+                            <span className="text-xs font-medium">{playerMetrics.blunderRate}%</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Move Accuracy:</span>
+                            <span className="text-xs font-medium">{playerMetrics.accuracy}%</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Time Phase:</span>
+                            <span className="text-xs font-medium capitalize">{gamePhase}</span>
+                          </div>
+                          <div className="flex justify-between items-center py-1">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Moves Played:</span>
+                            <span className="text-xs font-medium">{moveHistory.length}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Technical Implementation Section */}
+                  <div>
+                    <button 
+                      onClick={() => toggleSection('technical')}
+                      className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-750 text-left"
+                    >
+                      <span className="font-medium text-sm flex items-center">
+                        <Code className="mr-1.5 h-4 w-4 text-emerald-500" />
+                        Technical Implementation
+                      </span>
+                      {analysisExpanded.technical ? 
+                        <ChevronUp className="h-4 w-4 text-gray-400" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-400" />
+                      }
+                    </button>
+                    
+                    {analysisExpanded.technical && (
+                      <div className="p-3 pt-0">
+                        <div className="space-y-3">
+                          <p className="text-xs text-gray-600 dark:text-gray-300">
+                            Client-side React chessboard with server-side AI move generation via a Next.js API route.
+                          </p>
+                          
+                          <div className="flex flex-wrap gap-1.5">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              Next.js
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              React
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              TypeScript
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              Supabase
+                            </span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                              ONNX Runtime
+                            </span>
+                          </div>
+                          
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-2">
+                            Neural network model is stored in Supabase and dynamically loaded for inference.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Right column */}
+            <div className="flex flex-col gap-4">
+              {/* Move History */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <h3 className="text-sm font-medium">Move History</h3>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    Based on {moveHistory.length} move{moveHistory.length !== 1 ? 's' : ''}
+                  </div>
+                </div>
+                <div className="p-2 overflow-auto max-h-[200px]">
+                  {moveHistory.length === 0 ? (
+                    <div className="flex items-center justify-center text-center py-6">
+                      <div className="text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-medium">No moves played yet</p>
+                        <p className="text-xs mt-1">Moves will appear here as the game progresses</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-0.5">
+                      {moveHistory.map((move, index) => {
+                        const moveNumber = Math.floor(index / 2) + 1;
+                        if (index % 2 === 0) {
+                          // White move
+                          const blackMove = moveHistory[index + 1];
+                          return (
+                            <div key={index} className={`grid grid-cols-[3rem_1fr_1fr] gap-2 text-sm py-1.5 ${index % 4 === 0 || index % 4 === 1 ? 'bg-gray-50 dark:bg-gray-800/50' : ''}`}>
+                              <span className="font-mono text-gray-500 dark:text-gray-400 text-center">{moveNumber}.</span>
+                              <div 
+                                className={`font-medium px-2 py-0.5 rounded ${move.check || move.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
+                              >
+                                {move.notation}
+                              </div>
+                              {blackMove && (
+                                <div 
+                                  className={`font-medium px-2 py-0.5 rounded ${blackMove.check || blackMove.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
+                                >
+                                  {blackMove.notation}
+                                </div>
+                              )}
+                              {!blackMove && <div>...</div>}
+                            </div>
+                          );
+                        }
+                        return null; // Skip black moves as they're handled with white moves
+                      }).filter(Boolean)}
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Chess Assistant - Fixed height issues */}
+              <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
+                <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                  <h3 className="text-sm font-medium flex items-center">
+                    <MessageCircle className="mr-1.5 h-4 w-4 text-blue-500" />
+                    Chess Assistant
+                  </h3>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {moveHistory.length > 0 ? 'Providing analysis' : 'Waiting for moves'}
+                  </div>
+                </div>
+                
+                <div className="overflow-auto p-3 max-h-[250px]">
+                  {chatMessages.length === 0 ? (
+                    <div className="flex items-center justify-center text-center py-6">
+                      <div className="text-gray-500 dark:text-gray-400">
+                        <p className="text-sm font-medium">No messages yet</p>
+                        <p className="text-xs mt-1">Ask questions or make moves to get analysis</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {chatMessages.map((message) => (
+                        <div 
+                          key={message.id}
+                          className={`p-2.5 rounded-lg flex items-start gap-2 ${
+                            message.type === 'info' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300' :
+                            message.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300' :
+                            message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' :
+                            message.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' :
+                            message.type === 'user' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
+                            message.type === 'response' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300' :
+                            'bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
+                          }`}
+                        >
+                          <div className="mt-0.5 flex-shrink-0">
+                            {message.type === 'info' && <Info className="w-4 h-4 text-blue-500" />}
+                            {message.type === 'warning' && <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                            {message.type === 'success' && <Check className="w-4 h-4 text-green-500" />}
+                            {message.type === 'error' && <X className="w-4 h-4 text-red-500" />}
+                            {message.type === 'tip' && <Lightbulb className="w-4 h-4 text-purple-500" />}
+                            {message.type === 'user' && <User className="w-4 h-4 text-gray-500" />}
+                            {message.type === 'response' && <MessageCircle className="w-4 h-4 text-blue-500" />}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm">{message.text}</p>
+                            <p className="text-xs mt-1 opacity-70">
+                              {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ask a chess question..."
+                    className="w-full rounded-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                        handleUserMessage(e.currentTarget.value.trim());
+                        e.currentTarget.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white transition-colors"
+                    aria-label="Send message"
+                    onClick={(e) => {
+                      const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                      if (input.value.trim()) {
+                        handleUserMessage(input.value.trim());
+                        input.value = '';
+                      }
+                    }}
+                  >
+                    <Send className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         
-        <div className="w-full md:w-72 flex flex-col gap-4">
-          {renderMoveHistory()}
-          
-          {/* Chess Assistant */}
-          <ChatBox 
-            messages={chatMessages}
-            maxHeight="16rem"
-            title="Chess Assistant"
-            onSendMessage={handleUserMessage}
-          />
+        {/* Add a disclaimer at the bottom of the page */}
+        <div className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
+          This is a demonstration project and not affiliated with Magnus Carlsen or Star Wars.
+          <br />
+          Chess pieces imagery used under Creative Commons license.
         </div>
       </div>
     </div>

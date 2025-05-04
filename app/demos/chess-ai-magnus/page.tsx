@@ -215,10 +215,10 @@ export default function ChessAIDemo() {
                         <Layers size={16} className="mr-1" />
                         3D
                       </button>
-                    </div>
-                  </div>
-                </div>
               </div>
+      </div>
+            </div>
+          </div>
 
               {use3DBoard ? (
                 <div className="chess-game-container" style={{ height: '600px' }}>
@@ -238,13 +238,13 @@ export default function ChessAIDemo() {
                       <Info size={16} />
                       The 3D board is currently in spectator mode. For full gameplay, please use the 2D view.
                     </p>
-                    <button 
+          <button 
                       onClick={() => setUse3DBoard(false)} 
                       className="mt-2 bg-yellow-200 dark:bg-yellow-800 px-3 py-1 rounded-md text-xs font-medium"
-                    >
+          >
                       Switch to 2D View for Gameplay
-                    </button>
-                  </div>
+          </button>
+        </div>
                 </div>
               ) : (
                 typeof ChessGame === 'function' ? (
@@ -274,13 +274,13 @@ export default function ChessAIDemo() {
               )}
               
               {!instructionsVisible && (
-                <button 
+                  <button 
                   onClick={() => setInstructionsVisible(true)}
                   className="mt-4 text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
-                >
+                  >
                   <Info className="w-4 h-4" />
                   Show game instructions
-                </button>
+                  </button>
               )}
             </div>
 
@@ -309,16 +309,16 @@ export default function ChessAIDemo() {
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">Type</p>
                         <p className="font-medium">Deep ResNet</p>
-                      </div>
+                  </div>
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">Size</p>
                         <p className="font-medium">32 Residual Blocks</p>
-                      </div>
+                </div>
                       <div>
                         <p className="text-gray-600 dark:text-gray-400">Parameters</p>
                         <p className="font-medium">~18 Million</p>
-                      </div>
-                      <div>
+              </div>
+                    <div>
                         <p className="text-gray-600 dark:text-gray-400">Format</p>
                         <p className="font-medium">ONNX</p>
                       </div>
@@ -331,7 +331,7 @@ export default function ChessAIDemo() {
                       <li className="flex items-start gap-2">
                         <div className="mt-0.5 min-w-[18px]">
                           <Zap className="w-[18px] h-[18px] text-amber-500" />
-                        </div>
+                  </div>
                         <p>Self-play reinforcement learning with Monte Carlo Tree Search</p>
                       </li>
                       <li className="flex items-start gap-2">
@@ -347,18 +347,18 @@ export default function ChessAIDemo() {
                         <p>Fine-tuned on GM games with positional style similar to Magnus Carlsen</p>
                       </li>
                     </ul>
-                  </div>
-
+                </div>
+                
                   <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
                     <h3 className="font-medium mb-2">Performance</h3>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-sm">ELO Rating</span>
                       <span className="font-bold">3000+</span>
-                    </div>
+                        </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
                       <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: "85%" }}></div>
+                      </div>
                     </div>
-                  </div>
                 </div>
 
                 {/* Simplified info when collapsed */}
@@ -367,8 +367,8 @@ export default function ChessAIDemo() {
                     <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">ResNet Architecture</div>
                     <div className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full">3000+ ELO</div>
                     <div className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full">ONNX Format</div>
-                  </div>
-                )}
+                    </div>
+                  )}
               </div>
 
               {/* AI Playing Style */}
@@ -383,32 +383,32 @@ export default function ChessAIDemo() {
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm">Positional Understanding</span>
                       <span className="text-sm font-medium">Excellent</span>
-                    </div>
+                      </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: "90%" }}></div>
                     </div>
-                  </div>
-
-                  <div>
+                </div>
+                
+                    <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm">Endgame Technique</span>
                       <span className="text-sm font-medium">Masterful</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: "95%" }}></div>
-                    </div>
                   </div>
+                </div>
 
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm">Opening Preparation</span>
                       <span className="text-sm font-medium">Very Strong</span>
-                    </div>
+                </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: "85%" }}></div>
-                    </div>
-                  </div>
-
+              </div>
+          </div>
+          
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm">Tactical Awareness</span>
@@ -417,9 +417,9 @@ export default function ChessAIDemo() {
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div className="bg-amber-500 h-2 rounded-full" style={{ width: "90%" }}></div>
                     </div>
-                  </div>
-                </div>
-
+              </div>
+            </div>
+            
                 <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <h3 className="font-medium mb-2 text-sm">Style Characteristics</h3>
                   <ul className="space-y-2 text-sm">
@@ -435,8 +435,8 @@ export default function ChessAIDemo() {
                       <Star className="w-4 h-4 text-amber-500 mt-0.5" />
                       <p>Precise technical endgame conversion</p>
                     </li>
-                  </ul>
-                </div>
+                </ul>
+              </div>
               </div>
 
               {/* Technical Implementation */}
@@ -456,7 +456,7 @@ export default function ChessAIDemo() {
                     <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">ONNX Runtime</div>
                     <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">Supabase</div>
                     <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">Three.js</div>
-                  </div>
+            </div>
 
                   <div className="mt-4 p-4 bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-800">
                     <h4 className="font-medium text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
@@ -472,7 +472,7 @@ export default function ChessAIDemo() {
                       <li>3D chess board with wooden texture</li>
                       <li>Dynamic lighting and shadows</li>
                       <li>Interactive pieces with hover effects</li>
-                      <li>Camera controls to view the board from any angle</li>
+                      <li>Camera controls to view from all angles</li>
                       <li>Visual highlighting for moves and checks</li>
                     </ul>
                     <p className="mt-2 text-gray-700 dark:text-gray-300">
@@ -481,8 +481,8 @@ export default function ChessAIDemo() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
-          </div>
 
           {/* Disclaimer */}
           <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">

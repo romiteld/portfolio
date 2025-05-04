@@ -73,7 +73,7 @@ The portfolio includes several interactive AI demos showcasing technical capabil
    - Generative AI: Creative content generation demos
 
 3. Gaming & Interactive:
-   - Chess AI Magnus: Advanced chess AI implementation. Initially using heuristics, the goal is to implement a stronger AI using a Reinforcement Learning model trained offline via self-play and MCTS, with inference served via a dedicated API.
+   - Chess AI Magnus: Advanced chess AI implementation with 2D and 3D visualization. Initially using heuristics, upgraded to a stronger AI using a Reinforcement Learning model trained offline via self-play and MCTS, with inference served via a dedicated API. Features traditional 2D board and interactive 3D board views powered by Three.js and React Three Fiber.
    - Interactive Agents: Multi-agent simulation and interaction
 
 Each demo features:

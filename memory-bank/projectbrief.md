@@ -7,11 +7,13 @@ This is a modern portfolio website built with Next.js 14, React 18, and TypeScri
 1. Modern, responsive web interface using Next.js and React
 2. TypeScript for type safety and better development experience
 3. Component-based architecture using Radix UI components
-4. Interactive 3D elements using Three.js
+4. Interactive 3D elements using Three.js and React Three Fiber
 5. Contact form functionality with email integration (SendGrid)
 6. Image optimization and management capabilities
 7. Admin interface for content management
 8. Analytics integration (Vercel Analytics)
+9. AI demos showcasing various technologies and capabilities
+10. 3D visualization for selected demos (e.g., Chess AI)
 
 ## Project Goals
 - Create a performant, accessible, and visually appealing portfolio website
@@ -19,6 +21,8 @@ This is a modern portfolio website built with Next.js 14, React 18, and TypeScri
 - Provide easy contact methods through a form
 - Enable content management through an admin interface
 - Implement modern web technologies and best practices
+- Demonstrate AI capabilities through interactive demos
+- Showcase 3D visualization skills with Three.js and React Three Fiber
 
 ## Technical Goals
 - Maintain type safety throughout the codebase
