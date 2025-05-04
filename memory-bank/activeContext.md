@@ -24,6 +24,9 @@ The current focus is on improving the 3D visualization components across the por
    - Created placeholder visualization for financial scene with basic 3D objects
    - Added proper typing for Three.js Group and other components
    - Used absolute imports for components to improve module resolution
+   - Created dedicated ClientOnly component to address "Cannot read properties of undefined (reading 'ReactCurrentBatchConfig')" error
+   - Implemented proper mounting check to ensure Three.js code only runs after React context is established
+   - Applied ClientOnly wrapper to Canvas3D component in financial assistant demo
 
 2. **Chess AI 3D Visualization**:
    - Implemented 3D chess board using React Three Fiber and Three.js

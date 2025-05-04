@@ -479,7 +479,8 @@ flowchart TD
     end
     
     subgraph Rendering
-        R3F --> Canvas[Canvas Element]
+        R3F --> ClientOnly[ClientOnly Component]
+        ClientOnly --> Canvas[Canvas Element]
         Canvas --> Scene[Scene Setup]
         Scene --> |Only on Client| ThreeJS[Three.js Rendering]
     end
@@ -502,25 +503,42 @@ flowchart TD
 
 3. **ClientOnly Wrapper Component**:
    ```typescript
-   // Helper component to ensure client-only rendering
-   const ClientOnly = ({ children }: { children: React.ReactNode }) => {
-     const [hasMounted, setHasMounted] = useState(false);
+   // ClientOnly component (app/components/ClientOnly.tsx)
+   'use client'
+   
+   import { useEffect, useState, ReactNode } from 'react'
+   
+   interface ClientOnlyProps {
+     children: ReactNode
+   }
+   
+   export default function ClientOnly({ children }: ClientOnlyProps) {
+     const [mounted, setMounted] = useState(false)
      
      useEffect(() => {
-       setHasMounted(true);
-     }, []);
+       setMounted(true)
+     }, [])
      
-     if (!hasMounted) {
-       return <div className="h-screen flex items-center justify-center">
-         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-       </div>;
+     if (!mounted) {
+       return null // or a loading placeholder
      }
      
-     return <>{children}</>;
-   };
+     return <>{children}</>
+   }
    ```
 
-4. **Isolated Three.js Dependencies**:
+4. **Using the ClientOnly Wrapper**:
+   ```jsx
+   <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
+     <ClientOnly>
+       <Canvas3D>
+         <FinancialSceneWrapper />
+       </Canvas3D>
+     </ClientOnly>
+   </div>
+   ```
+
+5. **Isolated Three.js Dependencies**:
    - Three.js imports and dependencies are kept in dedicated files
    - Dependencies are never imported directly in page components
    - Main UI state is managed separately from 3D rendering logic
@@ -567,9 +585,11 @@ To optimize Next.js for 3D rendering with React Three Fiber:
        <div className="relative">
          {/* 3D Scene Canvas */}
          <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
-           <Canvas3D>
-             <FinancialSceneWrapper />
-           </Canvas3D>
+           <ClientOnly>
+             <Canvas3D>
+               <FinancialSceneWrapper />
+             </Canvas3D>
+           </ClientOnly>
          </div>
          
          {/* Rest of the UI */}

@@ -1,11 +1,12 @@
 "use client"
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import * as THREE from 'three'
 import { useFrame } from '@react-three/fiber'
+import { Environment } from '@react-three/drei'
 
 // Simple placeholder component for the financial visualization
-export default function FinancialScene() {
+const FinancialScene = () => {
   const groupRef = React.useRef<THREE.Group>(null)
   
   // Simple animation
@@ -16,7 +17,7 @@ export default function FinancialScene() {
   })
   
   return (
-    <>
+    <Suspense fallback={null}>
       {/* Simple ambient light */}
       <ambientLight intensity={0.5} />
       <directionalLight position={[10, 10, 5]} intensity={0.5} />
@@ -49,6 +50,10 @@ export default function FinancialScene() {
           <meshStandardMaterial color="#11be69" />
         </mesh>
       </group>
-    </>
+      
+      <Environment preset="city" background={false} />
+    </Suspense>
   )
-} 
+}
+
+export default FinancialScene 

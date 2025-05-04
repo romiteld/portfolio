@@ -1,7 +1,7 @@
 "use client"
 
 import { Metadata } from "next"
-import { useRef, useEffect, useState, RefObject, useMemo, useCallback, Fragment } from "react"
+import { useRef, useEffect, useState, RefObject, useMemo, useCallback, Fragment, ReactNode } from "react"
 import FinancialChatWidget from "@/app/components/demos/FinancialChatWidget"
 import { motion, useAnimation, AnimatePresence } from "framer-motion"
 import gsap from "gsap"
@@ -13,19 +13,48 @@ import dynamic from 'next/dynamic';
 import UserPreferences, { UserPreferencesData } from './components/UserPreferences';
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
-import * as THREE from 'three'
-import { useThree, useFrame } from '@react-three/fiber'
-import { Environment, Text } from '@react-three/drei'
-import { Group } from "three"
-import ClientOnly from '@/app/components/ClientOnly'
+
+// Create an inline ClientOnly component to avoid import issues
+function ClientOnly({ children, fallback = null }: { children: ReactNode, fallback?: ReactNode }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    // Wait for next tick to ensure React has finished hydration
+    setTimeout(() => {
+      setMounted(true)
+    }, 0)
+    
+    return () => setMounted(false)
+  }, [])
+  
+  if (!mounted) {
+    return fallback !== null ? (
+      <>{fallback}</>
+    ) : null
+  }
+  
+  return <>{children}</>
+}
 
 // Dynamically import the chart components (client-side only)
 const StockChart = dynamic(() => import('./components/StockChart'), { ssr: false });
 const VolatilityChart = dynamic(() => import('./components/VolatilityChart'), { ssr: false });
 
-// Dynamically import the 3D components with no SSR
-const Canvas3D = dynamic(() => import('@react-three/fiber').then(mod => mod.Canvas), { ssr: false });
-const FinancialSceneWrapper = dynamic(() => import('@/app/demos/financial-assistant/components/FinancialScene'), { ssr: false });
+// Dynamically import the 3D components with no SSR and suspense
+const Canvas3D = dynamic(
+  () => import('@react-three/fiber').then(mod => mod.Canvas), 
+  { 
+    ssr: false,
+    loading: () => <div className="w-full h-full bg-gradient-to-b from-gray-900 to-gray-800"></div>
+  }
+);
+
+const FinancialSceneWrapper = dynamic(
+  () => import('@/app/demos/financial-assistant/components/FinancialScene'), 
+  { 
+    ssr: false 
+  }
+);
 
 // Type definitions for data
 interface Message {
@@ -1424,12 +1453,16 @@ export default function FinancialAssistantPage() {
   return (
     <>
       <div className="w-full min-h-screen bg-white dark:bg-[#0f172a] text-gray-900 dark:text-white relative overflow-hidden" ref={sceneRef}>
-        {/* 3D Scene Canvas */}
+        {/* 3D Scene Canvas with improved wrapping */}
         <div className="fixed inset-0 w-screen h-screen pointer-events-none z-0">
-          <ClientOnly>
-            <Canvas3D>
-              <FinancialSceneWrapper />
-            </Canvas3D>
+          <ClientOnly fallback={
+            <div className="w-full h-full bg-gradient-to-b from-blue-900/20 to-indigo-900/20"></div>
+          }>
+            {typeof window !== 'undefined' && (
+              <Canvas3D shadows dpr={[1, 2]} gl={{ alpha: true, antialias: true }}>
+                <FinancialSceneWrapper />
+              </Canvas3D>
+            )}
           </ClientOnly>
         </div>
         
