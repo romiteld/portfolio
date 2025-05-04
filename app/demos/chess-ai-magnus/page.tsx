@@ -24,7 +24,7 @@ export default function ChessAIDemo() {
   const [aiLevel, setAiLevel] = useState(5)
   const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w')
   const [modelInfoVisible, setModelInfoVisible] = useState(false)
-  const [instructionsVisible, setInstructionsVisible] = useState(true)
+  const [instructionsVisible, setInstructionsVisible] = useState(false)
   
   // For game state tracking (kept for future use)
   const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
@@ -107,93 +107,93 @@ export default function ChessAIDemo() {
         </div>
       </div>
       
-      <div className="container mx-auto pt-16 pb-12 px-4 md:px-8 lg:px-12">
+      <div className="container mx-auto pt-4 md:pt-16 pb-12 px-4 md:px-8 lg:px-12">
         <div className="max-w-[1440px] mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold text-center text-gray-900 dark:text-white mb-2 glow-text">
+          <h1 className="text-3xl md:text-6xl font-bold text-center text-gray-900 dark:text-white mb-1 md:mb-2 glow-text">
             Advanced Chess AI Engine
           </h1>
-          <p className="text-lg text-gray-700 dark:text-gray-300 text-center mb-8">
+          <p className="text-sm md:text-lg text-gray-700 dark:text-gray-300 text-center mb-2 md:mb-8">
             Play against a neural network chess engine trained with deep reinforcement learning techniques
           </p>
           
-          <div className="absolute top-4 right-4 md:top-8 md:right-8 flex space-x-2 z-10">
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
+          <div className="absolute top-2 md:top-4 right-2 md:right-4 md:top-8 md:right-8 flex space-x-2 z-10">
+            <div className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
               <span className="mr-1">✨</span> AI Chess Demo
             </div>
           </div>
 
-          {/* Game Instructions */}
+          {/* Game Instructions - conditionally shown with compact styling */}
           {instructionsVisible && (
-            <div className="mb-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 md:p-6 relative">
+            <div className="mb-2 md:mb-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 md:p-4 md:p-6 relative instruction-box">
               <button 
                 onClick={() => setInstructionsVisible(false)}
-                className="absolute top-3 right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                className="absolute top-1 right-1 md:top-3 md:right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
                 aria-label="Close instructions"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 md:h-5 md:w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </button>
               
-              <div className="flex items-start gap-3">
-                <Info className="text-blue-600 w-5 h-5 mt-1 flex-shrink-0" />
+              <div className="flex items-start gap-2 md:gap-3">
+                <Info className="text-blue-600 w-4 h-4 md:w-5 md:h-5 mt-1 flex-shrink-0" />
                 <div>
-                  <h2 className="font-bold text-blue-800 dark:text-blue-300 text-lg mb-2">How to Play</h2>
-                  <div className="grid gap-4 md:grid-cols-3 mt-4">
-                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-sm">1</span>
+                  <h2 className="font-bold text-blue-800 dark:text-blue-300 text-base md:text-lg mb-1 md:mb-2">How to Play</h2>
+                  <div className="grid gap-2 md:gap-4 md:grid-cols-3 mt-2 md:mt-4">
+                    <div className="bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-sm">
+                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-1 md:mb-2 flex items-center gap-1 md:gap-2 text-sm">
+                        <span className="w-5 h-5 md:w-6 md:h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-xs md:text-sm">1</span>
                         Game Controls
                       </h3>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <RotateCcw className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <RotateCcw className="w-3 h-3 md:w-4 md:h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                           <span>Use <strong>New Game</strong> to reset the board</span>
                         </li>
-                        <li className="flex items-start gap-2">
-                          <Undo className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <Undo className="w-3 h-3 md:w-4 md:h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                           <span>Use <strong>Undo</strong> to take back your last move</span>
                         </li>
-                        <li className="flex items-start gap-2">
-                          <AlertCircle className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <AlertCircle className="w-3 h-3 md:w-4 md:h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                           <span>The game status is shown in the controls bar</span>
                         </li>
                       </ul>
                     </div>
                     
-                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-sm">2</span>
+                    <div className="bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-sm">
+                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-1 md:mb-2 flex items-center gap-1 md:gap-2 text-sm">
+                        <span className="w-5 h-5 md:w-6 md:h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-xs md:text-sm">2</span>
                         Visual Feedback
                       </h3>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <div className="w-4 h-4 bg-blue-500/40 rounded-full mt-0.5 flex-shrink-0"></div>
+                      <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-500/40 rounded-full mt-0.5 flex-shrink-0"></div>
                           <span>Blue dots show legal move destinations</span>
                         </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-4 h-4 border-2 border-red-500 rounded-full mt-0.5 flex-shrink-0"></div>
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <div className="w-3 h-3 md:w-4 md:h-4 border-2 border-red-500 rounded-full mt-0.5 flex-shrink-0"></div>
                           <span>Red highlight shows king in check</span>
                         </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-4 h-4 bg-blue-300/50 mt-0.5 flex-shrink-0"></div>
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <div className="w-3 h-3 md:w-4 md:h-4 bg-blue-300/50 mt-0.5 flex-shrink-0"></div>
                           <span>Blue highlights show the last move played</span>
                         </li>
                       </ul>
                     </div>
                     
-                    <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm">
-                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-2 flex items-center gap-2">
-                        <span className="w-6 h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-sm">3</span>
+                    <div className="bg-white dark:bg-gray-800 p-2 md:p-3 rounded-lg shadow-sm">
+                      <h3 className="font-medium text-blue-700 dark:text-blue-400 mb-1 md:mb-2 flex items-center gap-1 md:gap-2 text-sm">
+                        <span className="w-5 h-5 md:w-6 md:h-6 bg-blue-100 dark:bg-blue-800 rounded-full inline-flex items-center justify-center text-blue-600 dark:text-blue-300 text-xs md:text-sm">3</span>
                         Game Settings
                       </h3>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start gap-2">
-                          <Cpu className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <ul className="space-y-1 md:space-y-2 text-xs md:text-sm">
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <Cpu className="w-3 h-3 md:w-4 md:h-4 text-gray-500 mt-0.5 flex-shrink-0" />
                           <span>Adjust <strong>AI Strength</strong> to change difficulty</span>
                         </li>
-                        <li className="flex items-start gap-2">
-                          <div className="w-4 h-4 bg-white border border-gray-300 rounded-sm mt-0.5 flex-shrink-0"></div>
+                        <li className="flex items-start gap-1 md:gap-2">
+                          <div className="w-3 h-3 md:w-4 md:h-4 bg-white border border-gray-300 rounded-sm mt-0.5 flex-shrink-0"></div>
                           <span>Choose to play as <strong>White</strong> or <strong>Black</strong></span>
                         </li>
                       </ul>
@@ -204,8 +204,8 @@ export default function ChessAIDemo() {
             </div>
           )}
 
-          {/* Main content area */}
-          <div className="flex flex-col lg:flex-row gap-8 min-h-[650px] flex-col-mobile">
+          {/* Main content area - already has flex-col-mobile */}
+          <div className="flex flex-col lg:flex-row gap-4 md:gap-8 min-h-[650px] flex-col-mobile">
             {/* Chess Game */}
             <div className="lg:w-2/3 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 p-6">
               <div className="flex flex-wrap items-center justify-between mb-6">
@@ -262,16 +262,6 @@ export default function ChessAIDemo() {
                 <div className="p-4 bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 rounded-md">
                   Error loading chess game component. Please check the console for errors.
                 </div>
-              )}
-              
-              {!instructionsVisible && (
-                <button 
-                  onClick={() => setInstructionsVisible(true)}
-                  className="mt-4 text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
-                >
-                  <Info className="w-4 h-4" />
-                  Show game instructions
-                </button>
               )}
             </div>
 
@@ -359,6 +349,17 @@ export default function ChessAIDemo() {
                     <div className="px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full">3000+ ELO</div>
                     <div className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full">ONNX Format</div>
                   </div>
+                )}
+
+                {!instructionsVisible && (
+                  <button 
+                    onClick={() => setInstructionsVisible(true)}
+                    className="mt-2 text-xs md:text-sm text-blue-600 dark:text-blue-400 flex items-center gap-1 hover:underline"
+                  >
+                    <Info className="w-3 h-3 md:w-4 md:h-4" />
+                    <span className="hidden md:inline">Show game instructions</span>
+                    <span className="md:hidden">How to play</span>
+                  </button>
                 )}
               </div>
 

@@ -571,9 +571,32 @@
 }
 
 @media (max-width: 767px) {
-  /* Reduce empty space at top */
+  /* Reduce empty space at top - more aggressive */
   .container {
-    padding-top: 4px !important;
+    padding-top: 0 !important;
+  }
+  
+  /* Reduce top margin on title elements */
+  h1.text-4xl, h1.text-6xl {
+    margin-bottom: 0.5rem !important;
+    margin-top: 0.5rem !important;
+  }
+  
+  /* Reduce top padding on instruction boxes */
+  .mb-8.bg-blue-50 {
+    margin-bottom: 0.75rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  
+  /* Reduce paragraph spacing below title */
+  .text-lg.text-gray-700, .text-lg.text-gray-300 {
+    margin-bottom: 0.5rem !important;
+  }
+  
+  /* Adjust the top badge position */
+  .absolute.top-4 {
+    top: 0.5rem !important;
   }
   
   .flex-col-mobile {
@@ -637,11 +660,35 @@
 }
 
 @media (max-width: 480px) {
-  /* Minimal spacing for small phones */
+  /* Remove all top spacing for small phones */
   .container {
     padding-top: 0 !important;
     padding-left: 8px !important;
     padding-right: 8px !important;
+  }
+  
+  /* Aggressively reduce title and description spacing */
+  h1.text-4xl, h1.text-6xl {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+    font-size: 1.5rem !important;
+  }
+  
+  /* Hide or compact description on very small screens */
+  .text-lg.text-gray-700, .text-lg.text-gray-300 {
+    margin-bottom: 0.25rem !important;
+    font-size: 0.875rem !important;
+  }
+  
+  /* Make instruction box much more compact */
+  .mb-8.bg-blue-50 {
+    margin-bottom: 0.5rem !important;
+    padding: 0.5rem !important;
+  }
+  
+  /* Adjust game controls spacing */
+  .flex.items-center.justify-between.mb-6 {
+    margin-bottom: 0.5rem !important;
   }
   
   .board-container {
