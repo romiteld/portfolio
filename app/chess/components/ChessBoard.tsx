@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeftCircle } from 'lucide-react'
 
@@ -47,6 +47,15 @@ const ChessBoard = ({
   useEffect(() => {
     setSelectedSquare(null)
   }, [board])
+  
+  // Memoize handlers to prevent infinite re-renders
+  const handleHoverStart = useCallback((row: number, col: number) => {
+    setHoveredSquare({ row, col });
+  }, []);
+  
+  const handleHoverEnd = useCallback(() => {
+    setHoveredSquare(null);
+  }, []);
   
   // Map of legal moves for the selected piece for quick lookup
   const legalMovesMap = useMemo(() => {
@@ -143,8 +152,8 @@ const ChessBoard = ({
             key={`${r}-${c}`}
             className={squareClasses}
             onClick={() => handleSquareClick(actualRow, actualCol)}
-            onMouseEnter={() => setHoveredSquare({ row: actualRow, col: actualCol })}
-            onMouseLeave={() => setHoveredSquare(null)}
+            onMouseEnter={() => handleHoverStart(actualRow, actualCol)}
+            onMouseLeave={handleHoverEnd}
           >
             {/* Piece */}
             {piece && (

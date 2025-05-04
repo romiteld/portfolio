@@ -38,7 +38,8 @@ const nextConfig = {
   },
   experimental: {
     webpackBuildWorker: true,
-    optimizePackageImports: ['lucide-react']
+    optimizePackageImports: ['lucide-react'],
+    serverExternalPackages: ['three', '@react-three/fiber', '@react-three/drei']
   },
   output: 'standalone',
   staticPageGenerationTimeout: 120,

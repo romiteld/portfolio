@@ -5,9 +5,6 @@ import ChessBoard, { Board, Move, PieceColor, PieceType, Piece, CastlingRights }
 import { Clock, RotateCcw, Settings, Crown, Share, FileCog, Undo, Medal, Loader2, ChevronDown, ChevronUp, Info, TrendingUp, Target, Shield, Zap, Code, MessageCircle, AlertTriangle, Check, X, Lightbulb, User, Send } from 'lucide-react'
 import ChatBox, { ChatMessage } from './ChatBox'
 import * as chessAnalysis from '../utils/chessAnalysis'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { useGLTF, OrbitControls, Stars } from '@react-three/drei'
-import * as THREE from 'three'
 
 // Constants
 const INITIAL_BOARD: Board = [
@@ -79,216 +76,6 @@ const findKing = (board: Board, color: PieceColor): { row: number, col: number }
   return null
 }
 
-// Death Star component
-const DeathStar = () => {
-  const deathStarRef = useRef<THREE.Mesh>(null)
-  
-  useFrame(({clock}) => {
-    if (deathStarRef.current) {
-      // Slow rotation
-      deathStarRef.current.rotation.y = clock.getElapsedTime() * 0.1
-    }
-  })
-  
-  return (
-    <mesh ref={deathStarRef} position={[0, 0, 0]}>
-      <sphereGeometry args={[2, 32, 32]} />
-      <meshStandardMaterial color="#444444" metalness={0.7} roughness={0.3} emissive="#111111" />
-      {/* Add the equatorial trench */}
-      <mesh position={[0, 0, 0]} rotation={[Math.PI/2, 0, 0]}>
-        <torusGeometry args={[2.05, 0.15, 16, 100]} />
-        <meshStandardMaterial color="#333333" emissive="#222222" />
-      </mesh>
-      {/* Add the super laser */}
-      <mesh position={[0, -1.8, 0.9]} rotation={[Math.PI/8, 0, 0]}>
-        <cylinderGeometry args={[0.5, 0.5, 0.2, 32]} />
-        <meshStandardMaterial color="#222222" emissive="#333333" />
-      </mesh>
-      {/* Add green laser effect */}
-      <pointLight position={[0, -1.8, 0.9]} color="#00ff00" intensity={2} distance={5} />
-    </mesh>
-  )
-}
-
-// X-Wing component
-const XWing = ({ index }: { index: number }) => {
-  const xWingRef = useRef<THREE.Group>(null)
-  const speed = 0.2 + Math.random() * 1
-  
-  // Create more varied flight paths across the entire scene
-  const startPosition = useMemo(() => {
-    // Random position from outer edge
-    const dist = 50 + Math.random() * 30
-    const angle = Math.random() * Math.PI * 2
-    const heightVar = Math.random() * 40 - 20
-    return [
-      Math.cos(angle) * dist,
-      heightVar,
-      Math.sin(angle) * dist
-    ]
-  }, [])
-  
-  const endPosition = useMemo(() => {
-    // Either fly toward Death Star or another random point
-    if (Math.random() > 0.6) {
-      // Fly near Death Star
-      const offset = (Math.random() - 0.5) * 10
-      return [20 + offset, (Math.random() - 0.5) * 10, -30 + offset]
-    } else {
-      // Random flight path across the scene
-      const dist = 50 + Math.random() * 30
-      const angle = Math.random() * Math.PI * 2
-      const heightVar = Math.random() * 40 - 20
-      return [
-        Math.cos(angle) * dist,
-        heightVar,
-        Math.sin(angle) * dist
-      ]
-    }
-  }, [])
-  
-  const [currentPosition, setCurrentPosition] = useState(startPosition)
-  const [targetPosition, setTargetPosition] = useState(endPosition)
-  const [leaving, setLeaving] = useState(false)
-  
-  useFrame(({ clock }) => {
-    if (xWingRef.current) {
-      // Move toward target
-      const newPos = currentPosition.map((coord, i) => {
-        return coord + (targetPosition[i] - coord) * 0.005 * speed
-      }) as [number, number, number]
-      
-      setCurrentPosition(newPos)
-      xWingRef.current.position.set(newPos[0], newPos[1], newPos[2])
-      
-      // Look at next position
-      const direction = new THREE.Vector3(
-        targetPosition[0] - newPos[0],
-        targetPosition[1] - newPos[1],
-        targetPosition[2] - newPos[2]
-      ).normalize()
-      
-      const lookAt = new THREE.Vector3(
-        newPos[0] + direction.x,
-        newPos[1] + direction.y,
-        newPos[2] + direction.z
-      )
-      
-      xWingRef.current.lookAt(lookAt)
-      
-      // Check if we're close to target
-      const distance = Math.sqrt(
-        Math.pow(newPos[0] - targetPosition[0], 2) +
-        Math.pow(newPos[1] - targetPosition[1], 2) +
-        Math.pow(newPos[2] - targetPosition[2], 2)
-      )
-      
-      if (distance < 2) {
-        // Pick a new random destination
-        const dist = 50 + Math.random() * 30
-        const angle = Math.random() * Math.PI * 2
-        const heightVar = Math.random() * 40 - 20
-        setTargetPosition([
-          Math.cos(angle) * dist,
-          heightVar,
-          Math.sin(angle) * dist
-        ])
-        
-        // After several path changes, reset to a new X-wing to avoid stuttering
-        if (Math.random() > 0.7) {
-          const farDist = 80 + Math.random() * 30
-          const farAngle = Math.random() * Math.PI * 2
-          setCurrentPosition([
-            Math.cos(farAngle) * farDist,
-            (Math.random() - 0.5) * 40,
-            Math.sin(farAngle) * farDist
-          ])
-        }
-      }
-    }
-  })
-  
-  // X-wing appearance remains the same
-  return (
-    <group ref={xWingRef} scale={[0.2, 0.2, 0.2]}>
-      {/* X-Wing body */}
-      <mesh>
-        <boxGeometry args={[1, 0.3, 3]} />
-        <meshStandardMaterial color="#aaaaaa" metalness={0.7} roughness={0.3} />
-      </mesh>
-      {/* Wings */}
-      <mesh position={[1, 0, 0]}>
-        <boxGeometry args={[2, 0.1, 1.5]} />
-        <meshStandardMaterial color="#cc0000" emissive="#330000" />
-      </mesh>
-      <mesh position={[-1, 0, 0]}>
-        <boxGeometry args={[2, 0.1, 1.5]} />
-        <meshStandardMaterial color="#cc0000" emissive="#330000" />
-      </mesh>
-      {/* Engines with glowing effect */}
-      <mesh position={[1.5, 0, -0.5]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.2, 0.2, 1, 16]} />
-        <meshStandardMaterial color="#333333" />
-      </mesh>
-      <pointLight position={[1.5, 0, -1]} color="#ff6600" intensity={0.5} distance={2} />
-      
-      <mesh position={[-1.5, 0, -0.5]} rotation={[0, 0, 0]}>
-        <cylinderGeometry args={[0.2, 0.2, 1, 16]} />
-        <meshStandardMaterial color="#333333" />
-      </mesh>
-      <pointLight position={[-1.5, 0, -1]} color="#ff6600" intensity={0.5} distance={2} />
-      
-      {/* Cockpit */}
-      <mesh position={[0, 0.3, 0.5]}>
-        <sphereGeometry args={[0.3, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-        <meshStandardMaterial color="#88ccff" transparent opacity={0.7} emissive="#003366" />
-      </mesh>
-    </group>
-  )
-}
-
-// Scene component
-const SpaceScene = () => {
-  return (
-    <Canvas 
-      camera={{ position: [5, 2, 15], fov: 60 }}
-      style={{ 
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: -1,
-        background: 'linear-gradient(to bottom, #000000, #050520)'
-      }}
-    >
-      {/* Add more light sources for better visibility */}
-      <ambientLight intensity={0.4} />
-      <pointLight position={[10, 10, 10]} intensity={1.5} />
-      <pointLight position={[-10, -10, -10]} intensity={0.5} color="#6666ff" />
-      <spotLight 
-        position={[5, 5, 5]} 
-        angle={0.3} 
-        penumbra={0.8} 
-        intensity={2} 
-        castShadow 
-        color="#ffffff"
-      />
-      
-      {/* Position Death Star to the side */}
-      <group position={[20, 0, -30]}>
-        <DeathStar />
-      </group>
-      
-      {Array.from({ length: 15 }).map((_, index) => (
-        <XWing key={index} index={index} />
-      ))}
-      <Stars radius={100} depth={50} count={5000} factor={4} saturation={0.5} fade speed={1.5} />
-      <OrbitControls enableZoom={false} enablePan={false} autoRotate autoRotateSpeed={0.1} />
-    </Canvas>
-  )
-}
-
 // Main component
 const ChessGame = ({
   playerColor = 'w',
@@ -307,6 +94,15 @@ const ChessGame = ({
   const [gamePhase, setGamePhase] = useState<GamePhase>('opening')
   const [thinking, setThinking] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  
+  // Create a unique message ID counter
+  const messageIdCounter = useRef(0);
+  
+  // Utility function for generating unique message IDs
+  const getUniqueMessageId = (prefix: string) => {
+    messageIdCounter.current += 1;
+    return `${prefix}-${Date.now()}-${messageIdCounter.current}`;
+  };
   
   // Game settings
   const [aiPersonality, setAiPersonality] = useState<AIPersonality>(DEFAULT_AI_PERSONALITY)
@@ -679,7 +475,7 @@ const ChessGame = ({
           if (kingPos) {
             const explanation = chessAnalysis.getCheckmateExplanation(newBoard, kingPos, nextTurn)
             setChatMessages(prev => [...prev, {
-              id: `checkmate-${Date.now()}`,
+              id: getUniqueMessageId('checkmate'),
               text: explanation,
               type: 'error',
               timestamp: new Date()
@@ -688,7 +484,7 @@ const ChessGame = ({
         } else {
           // Player delivered checkmate
           setChatMessages(prev => [...prev, {
-            id: `checkmate-win-${Date.now()}`,
+            id: getUniqueMessageId('checkmate-win'),
             text: "Congratulations! You've delivered checkmate and won the game.",
             type: 'success',
             timestamp: new Date()
@@ -706,7 +502,7 @@ const ChessGame = ({
       setMessage("Stalemate! Game drawn.")
       
       setChatMessages(prev => [...prev, {
-        id: `stalemate-${Date.now()}`,
+        id: getUniqueMessageId('stalemate'),
         text: "Stalemate! The game is a draw because the player to move has no legal moves but is not in check.",
         type: 'info',
         timestamp: new Date()
@@ -757,7 +553,7 @@ const ChessGame = ({
       // Add analysis message after a slight delay to make it feel more natural
       setTimeout(() => {
         setChatMessages(prev => [...prev, {
-          id: `move-${Date.now()}`,
+          id: getUniqueMessageId('move'),
           text: analysis.text,
           type: analysis.type,
           timestamp: new Date()
@@ -814,7 +610,7 @@ const ChessGame = ({
                   const explanation = chessAnalysis.getCheckExplanation(board, kingPos, color, lastMove)
                   
                   setChatMessages(prev => [...prev, {
-                    id: `check-${Date.now()}`,
+                    id: getUniqueMessageId('check'),
                     text: explanation,
                     type: 'warning',
                     timestamp: new Date()
@@ -834,7 +630,7 @@ const ChessGame = ({
               const explanation = chessAnalysis.getCheckExplanation(board, kingPos, color, lastMove)
               
               setChatMessages(prev => [...prev, {
-                id: `check-${Date.now()}`,
+                id: getUniqueMessageId('check'),
                 text: explanation,
                 type: 'warning',
                 timestamp: new Date()
@@ -1606,7 +1402,7 @@ const ChessGame = ({
       const tipText = chessAnalysis.getGamePhaseTips(gamePhase, moveHistory.length)
       
       setChatMessages(prev => [...prev, {
-        id: `tip-${Date.now()}`,
+        id: getUniqueMessageId('tip'),
         text: tipText,
         type: 'tip',
         timestamp: new Date()
@@ -1618,7 +1414,7 @@ const ChessGame = ({
   const handleUserMessage = useCallback((message: string) => {
     // First add the user's message to the chat
     setChatMessages(prev => [...prev, {
-      id: `user-${Date.now()}`,
+      id: getUniqueMessageId('user'),
       text: message,
       type: 'user',
       timestamp: new Date()
@@ -1875,7 +1671,7 @@ const ChessGame = ({
     // Add the response to the chat messages after a short delay
     setTimeout(() => {
       setChatMessages(prev => [...prev, {
-        id: `response-${Date.now()}`,
+        id: getUniqueMessageId('response'),
         text: response,
         type: 'response',
         timestamp: new Date()
@@ -1919,8 +1715,7 @@ const ChessGame = ({
   
   return (
     <div className={`relative ${className}`}>
-      {/* Space background */}
-      <SpaceScene />
+      {/* Chess board content */}
       
       {/* Content with slight transparency for readability */}
       <div className="relative z-10">

@@ -694,6 +694,11 @@ const selectBestMoveBackend = (currentBoard: Board, color: PieceColor, gamePhase
 
     let chosenMove: Move = legalMoves[0] // Default
 
+    // Check if we're using a high AI level (grandmaster)
+    const isGrandmasterLevel = aiPersonality.positionality >= 0.95;
+
+    // Perform deeper evaluation for grandmaster level
+    // This simulates multi-ply thinking
     const evaluatedMoves = legalMoves.map(move => {
         const testBoard = JSON.parse(JSON.stringify(currentBoard))
         const piece = testBoard[move.from.row][move.from.col]
@@ -712,7 +717,54 @@ const selectBestMoveBackend = (currentBoard: Board, color: PieceColor, gamePhase
             testBoard[move.from.row][enPassantTarget.col] = null;
         }
         
-        const score = evaluateBoardUtil(testBoard, gamePhase, aiPersonality) // Use the enhanced evaluateBoardUtil
+        // At Grandmaster level, add a simple 1-ply lookahead for deeper evaluation
+        let score;
+        if (isGrandmasterLevel) {
+            // First evaluate this position
+            const initialScore = evaluateBoardUtil(testBoard, gamePhase, aiPersonality);
+            
+            // Then look ahead at opponent's best response
+            const opponentColor = color === 'w' ? 'b' : 'w';
+            const opponentMoves = getFilteredLegalMoves(testBoard, opponentColor, currentCastlingRights, null);
+            
+            if (opponentMoves.length > 0) {
+                // Find opponent's best move
+                let bestOpponentScore = color === 'w' ? Infinity : -Infinity;
+                
+                for (const opMove of opponentMoves) {
+                    const opTestBoard = JSON.parse(JSON.stringify(testBoard));
+                    const opPiece = opTestBoard[opMove.from.row][opMove.from.col];
+                    if (!opPiece) continue;
+                    
+                    // Apply opponent move
+                    opTestBoard[opMove.to.row][opMove.to.col] = opPiece;
+                    opTestBoard[opMove.from.row][opMove.from.col] = null;
+                    
+                    // Evaluate position after opponent's move
+                    const opScore = evaluateBoardUtil(opTestBoard, gamePhase, aiPersonality);
+                    
+                    // Update best opponent score
+                    if (color === 'w') {
+                        bestOpponentScore = Math.min(bestOpponentScore, opScore);
+                    } else {
+                        bestOpponentScore = Math.max(bestOpponentScore, opScore);
+                    }
+                }
+                
+                // Final score is current position evaluation minus opponent's best response
+                // This encourages moves that lead to positions where opponent's best move is still bad
+                score = initialScore * 0.7 + bestOpponentScore * 0.3;
+            } else {
+                // If opponent has no moves, this is checkmate or stalemate
+                score = opponentMoves.length === 0 && isCheck(testBoard, opponentColor) ? 
+                    (color === 'w' ? 100 : -100) : // Checkmate
+                    0; // Stalemate
+            }
+        } else {
+            // Normal evaluation for non-grandmaster levels
+            score = evaluateBoardUtil(testBoard, gamePhase, aiPersonality);
+        }
+        
         return { move, score }
     })
 
@@ -721,7 +773,20 @@ const selectBestMoveBackend = (currentBoard: Board, color: PieceColor, gamePhase
     chosenMove = evaluatedMoves[0].move
     let bestScore = evaluatedMoves[0].score
 
-    // *** Enhanced Style Adjustment ***
+    // For Grandmaster level, much less randomness in move selection
+    if (isGrandmasterLevel) {
+        // Almost always pick the best move
+        if (Math.random() < 0.95) {
+            return chosenMove;
+        }
+        
+        // Occasionally pick from top 2 moves for some minimal variety
+        const topMoves = evaluatedMoves.slice(0, Math.min(2, evaluatedMoves.length));
+        chosenMove = topMoves[Math.floor(Math.random() * topMoves.length)].move;
+        return chosenMove;
+    }
+
+    // Standard style adjustment for non-Grandmaster levels
     const potentialMoves = evaluatedMoves.slice(0, Math.min(5, evaluatedMoves.length)) // Consider top 5 moves
     const scoreThreshold = 0.6 // Slightly wider threshold to allow for style
     let bestStyleMove: Move | null = null;
@@ -746,18 +811,6 @@ const selectBestMoveBackend = (currentBoard: Board, color: PieceColor, gamePhase
                 stylePoints += magnusStylePatterns.piecePreferences.centralControl * (gamePhase === 'middlegame' ? 0.3 : 0.2);
             }
             
-            // Positional Play (primarily middlegame)
-            if (gamePhase === 'middlegame') {
-                // Example: Small bonus for improving piece position (needs better definition)
-                 // stylePoints += (magnusStylePatterns.middleGamePreferences?.positional ?? 0.8) * 0.1;
-                 // Example: Bonus for moves that increase control over key squares (complex to calculate here)
-            }
-            
-            // Endgame Skill (applied as a general preference if score is close)
-             if (gamePhase === 'endgame' && stylePoints < 0.1) { // Small bias if no other strong style applies
-                // stylePoints += (magnusStylePatterns.middleGamePreferences?.endgameSkill ?? 0.9) * 0.05;
-             }
-
             // Track the move with the highest style points within the threshold
             if (stylePoints > maxStylePoints) {
                 maxStylePoints = stylePoints;
@@ -803,6 +856,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required game state parameters' }, { status: 400 })
     }
 
+    // For Grandmaster level, use enhanced evaluation
+    const isGrandmasterLevel = aiLevel >= 10;
+
     // Get active model from Supabase
     const { data: modelData, error: modelError } = await supabase
       .from('chess_models')
@@ -839,7 +895,7 @@ export async function POST(request: Request) {
           
           // Choose move based on AI level
           // Level 10 always chooses best move, lower levels may choose suboptimal moves
-          const moveIndex = aiLevel >= 10 ? 0 : Math.min(
+          const moveIndex = isGrandmasterLevel ? 0 : Math.min(
             Math.floor(Math.random() * (11 - aiLevel) * moveList.length / 10),
             moveList.length - 1
           )
@@ -887,9 +943,40 @@ export async function POST(request: Request) {
         }, { status: 200 })
       }
       
+      // For Grandmaster level, enhance the AI personality to make stronger moves
+      let enhancedPersonality = { ...aiPersonality };
+      if (isGrandmasterLevel) {
+        // At Grandmaster level, optimize the AI personality for strong play
+        enhancedPersonality = {
+          ...aiPersonality,
+          // Increase key attributes that make play stronger
+          aggressiveness: Math.max(0.8, aiPersonality.aggressiveness || 0.7),
+          defensiveness: Math.max(0.85, aiPersonality.defensiveness || 0.6),
+          mobility: Math.max(0.9, aiPersonality.mobility || 0.8),
+          positionality: Math.max(0.95, aiPersonality.positionality || 0.9),
+          riskTaking: 0.4, // Lower risk taking for more solid play
+          opening: 'mainline'
+        };
+        
+        // For endgame, adjust to emphasize technical conversion skills
+        if (gamePhase === 'endgame') {
+          enhancedPersonality.aggressiveness = Math.min(1.0, enhancedPersonality.aggressiveness + 0.1);
+          enhancedPersonality.positionality = Math.min(1.0, enhancedPersonality.positionality + 0.05);
+          enhancedPersonality.mobility = Math.min(1.0, enhancedPersonality.mobility + 0.05);
+        }
+      }
+      
       // Use the neural network move selector
       const moveHistoryString = moveHistory.map(m => m.notation).join(' ')
-      const selectedMove = selectBestMoveBackend(board, turn, gamePhase, aiPersonality, castlingRights, moveHistoryString, enPassantTargetSquare)
+      const selectedMove = selectBestMoveBackend(
+        board, 
+        turn, 
+        gamePhase, 
+        isGrandmasterLevel ? enhancedPersonality : aiPersonality, 
+        castlingRights, 
+        moveHistoryString, 
+        enPassantTargetSquare
+      )
       
       // Add a simulated thinking time based on AI level and game phase
       // Higher level AI "thinks" longer
@@ -901,7 +988,8 @@ export async function POST(request: Request) {
       
       if (selectedMove) {
         // Add AI level adjustment - at lower levels, occasionally make suboptimal moves
-        if (aiLevel < 10 && Math.random() > aiLevel / 10) {
+        // At Grandmaster level (10), NEVER make suboptimal moves
+        if (!isGrandmasterLevel && Math.random() > aiLevel / 10) {
           const randomMoveIndex = Math.floor(Math.random() * legalMoves.length)
           return NextResponse.json({ 
             move: legalMoves[randomMoveIndex], 
