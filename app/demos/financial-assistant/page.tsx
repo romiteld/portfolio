@@ -555,15 +555,20 @@ export default function FinancialAssistantPage() {
 
   const handleNewsItemClick = (item: NewsItem) => {
     console.log('News item clicked:', item.title);
-    setSelectedNewsItem(item);
-    setIsModalOpen(true);
-    console.log('Set modal open to true');
+    // Force a complete reset of the modal state before opening a new one
+    setIsModalOpen(false);
+    
+    // Use a longer timeout to ensure the modal fully closes before reopening
+    setTimeout(() => {
+      setSelectedNewsItem(item);
+      setIsModalOpen(true);
+    }, 100); // Increase timeout to ensure complete reset
   };
 
   const closeModal = () => {
     console.log('Closing modal');
     setIsModalOpen(false);
-    // Delay clearing the selected item to allow for transition
+    // Completely reset the modal after closing
     setTimeout(() => {
       setSelectedNewsItem(null);
     }, 300);
@@ -1180,26 +1185,31 @@ export default function FinancialAssistantPage() {
                   
                   {selectedNewsItem && (
                     <div>
-                      <div className="flex items-start gap-2 mb-4">
-                        <div className={`px-2 py-1 rounded text-xs font-medium
-                          ${selectedNewsItem?.category === 'Markets' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 
-                           selectedNewsItem?.category === 'Economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
-                           'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
-                          {selectedNewsItem?.category}
+                      <div className="mb-4">
+                        {/* Category and timestamp in first row */}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className={`px-2 py-1 rounded text-xs font-medium
+                            ${selectedNewsItem?.category === 'Markets' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 
+                              selectedNewsItem?.category === 'Economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                              'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}`}>
+                            {selectedNewsItem?.category}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {selectedNewsItem?.timestamp}
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {selectedNewsItem?.timestamp}
-                        </div>
+                        
+                        {/* Source information in its own row with plenty of space */}
                         {selectedNewsItem?.source && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
-                            Source: {selectedNewsItem?.source}
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                            <span className="font-medium">Source:</span> {selectedNewsItem?.source}
                           </div>
                         )}
                       </div>
                       
-                      <Dialog.Title as="h3" className="text-xl font-semibold leading-6 text-gray-900 dark:text-white mb-4">
+                      <h3 className="text-xl font-semibold leading-6 text-gray-900 dark:text-white mb-4">
                         {selectedNewsItem?.title}
-                      </Dialog.Title>
+                      </h3>
                       
                       <div className="mt-2 space-y-4">
                         <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed whitespace-pre-line">
