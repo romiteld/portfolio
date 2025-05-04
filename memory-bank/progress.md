@@ -17,6 +17,7 @@
 13. Git repository optimization with large files excluded from tracking
 14. Proper server/client rendering pattern for React Three Fiber components
 15. Successful Vercel deployment with fixed dependency issues (@headlessui/react)
+16. Enhanced user experience in Financial Assistant with improved news article modal
 
 - **Core Portfolio Website**
   - Home page with projects showcase
@@ -53,6 +54,8 @@
   - Responsive 3D visualization
   - Market volatility analysis
   - Example news and insights section
+  - Enhanced news article modal with improved source attribution
+  - Fixed issue with modal state handling when opening multiple articles
 
 ## Current Status
 
@@ -78,6 +81,8 @@
    - Implemented proper mounting checks for 3D components
    - Applied ClientOnly component to wrap Canvas3D in financial assistant demo
    - Fixed Vercel build error by pinning @headlessui/react to version 1.4.3
+   - Fixed news article modal in Financial Assistant to properly handle multiple articles
+   - Improved news source attribution display to prevent text cutoff
 
 2. **Backend**:
    - Next.js API routes for chess move generation
