@@ -719,51 +719,90 @@ To optimize Next.js for 3D rendering with React Three Fiber:
 
 ## Responsive Design Patterns
 
-1. **Mobile-First Approach**
-   - Base styles for mobile devices
-   - Media queries for larger screens
-   - Use Tailwind's responsive prefixes (sm:, md:, lg:, xl:)
-   - Test across multiple device sizes
+```mermaid
+graph TD
+    A[Responsive Design] --> B[CSS Approaches]
+    A --> C[Component Patterns]
+    A --> D[Media Queries]
+    A --> E[Viewport Control]
+    A --> F[Scroll Management]
+    
+    B --> B1[Tailwind Classes]
+    B --> B2[CSS Variables]
+    B --> B3[Custom Media Queries]
+    
+    C --> C1[Mobile-First Components]
+    C --> C2[Conditional Rendering]
+    C --> C3[Layout Components]
+    
+    D --> D1[Breakpoint System]
+    D --> D2[Feature Queries]
+    
+    E --> E1[Meta Viewport Tag]
+    E --> E2[Initial Scale Control]
+    
+    F --> F1[Scroll Position Preservation]
+    F --> F2[Focus Management]
+    F --> F3[MutationObserver for DOM Changes]
+```
 
-2. **Fluid Typography**
-   - Scale text based on viewport width
-   - Min and max sizes to prevent extremes
-   - Maintain proper text hierarchy at all sizes
-   - Ensure readability on all devices
+1. **CSS Frameworks**
+   - Tailwind CSS for utility-first styling
+   - CSS variables for theme consistency
+   - CSS modules for component-specific styling
+   - Mobile-first approach (sm → md → lg → xl)
 
-3. **Grid and Flex Layouts**
-   - CSS Grid for two-dimensional layouts
-   - Flexbox for one-dimensional layouts
-   - Auto-fill and auto-fit for responsive grids
-   - Gap properties for consistent spacing
+2. **Layout Components**
+   - Flexible container systems for consistent spacing
+   - Auto-adjusting grid layouts using grid-template-columns
+   - Stack components that adjust direction based on screen size
+   - Responsive navbar with mobile menu
 
-4. **Component-Based Media Queries**
-   - Inline responsive design with Tailwind
-   - Component-specific breakpoints when needed
-   - Use clamp() for fluid sizing
+3. **Media Queries**
+   - Standard breakpoints: 640px, 768px, 1024px, 1280px, 1536px
+   - Feature queries for capability detection
+   - Preference queries for dark mode/reduced motion
 
-5. **Responsive Images**
-   - Next.js Image component for optimization
-   - Srcset for different resolutions
-   - Art direction with picture element
-   - Lazy loading for off-screen images
+4. **Images & Media**
+   - Responsive image sizing with max-width
+   - Dynamic imports for heavy components
+   - Lazy loading for off-screen content
+   - Placeholder strategies for loading states
 
-6. **Container Queries**
-   - Component sizing based on parent container
-   - Used for reusable components in different contexts
-   - Implemented with CSS container queries or JS resize observers
+5. **Mobile Optimizations**
+   - Touch-friendly targets (min 44px×44px)
+   - Reduced animations on lower-power devices
+   - Simplified layouts for smaller screens
+   - Adjusted typography scales
+   - Collapsible sections for complex content
 
-7. **3D Content Responsiveness**
-   - Scale 3D scenes based on container size, not viewport
-   - Adjust camera properties based on screen dimensions
-   - Reduce complexity of 3D scenes on mobile devices
-   - Provide fallback 2D views for low-end devices
-   - Use device capabilities detection for optimal performance
-   - Implement responsive canvas sizing with useThree hook
+6. **Scroll Management Techniques**
+   - Preserve scroll position during state updates using `window.scrollY` + `setTimeout` pattern
+   - MutationObserver pattern to detect DOM changes causing unwanted scrolling
+   - CSS overrides with `scroll-behavior: auto !important` and `overflow-anchor: none` to prevent browser auto-scrolling
+   - Specific focus management for interactive elements to avoid focus-induced scrolling
+   - Using CSS `scroll-margin` properties to control element positioning during focus
 
-8. **Accessibility Considerations**
-   - Touch targets at least 44×44px on mobile
-   - Focus states visible and enhanced
-   - Proper contrast ratios maintained at all sizes
-   - Keyboard navigation support
-   - Screen reader compatibility
+7. **Interactive Elements**
+   - Chess game board sized appropriately for mobile with full-width responsive layout
+   - Chess pieces sized for touch interaction with increased touch target sizes on mobile
+   - Stacked layout for game information on mobile (flex-direction: column)
+   - Game controls adapted for smaller screens with proper spacing and sizing
+
+8. **Viewport Metadata**
+   - Using appropriate meta viewport settings:
+   ```html
+   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
+   ```
+   - Ensuring user scaling is permitted for accessibility
+   - Setting proper initial-scale for consistent rendering
+
+9. **Framework-Specific Patterns**
+   - Next.js: Using image optimization for different viewport sizes
+   - React: Conditional rendering based on viewport size
+   - Framer Motion: Adjusting animations for mobile devices
+
+10. **Testing Strategy**
+    - Device testing matrix across multiple screen sizes
+    - Browser compatibility testing for responsive features
+    - Performance testing on lower-end mobile devices

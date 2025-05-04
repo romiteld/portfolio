@@ -28,7 +28,21 @@ The current focus is on improving the 3D visualization components across the por
    - Implemented proper mounting check to ensure Three.js code only runs after React context is established
    - Applied ClientOnly wrapper to Canvas3D component in financial assistant demo
 
-2. **Chess AI 3D Visualization**:
+2. **Chess AI Demo Mobile Improvements**:
+   - Enhanced responsive design for the chess board on mobile devices
+   - Made the chess board larger when viewing from mobile devices
+   - Prevented automatic scrolling when moves are made or pieces are selected
+   - Added CSS scroll behavior control to prevent focusing-induced scrolling
+   - Implemented scroll position preservation in both player and AI move handlers
+   - Added a MutationObserver to detect focus changes that might cause unwanted scrolling
+   - Improved touch interactions for chess piece selection on small screens
+   - Added better spacing for game controls on mobile displays
+   - Made piece movements more touch-friendly with larger tap targets
+   - Ensured the board adapts appropriately to different mobile screen sizes
+   - Created mobile-specific CSS classes for layout changes when viewport width is below 767px
+   - Implemented stacking of sidebar content below the chess board on mobile views
+
+3. **Chess AI 3D Visualization**:
    - Implemented 3D chess board using React Three Fiber and Three.js
    - Created 3D chess piece geometries with proper materials
    - Added lighting and shadows for realistic 3D scene
@@ -37,34 +51,34 @@ The current focus is on improving the 3D visualization components across the por
    - Added toggle for switching between 2D and 3D views
    - Fixed SSR issues with dynamic imports for Three.js components
 
-3. **Git Repository Optimization**:
+4. **Git Repository Optimization**:
    - Removed large model files from git tracking
    - Added comprehensive rules to .gitignore for model files and sensitive directories
    - Moved models to Supabase storage for better accessibility
    - Cleaned repository history to reduce size and improve performance
    - Set up proper tracking between local and remote repositories
 
-4. **Chess AI Integration with Supabase**:
+5. **Chess AI Integration with Supabase**:
    - Uploaded ONNX model to Supabase storage bucket
    - Created database tables for chess model metadata, openings, and game history
    - Set up Row Level Security (RLS) policies for secure access
    - Implemented a more efficient model serving approach
 
-5. **Chess UI Implementation**:
+6. **Chess UI Implementation**:
    - Created a responsive chess board component
    - Implemented game state management with TypeScript
    - Added AI difficulty level controls
    - Implemented move validation and game rules
    - Styled components to match portfolio design
 
-6. **Chess AI API Route Improvements**:
+7. **Chess AI API Route Improvements**:
    - Fixed recursive function calls causing "Maximum call stack size exceeded" errors
    - Implemented a more direct approach to checking attacked squares
    - Updated isCheck function to avoid circular dependencies
    - Improved diagnostic endpoint for troubleshooting AI issues
    - Removed heuristic evaluation fallbacks, ensuring model-based evaluation
 
-7. **Critical fixes to the chess AI fine-tuning script**:
+8. **Critical fixes to the chess AI fine-tuning script**:
    - Fixed torch.cuda.amp deprecation warnings by updating to the newer torch.amp API
    - Resolved mixed precision issues by adding explicit mixed precision control
    - Added command-line parameter to disable mixed precision when needed
@@ -73,7 +87,7 @@ The current focus is on improving the 3D visualization components across the por
    - Implemented better error handling for training loops
    - Enhanced progress reporting with more detailed metrics
 
-8. **Major improvements to the chess AI fine-tuning script**:
+9. **Major improvements to the chess AI fine-tuning script**:
    - Fixed critical memory management issues by implementing more aggressive memory control mechanisms
    - Corrected GPU utilization issues by resolving synchronization bottlenecks
    - Enhanced CPU utilization with optimized data pipeline and preprocessing
@@ -81,20 +95,20 @@ The current focus is on improving the 3D visualization components across the por
    - Implemented channel dimension fixes between the chess board representation and model input
    - Added proper tensor cleanup to reduce memory leaks
 
-9. **Added comprehensive GPU-accelerated chess AI implementation using**:
-   - Neural network model in ONNX format (converted from Leela Chess Zero)
-   - Monte Carlo Tree Search (MCTS) for move prediction
-   - Fine-tuning capabilities to improve performance with GPU support
-   - ONNX model stored in Supabase for efficient retrieval
-   - Next.js API route for chess move generation
+10. **Added comprehensive GPU-accelerated chess AI implementation using**:
+    - Neural network model in ONNX format (converted from Leela Chess Zero)
+    - Monte Carlo Tree Search (MCTS) for move prediction
+    - Fine-tuning capabilities to improve performance with GPU support
+    - ONNX model stored in Supabase for efficient retrieval
+    - Next.js API route for chess move generation
 
-10. **Fixed security issues with the financial assistant**:
+11. **Fixed security issues with the financial assistant**:
     - Removed hardcoded API keys from PowerShell scripts
     - Added environment variable loading
     - Added validation for required environment variables
     - Added .env.local-based configuration
 
-11. **Improved financial assistant UI**:
+12. **Improved financial assistant UI**:
     - Enhanced news article content
     - Implemented modal interface for article reading
     - Added formatting to preserve paragraph structure
