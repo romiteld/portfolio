@@ -16,6 +16,7 @@
 12. 3D chess board visualization using Three.js and React Three Fiber
 13. Git repository optimization with large files excluded from tracking
 14. Proper server/client rendering pattern for React Three Fiber components
+15. Successful Vercel deployment with fixed dependency issues (@headlessui/react)
 
 - **Core Portfolio Website**
   - Home page with projects showcase
@@ -76,6 +77,7 @@
    - Created dedicated ClientOnly component to fix Three.js hydration issues
    - Implemented proper mounting checks for 3D components
    - Applied ClientOnly component to wrap Canvas3D in financial assistant demo
+   - Fixed Vercel build error by pinning @headlessui/react to version 1.4.3
 
 2. **Backend**:
    - Next.js API routes for chess move generation
@@ -499,6 +501,12 @@ The next steps include completing the 3D chess visualization with detailed model
    - Docker Deployment with GPU Support
    - FastAPI Backend with ONNX Runtime
 
+5. Deployment Improvements
+   - Resolved Vercel build failures related to @headlessui/react dependency
+   - Fixed module resolution issues by downgrading dependencies to compatible versions
+   - Ensured consistent dependency versioning between development and production
+   - Successfully deployed to production with all fixes implemented
+
 ## In Progress
 
 1. Chess AI Fine-tuning
@@ -586,6 +594,12 @@ The next steps include completing the 3D chess visualization with detailed model
   - ✅ Optimized 3D scene rendering for production builds
   - ✅ Wrapped 3D Canvas with ClientOnly component to prevent hydration errors
   - ✅ Fixed "Cannot read properties of undefined" React context errors
+  - ✅ Removed "3D Visualization Disabled" text while keeping gradient background
+  - ✅ Implemented fixed-height scrollable containers for chat and market data
+  - ✅ Added custom scrollbar styling for better user experience
+  - ✅ Centered all volatility chart text and elements for better alignment
+  - ✅ Added detailed Bollinger Bands explanations to volatility charts
+  - ✅ Improved vertical spacing and whitespace distribution
 
 ## Completed Features
 

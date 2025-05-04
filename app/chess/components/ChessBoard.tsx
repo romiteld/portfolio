@@ -265,7 +265,7 @@ const ChessBoard = ({
     return (
       <div className={`board-container relative w-full aspect-square border border-[#7d694c] dark:border-[#5d4a38] shadow-lg rounded-sm overflow-hidden ${className} bg-[#b58863]/10`}>
         {/* Board texture overlay */}
-        <div className="absolute inset-0 pointer-events-none bg-[url('/images/chess/wood-pattern.png')] opacity-5 mix-blend-overlay"></div>
+        <div className="absolute inset-0 pointer-events-none bg-gradient-to-br from-[#8a6642]/10 to-[#b58863]/5 mix-blend-overlay"></div>
         
         {/* Outer frame */}
         <div className="absolute inset-0 border-8 border-[#8a6642] dark:border-[#6d5036] rounded-sm shadow-inner pointer-events-none">
@@ -327,6 +327,9 @@ const ChessBoard = ({
     const arrowPoint2X = newToX - arrowHeadSize * Math.cos(angle + Math.PI / 6);
     const arrowPoint2Y = newToY - arrowHeadSize * Math.sin(angle + Math.PI / 6);
     
+    // Format coordinates as fixed decimals instead of percentages with % symbols
+    const pointsString = `${newToX} ${newToY} ${arrowPoint1X} ${arrowPoint1Y} ${arrowPoint2X} ${arrowPoint2Y}`;
+    
     return (
       <g>
         <defs>
@@ -340,10 +343,10 @@ const ChessBoard = ({
           </filter>
         </defs>
         <line
-          x1={`${newFromX}%`}
-          y1={`${newFromY}%`}
-          x2={`${newToX}%`}
-          y2={`${newToY}%`}
+          x1={newFromX}
+          y1={newFromY}
+          x2={newToX}
+          y2={newToY}
           stroke="url(#arrowGradient)"
           strokeWidth="2"
           strokeLinecap="round"
@@ -352,7 +355,7 @@ const ChessBoard = ({
           <animate attributeName="strokeOpacity" values="0.6;0.9;0.6" dur="2s" repeatCount="indefinite" />
         </line>
         <polygon
-          points={`${newToX}%,${newToY}% ${arrowPoint1X}%,${arrowPoint1Y}% ${arrowPoint2X}%,${arrowPoint2Y}%`}
+          points={pointsString}
           fill="url(#arrowGradient)"
           filter="url(#glow)"
         >

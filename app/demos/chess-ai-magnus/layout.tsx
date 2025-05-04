@@ -1,13 +1,14 @@
-import { Metadata } from "next"
+import { Metadata, Viewport } from "next"
 
 export const metadata: Metadata = {
   title: "Advanced Chess AI Engine | AI Demos",
-  description: "Play against a neural network chess engine trained with deep reinforcement learning techniques and test your skills against different AI difficulty levels.",
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 5
-  }
+  description: "Play against a neural network chess engine trained with deep reinforcement learning techniques and test your skills against different AI difficulty levels."
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5
 }
 
 export default function ChessAILayout({
