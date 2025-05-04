@@ -834,6 +834,9 @@ const ChessGame = ({
   // Handle AI move
   const handleAIMove = useCallback(async () => {
     if (turn !== playerColor && gameStatus === 'playing') {
+      // Save current scroll position before AI move
+      const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
+      
       setThinking(true)
       setMessage("AI is thinking...")
       
@@ -877,6 +880,11 @@ const ChessGame = ({
       } finally {
         setThinking(false)
         setTimeout(() => setMessage(null), 3000)
+        
+        // Restore scroll position after AI move is complete
+        setTimeout(() => {
+          window.scrollTo(0, currentScrollPosition);
+        }, 10);
       }
     }
   }, [turn, playerColor, gameStatus, board, gamePhase, aiPersonality, castlingRights, aiLevel, moveHistory, enPassantTarget, makeMove, onGameOver])
@@ -884,9 +892,17 @@ const ChessGame = ({
   // Handle human player move
   const handlePlayerMove = useCallback((move: Move) => {
     if (turn === playerColor && gameStatus === 'playing') {
-      const newBoard = makeMove(move)
+      // Prevent automatic scrolling that can happen on move
+      const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
+      
+      const newBoard = makeMove(move);
+      
+      // Restore the scroll position after the move is made
+      setTimeout(() => {
+        window.scrollTo(0, currentScrollPosition);
+      }, 10);
     }
-  }, [turn, playerColor, gameStatus, makeMove])
+  }, [turn, playerColor, gameStatus, makeMove]);
   
   // AI moves automatically when it's their turn
   useEffect(() => {

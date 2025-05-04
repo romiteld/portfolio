@@ -574,6 +574,13 @@
   .files,
   .board-container {
     max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  /* Make the board larger on mobile devices */
+  .chess-board {
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
   /* Make the board squares more touch-friendly */
@@ -631,6 +638,14 @@
   /* Further reduce padding to maximize board size */
   .board-container {
     padding: 0 !important;
+    width: 100% !important;
+  }
+  
+  /* Make chess board as large as possible on small screens */
+  .chess-board {
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 1 / 1;
   }
   
   /* Hide coordinates on very small screens */
@@ -663,4 +678,19 @@
   .model-info-text {
     font-size: 0.85rem !important;
   }
+}
+
+/* Prevent automatic scrolling on move/selection */
+html {
+  scroll-behavior: auto !important;
+  overflow-anchor: none !important;
+}
+
+* {
+  overflow-anchor: none !important;
+}
+
+/* Disable focus-induced scrolling */
+*:focus {
+  scroll-margin: 0 !important;
 } 

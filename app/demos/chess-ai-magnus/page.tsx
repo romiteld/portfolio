@@ -36,6 +36,48 @@ export default function ChessAIDemo() {
   // Use ref to track if an update is already in progress
   const isUpdatingRef = useRef(false);
   
+  // Add effect to prevent automatic scrolling on focus or click
+  useEffect(() => {
+    // Disable automatic scrolling behavior
+    if (typeof window !== 'undefined') {
+      // Get initial scroll position
+      const initialScrollPosition = window.scrollY;
+      
+      // Create handler for focus events that would cause scrolling
+      const preventScrollOnFocus = () => {
+        // If scroll position changed from external causes, don't override
+        if (Math.abs(window.scrollY - initialScrollPosition) < 100) {
+          window.scrollTo(0, initialScrollPosition);
+        }
+      };
+      
+      // Create a MutationObserver to watch for focus changes
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'attributes' && 
+              mutation.attributeName === 'tabindex') {
+            preventScrollOnFocus();
+          }
+        }
+      });
+      
+      // Apply the observer to the chess game container
+      const chessGameContainer = document.querySelector('.chess-game');
+      if (chessGameContainer) {
+        observer.observe(chessGameContainer, { 
+          attributes: true,
+          childList: true,
+          subtree: true
+        });
+      }
+      
+      // Cleanup function
+      return () => {
+        observer.disconnect();
+      };
+    }
+  }, []);
+  
   // Memoize the onMove callback to prevent infinite updates
   const handleBoardUpdate = useCallback((board: Board, move: Move | null, isInCheck: boolean, kingPos: {row: number, col: number} | null, moves: Move[]) => {
     if (isUpdatingRef.current) return; // Skip if already updating

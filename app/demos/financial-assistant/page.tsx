@@ -13,6 +13,10 @@ import dynamic from 'next/dynamic';
 import UserPreferences, { UserPreferencesData } from './components/UserPreferences';
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import * as THREE from 'three'
+import { useThree, useFrame } from '@react-three/fiber'
+import { Group } from 'three'
+import { Environment, Text } from "@react-three/drei"
 
 // Create an inline ClientOnly component to avoid import issues
 function ClientOnly({ children, fallback = null }: { children: ReactNode, fallback?: ReactNode }) {
