@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Upload, X, FilePlus, BarChart3, PieChart as PieChartIcon, LineChart as LineChartIcon, Table2, Sigma, Brain, Save, Share2, Clipboard, Eye, EyeOff, Settings } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import initDataAnalystAssistant from '../init';
 
 // Define TypeScript interfaces
 interface DataItem {
@@ -110,6 +111,12 @@ const DataAnalystAssistant: React.FC = () => {
   const [selectedInsight, setSelectedInsight] = useState<InsightType | null>(null);
   const [correlationMatrix, setCorrelationMatrix] = useState<CorrelationRow[]>([]);
   const [errorMessage, setErrorMessage] = useState<string>('');
+
+  // Initialize component with fixes for button functionality and scroll issues
+  useEffect(() => {
+    // Apply the initialization script to fix buttons and scrolling
+    initDataAnalystAssistant();
+  }, []);
   
   // COLORS for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#8DD1E1', '#A4DE6C', '#D0ED57'];
@@ -1075,7 +1082,7 @@ const DataAnalystAssistant: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white data-analyst-container" data-component-name="DataAnalystAssistant">
       {/* Header */}
       <header className="bg-white dark:bg-gray-800 shadow-md p-4">
         <div className="flex justify-between items-center">
@@ -1139,22 +1146,30 @@ const DataAnalystAssistant: React.FC = () => {
         </div>
         
         {/* Main Content Area */}
-        <div className="flex-grow p-4">
+        <div className="flex-grow p-4" data-component-name="DataAnalystAssistant">
           {/* Upload Tab */}
           {activeTab === 'upload' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6" data-component-name="DataAnalystAssistant">
               <h2 className="text-xl font-semibold mb-4">Upload Your Data</h2>
               
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center">
-                <input
-                  type="file"
+              <div 
+                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center"
+                data-component-name="DataAnalystAssistant"
+              >
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  id="fileInput" 
                   ref={fileInputRef}
-                  onChange={handleFileUpload}
                   accept=".csv,.xlsx,.xls,.json"
-                  className="hidden"
-                  id="fileInput"
+                  onChange={handleFileUpload}
+                  data-component-name="DataAnalystAssistant"
                 />
-                <label htmlFor="fileInput" className="cursor-pointer">
+                <label 
+                  htmlFor="fileInput" 
+                  className="cursor-pointer"
+                  data-component-name="DataAnalystAssistant"
+                >
                   <FilePlus className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
                   <p className="mb-2 text-lg font-medium">Click to upload or drag and drop</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">CSV, Excel, or JSON files</p>
