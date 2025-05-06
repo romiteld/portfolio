@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import dynamic from 'next/dynamic'
-import { Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap, Github, Info, RotateCcw, Undo, AlertCircle, Layers, MessageCircle, Send } from "lucide-react"
+import { Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap, Github, Info, RotateCcw, Undo, AlertCircle, Layers, MessageCircle, Send, ChevronUp, ChevronDown } from "lucide-react"
 import { Board, Move, PieceColor } from "@/app/chess/components/ChessBoard"
 
 // Initial empty board state that matches the expected structure
@@ -38,35 +38,49 @@ function ChessAIDemo() {
   
   // Add effect to prevent automatic scrolling on focus or click
   useEffect(() => {
-    // Only apply scroll management to the chess board component itself
-    // instead of blocking all scrolling globally
-    const chessContainer = document.querySelector('.chess-demo-container');
+    // Mark all components and interactive elements to be excluded from scroll protection
+    const markComponentElements = () => {
+      // Mark the main container
+      const chessContainer = document.querySelector('.chess-demo-container');
+      if (chessContainer) {
+        chessContainer.setAttribute('data-component-name', 'ChessAIDemo');
+        
+        // Mark all interactive and relevant elements
+        const elementsToMark = chessContainer.querySelectorAll(
+          'button, input, select, a, .chess-game-section, .difficulty-controls, ' +
+          '.player-analysis, .move-history, .chess-assistant, .advanced-features, ' +
+          '.model-info, .how-to-play'
+        );
+        
+        elementsToMark.forEach(el => {
+          el.setAttribute('data-component-name', 'ChessAIDemo');
+        });
+      }
+    };
     
-    // Mark this component for detection by our global scroll script
-    if (chessContainer) {
-      chessContainer.setAttribute('data-component-name', 'ChessAIDemo');
-      
-      // Also mark any child elements that need to be interactable
-      const interactableElements = chessContainer.querySelectorAll('button, input, select, a');
-      interactableElements.forEach(el => {
-        el.setAttribute('data-component-name', 'ChessAIDemo');
-      });
-    }
+    // Run immediately
+    markComponentElements();
+    
+    // Also run after a short delay to catch dynamically rendered elements
+    const markTimer = setTimeout(markComponentElements, 500);
+    
+    // Run again if difficulty or player color changes (causes re-renders)
+    const remarkTimer = setTimeout(markComponentElements, 1000);
     
     // Restore original scroll functionality
     const originalScrollTo = window.scrollTo;
     
     // Cleanup function
     return () => {
+      clearTimeout(markTimer);
+      clearTimeout(remarkTimer);
+      
       // Restore original functions when component unmounts
       if (window.scrollTo !== originalScrollTo) {
         window.scrollTo = originalScrollTo;
       }
-      
-      // Remove any event listeners or observers if they were added
-      // (this is a cleanup for any previous code that might have added them)
     };
-  }, []);
+  }, [aiLevel, playerColor]);
   
   // Memoize the onMove callback to prevent infinite updates
   const handleBoardUpdate = useCallback((board: Board, move: Move | null, isInCheck: boolean, kingPos: {row: number, col: number} | null, moves: Move[]) => {
@@ -89,203 +103,216 @@ function ChessAIDemo() {
     <div className="chess-demo-container min-h-screen bg-gradient-to-b from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950" data-component-name="ChessAIDemo">
       <div className="w-full mx-auto px-4 py-6 md:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-4 md:mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-center">
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">AI Engineer</span>
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
+              Magnus AI Chess Engine
+            </span>
           </h1>
+          <p className="text-center text-sm md:text-base text-gray-600 dark:text-gray-300 mt-2">
+            Play against an AI modeled after Magnus Carlsen's playing style
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {/* Main chess board column */}
-          <div className="lg:col-span-2 xl:col-span-2">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
-              {/* AI Difficulty control */}
-              <div className="px-5 py-4 border-b border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Cpu className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <span className="text-sm font-medium text-gray-800 dark:text-gray-200">AI Difficulty</span>
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    <button 
-                      onClick={() => setAiLevel(Math.max(1, aiLevel - 1))}
-                      className="p-1 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+        
+        {/* Main game section */}
+        <div className="space-y-4 md:space-y-6">
+          {/* Primary Game Section: Board & Controls */}
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden" data-component-name="ChessAIDemo">
+            <div className="p-4 lg:p-5">
+              {/* Game Title and Difficulty Selection */}
+              <div className="mb-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
+                    <Cpu className="w-5 h-5 text-blue-500" />
+                    Chess Engine
+                  </h2>
+                </div>
+                
+                {/* Difficulty Controls - Moved to the top for easier access */}
+                <div className="difficulty-controls flex items-center space-x-4 w-full md:w-auto" data-component-name="ChessAIDemo">
+                  <div className="flex items-center space-x-2">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Difficulty:</div>
+                    <select 
+                      value={aiLevel}
+                      onChange={(e) => setAiLevel(parseInt(e.target.value))}
+                      className="rounded bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 text-sm px-2 py-1"
                       data-component-name="ChessAIDemo"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
-                      </svg>
-                    </button>
-                    <div className="w-5 text-center font-medium text-sm">{aiLevel}</div>
-                    <button 
-                      onClick={() => setAiLevel(Math.min(10, aiLevel + 1))}
-                      className="p-1 rounded-md bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                      <option value="1">Beginner</option>
+                      <option value="3">Casual</option>
+                      <option value="5">Intermediate</option>
+                      <option value="7">Advanced</option>
+                      <option value="10">Grandmaster</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <div className="text-sm font-medium text-gray-700 dark:text-gray-300">Play as:</div>
+                    <select 
+                      value={playerColor}
+                      onChange={(e) => setPlayerColor(e.target.value as 'w' | 'b')}
+                      className="rounded bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-gray-200 text-sm px-2 py-1"
                       data-component-name="ChessAIDemo"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mt-3">
-                  <div 
-                    className="bg-gradient-to-r from-blue-500 to-purple-600 h-1.5 rounded-full transition-all duration-300" 
-                    style={{ width: `${aiLevel * 10}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              {/* Chess game */}
-              <div className="p-4 lg:p-5">
-                <div className="rounded-md overflow-hidden shadow-sm">
-                  <ChessGame 
-                    aiLevel={aiLevel} 
-                    playerColor={playerColor} 
-                    onMove={(board, move, isCheck, checkPosition, legalMoves) => {
-                      // Update board state without causing infinite rerenders
-                      if (!isUpdatingRef.current) {
-                        isUpdatingRef.current = true;
-                        setBoardState(board);
-                        setLastMove(move);
-                        setIsCheck(isCheck);
-                        setCheckPosition(checkPosition);
-                        setLegalMoves(legalMoves);
-                        setTimeout(() => {
-                          isUpdatingRef.current = false;
-                        }, 10);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* Right sidebar - Information and controls */}
-          <div className="lg:col-span-1 xl:col-span-2">
-            <div className="space-y-6">
-              {/* Magnus AI Model card */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Brain className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  <h2 className="text-base font-medium text-gray-900 dark:text-white">Magnus AI Model</h2>
-                </div>
-                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                  <h3 className="font-medium mb-2 text-sm text-gray-900 dark:text-white">Model Features</h3>
-                  <ul className="space-y-2">
-                    <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                      <div className="mr-2 text-purple-500 dark:text-purple-400">✦</div>
-                      <span>Trained on games by Magnus Carlsen</span>
-                    </li>
-                    <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                      <div className="mr-2 text-purple-500 dark:text-purple-400">✦</div>
-                      <span>Deep neural network architecture</span>
-                    </li>
-                    <li className="flex items-center text-sm text-gray-700 dark:text-gray-300">
-                      <div className="mr-2 text-purple-500 dark:text-purple-400">✦</div>
-                      <span>Adjustable difficulty levels</span>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Player color section */}
-                <div className="mt-4 bg-white dark:bg-gray-800 rounded-lg">
-                  <h3 className="font-medium mb-2 text-sm text-gray-900 dark:text-white">Playing as {playerColor === 'w' ? 'White' : 'Black'}</h3>
-                  <div className="flex items-center mb-2 text-sm text-gray-700 dark:text-gray-300">
-                    <div className="w-3 h-3 rounded-full bg-gray-800 dark:bg-white mr-2"></div>
-                    <span>You move first</span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    To change sides, click the "Switch Sides" button below the chessboard.
-                  </p>
-                </div>
-
-                {/* AI Difficulty section */}
-                <div className="mt-4">
-                  <h3 className="font-medium mb-2 text-sm text-gray-900 dark:text-white">AI Difficulty: {aiLevel}</h3>
-                  <div className="bg-green-100 dark:bg-green-900/20 rounded-md px-3 py-2 mt-1 text-sm">
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 mb-2">
-                      <div 
-                        className="bg-gradient-to-r from-green-500 to-blue-500 h-1.5 rounded-full transition-all duration-300" 
-                        style={{ width: `${aiLevel * 10}%` }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">
-                      {aiLevel < 3 ? 'Beginner level - Good for learning the basics' : 
-                       aiLevel < 6 ? 'Intermediate level - Challenging but beatable' : 
-                       aiLevel < 9 ? 'Advanced level - Tough opponent with strong tactics' : 
-                                    'Grandmaster level - Extremely challenging'}
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* How to Play section */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <h2 className="text-base font-medium text-gray-900 dark:text-white">How to Play</h2>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">1.</span> Click on your piece to select it. 
-                      Valid moves will be highlighted with blue dots.
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">2.</span> Click on a highlighted square to move your piece.
-                      The AI will respond automatically.
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                    <p className="text-sm text-gray-700 dark:text-gray-300">
-                      <span className="font-medium">3.</span> Use the buttons below the board to
-                      switch sides or reset the game at any time.
-                    </p>
+                      <option value="w">White</option>
+                      <option value="b">Black</option>
+                    </select>
                   </div>
                 </div>
               </div>
               
-              {/* Advanced Features - Added to fill space */}
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-5">
-                <div className="flex items-center space-x-2 mb-4">
-                  <Code className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <h2 className="text-base font-medium text-gray-900 dark:text-white">Advanced Features</h2>
+              {/* ChessBoard Component */}
+              <div className="chess-game-section" data-component-name="ChessAIDemo">
+                <ChessGame 
+                  playerColor={playerColor} 
+                  aiLevel={aiLevel} 
+                  onMove={handleBoardUpdate}
+                  showControls={false}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Secondary Sections - Reorganized for better flow */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6" data-component-name="ChessAIDemo">
+            {/* Move History Section - Placed first for mobile */}
+            <div className="move-history bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden lg:col-span-1" data-component-name="ChessAIDemo">
+              <div className="p-4">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  <ChevronRight className="w-5 h-5 text-blue-500" />
+                  Move History
+                </h2>
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 min-h-[150px] max-h-[200px] overflow-y-auto">
+                  {lastMove ? (
+                    <div>
+                      <div className="text-sm text-gray-700 dark:text-gray-300">
+                        Last move: {lastMove.from.col}, {lastMove.from.row} → {lastMove.to.col}, {lastMove.to.row}
+                      </div>
+                      {isCheck && (
+                        <div className="mt-2 text-sm font-medium text-red-600 dark:text-red-400">
+                          Check!
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-gray-500 dark:text-gray-400 italic">No moves yet</div>
+                  )}
+                </div>
+              </div>
+            </div>
+            
+            {/* Chess Assistant Section - Placed second for mobile */}
+            <div className="chess-assistant bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden lg:col-span-1" data-component-name="ChessAIDemo">
+              <div className="p-4">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  <MessageCircle className="w-5 h-5 text-green-500" />
+                  Chess Assistant
+                </h2>
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 min-h-[150px]">
+                  <button
+                    onClick={() => setInstructionsVisible(!instructionsVisible)}
+                    className="flex justify-between items-center w-full text-left text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-2"
+                    data-component-name="ChessAIDemo"
+                  >
+                    <span>How to Play</span>
+                    {instructionsVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                  
+                  {instructionsVisible && (
+                    <div className="text-sm text-gray-700 dark:text-gray-300 mt-2 space-y-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p>1. Select your difficulty level and preferred color.</p>
+                      <p>2. Make your move by clicking on a piece and then its destination.</p>
+                      <p>3. The AI will respond with its move.</p>
+                      <p>4. Try to checkmate the AI's king to win!</p>
+                    </div>
+                  )}
+                  
+                  <div className="mt-3">
+                    <input
+                      type="text"
+                      placeholder="Ask a chess question..."
+                      className="w-full rounded px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      data-component-name="ChessAIDemo"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Player Analysis Panel - Moved to third position */}
+            <div className="player-analysis bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden lg:col-span-1" data-component-name="ChessAIDemo">
+              <div className="p-4">
+                <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                  <Brain className="w-5 h-5 text-purple-500" />
+                  Player Analysis
+                </h2>
+                <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-3 min-h-[150px]">
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-700 dark:text-gray-300">Positional Score</span>
+                      <span className="text-sm font-medium text-blue-600 dark:text-blue-400">+1.2</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                      <div className="bg-blue-500 h-2 rounded-full" style={{ width: '60%' }}></div>
+                    </div>
+                    
+                    <div className="mt-2">
+                      <div className="flex items-center gap-1 text-sm text-gray-700 dark:text-gray-300">
+                        <Star className="w-4 h-4 text-yellow-500" />
+                        <span>Your best moves: <span className="font-medium">e4, Nf3, Bc4</span></span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Advanced Features Section - Moved to bottom */}
+          <div className="advanced-features bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden" data-component-name="ChessAIDemo">
+            <div className="p-4">
+              <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white mb-3">
+                <Zap className="w-5 h-5 text-amber-500" />
+                Advanced Features
+              </h2>
+              
+              <button
+                onClick={() => setModelInfoVisible(!modelInfoVisible)}
+                className="flex justify-between items-center w-full text-left text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors mb-2"
+                data-component-name="ChessAIDemo"
+              >
+                <span>About the AI Model</span>
+                {modelInfoVisible ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              
+              {modelInfoVisible && (
+                <div className="text-sm text-gray-700 dark:text-gray-300 mt-2 space-y-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg mb-4">
+                  <p>This AI chess engine combines neural networks with traditional minimax search algorithms.</p>
+                  <p>The model was trained on thousands of Magnus Carlsen's games to mimic his playing style and decision-making process.</p>
+                  <p>At higher difficulty levels, the AI uses deeper search and more sophisticated evaluation.</p>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg p-3">
+                  <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Positional Analysis</h3>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                    Evaluate your board position and get suggestions for improvement.
+                  </p>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20 rounded-lg p-3">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Model Insights</h3>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">
-                      Get detailed analysis of your moves and learn from the AI's tactical evaluations.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-3">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Save Games</h3>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">
-                      Export your games in PGN format to study or share with others.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-lg p-3">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Adjustable Strength</h3>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">
-                      Set the AI difficulty from beginner to grandmaster level.
-                    </p>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg p-3">
-                    <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Interactive Training</h3>
-                    <p className="text-xs text-gray-700 dark:text-gray-300">
-                      Practice specific openings and endgame scenarios against the AI.
-                    </p>
-                  </div>
+                <div className="bg-gradient-to-r from-green-50 to-teal-50 dark:from-green-900/20 dark:to-teal-900/20 rounded-lg p-3">
+                  <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Adjustable Strength</h3>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                    Set the AI difficulty from beginner to grandmaster level.
+                  </p>
+                </div>
+                
+                <div className="bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-lg p-3">
+                  <h3 className="font-medium text-sm text-gray-900 dark:text-white mb-1">Interactive Training</h3>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">
+                    Practice specific openings and endgame scenarios against the AI.
+                  </p>
                 </div>
               </div>
             </div>
@@ -312,66 +339,87 @@ export function Head() {
           display: none !important;
         }
 
-        /* Reorder sections - Chess Assistant should appear first */
-        .chess-demo-container .flex.flex-col.gap-4 {
-          display: flex;
-          flex-direction: column;
+        /* Prevent unwanted auto-scrolling by properly marking all components */
+        [data-component-name="ChessAIDemo"] {
+          scroll-behavior: auto !important;
         }
         
-        /* Desktop layout (default) */
-        @media (min-width: 768px) {
-          /* Make Chess Assistant appear first (before Player Analysis) */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(3) {
-            order: 1;
-          }
-          
-          /* Make Player Analysis appear after Chess Assistant */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(1) {
-            order: 3;
-          }
-          
-          /* Keep Move History in second position */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(2) {
-            order: 2;
-          }
+        /* Improve spacing for better readability */
+        .chess-demo-container {
+          scroll-margin-top: 1rem;
         }
         
-        /* Mobile-specific layout */
+        /* Make all cards same minimum height for consistency */
+        .chess-demo-container .chess-game-section,
+        .chess-demo-container .move-history,
+        .chess-demo-container .chess-assistant,
+        .chess-demo-container .player-analysis {
+          min-height: 200px;
+        }
+        
+        /* Improve color contrast for better readability */
+        .chess-demo-container .text-gray-700 {
+          color: rgba(55, 65, 81, 1) !important;
+        }
+        
+        .chess-demo-container .dark .text-gray-300 {
+          color: rgba(209, 213, 219, 1) !important;
+        }
+        
+        /* Mobile-specific layout optimizations */
         @media (max-width: 767px) {
           /* More compact layout for mobile */
           .chess-demo-container h1 {
             margin-bottom: 0.5rem !important;
           }
           
-          /* Make Move History come first for mobile (most important after board) */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(2) {
-            order: 1;
+          /* Optimize vertical space */
+          .chess-demo-container .space-y-4 > div {
+            margin-bottom: 1rem !important;
           }
           
-          /* Make Chess Assistant second (easy access to help) */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(3) {
-            order: 2;
-          }
-          
-          /* Push Player Analysis further down as it's less critical during active play */
-          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(1) {
-            order: 3;
-          }
-          
-          /* Reduce spacing between elements */
-          .chess-demo-container .space-y-6 {
-            margin-top: 0.5rem !important;
-          }
-          
-          /* Make the chessboard a bit more compact on mobile */
+          /* Make the chessboard more compact on mobile */
           .chess-demo-container .p-4.lg\\:p-5 {
-            padding: 0.5rem !important;
+            padding: 0.75rem !important;
           }
           
-          /* The "How to Play" section should be collapsible on mobile but expanded by default */
-          .chess-demo-container .bg-blue-50 {
-            margin-bottom: 0.5rem !important;
+          /* Allow scrolling within panels */
+          .chess-demo-container .min-h-\\[150px\\] {
+            overflow-y: auto;
+            max-height: 200px;
           }
+          
+          /* Make difficulty controls more compact */
+          .chess-demo-container .difficulty-controls {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .chess-demo-container .difficulty-controls .space-x-4 {
+            margin-top: 0.5rem;
+          }
+        }
+        
+        /* Fix interactive elements */
+        .chess-demo-container button,
+        .chess-demo-container select,
+        .chess-demo-container input {
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        
+        .chess-demo-container button:hover,
+        .chess-demo-container select:hover {
+          opacity: 0.9;
+        }
+        
+        /* Add subtle animations for better UX */
+        .chess-demo-container .rounded-xl {
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .chess-demo-container .rounded-xl:hover {
+          box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
       `}</style>
     </>
