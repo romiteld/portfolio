@@ -147,6 +147,97 @@ const generateVolatilityData = (days = 30, baseVol = 20) => {
   return { dates, prices, impliedVol, historicalVol, vix, bands };
 };
 
+// Add a custom CSS class to improve chart display
+const chartStyles = `
+  .volatility-chart {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .volatility-chart canvas {
+    max-width: 100% !important;
+  }
+  .volatility-chart .chartjs-tooltip {
+    z-index: 50;
+  }
+  @media (max-width: 640px) {
+    .chart-container {
+      margin-top: 20px;
+    }
+    .chart-legend-item {
+      margin: 0 5px;
+      display: inline-block;
+    }
+    /* Center titles on mobile */
+    .chart-title {
+      text-align: center !important;
+      justify-content: center !important;
+    }
+    .volatility-badge {
+      justify-content: center !important;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    /* Center time range controls on mobile */
+    .chart-controls {
+      justify-content: center !important;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .time-range-buttons {
+      justify-content: center !important;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .zoom-control {
+      margin-right: 0 !important;
+    }
+  }
+  .chart-instructions {
+    clear: both;
+    padding-top: 10px;
+    font-size: 10px;
+  }
+  /* Fix the radio button spacing */
+  .vol-option-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+    margin-top: 8px;
+  }
+  @media (min-width: 640px) {
+    .vol-option-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+  }
+  /* Ensure circle dots in chart legends display properly */
+  .chartjs-legend-item span {
+    display: inline-block;
+    margin-right: 8px;
+  }
+  /* Fix checkbox alignment */
+  .vol-option-item {
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+  .vol-option-item input[type="checkbox"] {
+    margin-right: 4px;
+    width: 12px;
+    height: 12px;
+  }
+  .vol-option-label {
+    font-size: 9px;
+    line-height: 1;
+    display: inline-block;
+    white-space: nowrap;
+  }
+`;
+
 export default function VolatilityChart({
   symbol = 'SAMPLE',
   data,
@@ -368,8 +459,19 @@ export default function VolatilityChart({
         position: 'top',
         labels: {
           usePointStyle: true,
-          boxWidth: 6
-        }
+          boxWidth: 6,
+          padding: 30,
+          font: {
+            size: 9
+          },
+          filter: function(item, chart) {
+            // Only show important labels, filter out bands and secondary items
+            return !item.text.includes('Band') && item.text !== 'Upper Band (2σ)' && item.text !== 'Lower Band (2σ)';
+          }
+        },
+        align: 'start',
+        maxWidth: 200,
+        maxHeight: 25
       },
       tooltip: {
         enabled: false, // Disable built-in tooltips
@@ -470,9 +572,12 @@ export default function VolatilityChart({
           display: false
         },
         ticks: {
+          font: {
+            size: 9
+          },
           maxRotation: 0,
           autoSkip: true,
-          maxTicksLimit: 8
+          maxTicksLimit: 6
         }
       },
       y: {
@@ -485,6 +590,11 @@ export default function VolatilityChart({
         },
         grid: {
           color: 'rgba(0, 0, 0, 0.05)'
+        },
+        ticks: {
+          font: {
+            size: 9
+          }
         }
       },
       y1: (showHistoricalVol || showImpliedVol || showVix) ? {
@@ -501,6 +611,11 @@ export default function VolatilityChart({
              volatilityRegime === 'low' ? 20 : 30,
         grid: {
           drawOnChartArea: false,
+        },
+        ticks: {
+          font: {
+            size: 9
+          }
         }
       } : undefined
     }
@@ -557,15 +672,18 @@ export default function VolatilityChart({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 w-full h-full flex flex-col">
-      <div className="flex flex-col h-full">
+    <div className="volatility-chart shadow-md rounded-lg overflow-hidden">
+      {/* Inject custom CSS */}
+      <style jsx>{chartStyles}</style>
+      
+      <div className="chart-container p-3 bg-white/90 dark:bg-gray-800/90 rounded-lg border border-neutral-200 dark:border-neutral-700">
         {title && (
           <div className="mb-2">
-            <h3 className="text-lg font-semibold truncate max-w-full">
+            <h3 className="text-lg font-semibold truncate max-w-full chart-title">
               {title}
             </h3>
             
-            <div className={`mt-1 mb-2 px-2 py-1 rounded inline-flex items-center gap-1 whitespace-nowrap w-fit
+            <div className={`mt-1 mb-2 px-2 py-1 rounded inline-flex items-center gap-1 whitespace-nowrap w-fit volatility-badge
               ${volatilityRegime === 'low' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 
                 volatilityRegime === 'normal' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
                 volatilityRegime === 'high' ? 'bg-yellow-100 text-yellow-600 dark:bg-yellow-900/30 dark:text-yellow-400' :
@@ -576,9 +694,9 @@ export default function VolatilityChart({
           </div>
         )}
         
-        <div className="flex items-center justify-end mb-2">
+        <div className="flex items-center justify-end mb-2 chart-controls">
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 p-1 rounded mr-2">
+            <div className="flex gap-1 bg-gray-100 dark:bg-gray-700 p-1 rounded mr-2 zoom-control">
               <button
                 onClick={() => resetZoom()}
                 className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -589,7 +707,7 @@ export default function VolatilityChart({
               </button>
             </div>
             
-            <div className="flex gap-1 text-xs">
+            <div className="flex gap-1 text-xs time-range-buttons">
               {timeRangeButtons.map((btn) => (
                 <button
                   key={btn.value}
@@ -609,9 +727,9 @@ export default function VolatilityChart({
         </div>
         
         {title && (
-          <div className="flex items-center justify-start gap-4 text-sm mb-2 flex-wrap">
+          <div className="vol-option-grid">
             {volatilityOptions.map((option) => (
-              <label key={option.value} className="flex items-center gap-1.5 cursor-pointer">
+              <label key={option.value} className="vol-option-item">
                 <input
                   type="checkbox"
                   checked={option.checked}
@@ -620,9 +738,9 @@ export default function VolatilityChart({
                     // @ts-ignore
                     setChartData((prev) => ({...prev})); // Force rerender
                   }}
-                  className="rounded text-blue-500 focus:ring-blue-500"
+                  className="rounded text-blue-500 focus:ring-blue-500 h-3 w-3"
                 />
-                {option.label} Volatility
+                <span className="vol-option-label">{option.label}</span>
               </label>
             ))}
           </div>
@@ -644,12 +762,15 @@ export default function VolatilityChart({
           )}
         </div>
         
-        <div className="mt-auto pt-2">
-          <div className="flex flex-wrap justify-between items-center text-xs text-gray-500 dark:text-gray-400">
-            <div className="mr-2">Zoom: Use mouse wheel or pinch. Pan: Click and drag.</div>
+        <div className="chart-instructions mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-2 gap-2 text-[9px] text-gray-500 dark:text-gray-400">
+            <div>
+              <p>Zoom: Mouse wheel/pinch</p>
+              <p>Pan: Click and drag</p>
+            </div>
             <div className="text-right">
-              <div>Bollinger Bands: Price ±2 standard deviations</div>
-              <div>Wider bands indicate higher volatility</div>
+              <p>Bands: Price ±2σ</p>
+              <p>Wide bands = high volatility</p>
             </div>
           </div>
         </div>

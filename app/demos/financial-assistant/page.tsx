@@ -1002,13 +1002,6 @@ export default function FinancialAssistantPage() {
                   timeRange="3m"
                   height={300} /* Reduced height from 400 to 300 */
                 />
-                <div className="chart-instructions">
-                  Zoom: Use mouse wheel or pinch. Pan: Click and drag.
-                  <br />
-                  Bollinger Bands: Price ±2 standard deviations
-                  <br />
-                  Wider bands indicate higher volatility
-                </div>
               </div>
               
               <h3 className="text-xl font-semibold mb-4 text-center">Compare Volatility Regimes</h3>
@@ -1052,13 +1045,6 @@ export default function FinancialAssistantPage() {
                       showImpliedVol={false}
                       timeRange="3m"
                     />
-                    <div className="chart-instructions">
-                      Zoom: Use mouse wheel or pinch. Pan: Click and drag.
-                      <br />
-                      Bollinger Bands: Price ±2 standard deviations
-                      <br />
-                      Narrower bands show low volatility
-                    </div>
                   </div>
                 </div>
                 
@@ -1101,13 +1087,6 @@ export default function FinancialAssistantPage() {
                       showImpliedVol={true}
                       timeRange="3m"
                     />
-                    <div className="chart-instructions">
-                      Zoom: Use mouse wheel or pinch. Pan: Click and drag.
-                      <br />
-                      Bollinger Bands: Price ±2 standard deviations
-                      <br />
-                      Wider bands show increased volatility
-                    </div>
                   </div>
                 </div>
                 
@@ -1160,13 +1139,6 @@ export default function FinancialAssistantPage() {
                       showVix={true}
                       timeRange="3m"
                     />
-                    <div className="chart-instructions">
-                      Zoom: Use mouse wheel or pinch. Pan: Click and drag.
-                      <br />
-                      Bollinger Bands: Price ±2 standard deviations
-                      <br />
-                      Extremely wide bands during market crisis
-                    </div>
                   </div>
                 </div>
               </div>

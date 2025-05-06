@@ -40,7 +40,6 @@ export default function RootLayoutClient({
       // Reset any scroll-related styles
       document.documentElement.style.scrollBehavior = '';
       document.documentElement.style.overflowAnchor = '';
-      document.body.style.overflowAnchor = '';
       
       return () => {
         // Restore previous scroll listeners when unmounting
@@ -72,9 +71,10 @@ export default function RootLayoutClient({
     
     // Set up scroll protection
     const setupScrollProtection = () => {
-      // Force disable scroll behavior and overflow anchor
+      // Force disable scroll behavior and overflow anchor - apply only to documentElement to avoid hydration errors
       document.documentElement.style.scrollBehavior = 'auto';
       document.documentElement.style.overflowAnchor = 'none';
+      // No longer applying to body to avoid hydration errors
       
       // Add scroll event listener
       window.addEventListener('scroll', handleScroll, { passive: true });
@@ -112,7 +112,7 @@ export default function RootLayoutClient({
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${poppins.variable}`}>
       <head>
       </head>
-      <body className={isContactPage ? 'bg-slate-900 dark:bg-slate-950' : ''}>
+      <body className={isContactPage ? 'bg-slate-900 dark:bg-slate-950' : ''} suppressHydrationWarning>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <div className={`${isContactPage ? 'bg-transparent' : 'bg-neutral-50 dark:bg-black'} text-neutral-900 dark:text-neutral-50 min-h-screen flex flex-col`}>
             {!isContactPage && <BackgroundAnimation />}

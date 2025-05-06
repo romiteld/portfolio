@@ -645,7 +645,7 @@ export default function FinancialChatWidget() {
   return (
     <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[600px] md:h-[600px] relative" data-component-name="FinancialAssistantDemo">
       {/* Main chat area */}
-      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[calc(100vh-240px)] sm:h-[550px] md:h-auto">
+      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[calc(100vh-340px)] sm:h-[calc(100vh-360px)] md:h-[calc(100%-140px)]">
         {/* Header - Update the light mode styling */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between shadow-sm relative overflow-hidden">
           {/* Add subtle background pattern for light mode only */}
@@ -680,7 +680,7 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages area */}
         <div 
-          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative h-[calc(100vh-340px)] sm:h-[calc(100%-140px)]"
+          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative h-[calc(100vh-340px)] sm:h-[calc(100vh-360px)] md:h-[calc(100%-140px)]"
           ref={chatContainerRef}
           data-component-name="FinancialChatMessages"
         >
@@ -693,7 +693,7 @@ export default function FinancialChatWidget() {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} mb-4`}
             >
               <div
-                className={`max-w-[80%] sm:max-w-[85%] p-3 rounded-lg ${
+                className={`max-w-[85%] sm:max-w-[85%] md:max-w-[80%] p-2 sm:p-3 rounded-lg ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
                     : message.isRealTimeData 
@@ -705,12 +705,12 @@ export default function FinancialChatWidget() {
                   <div className="flex items-center">
                     {message.role === "user" ? (
                       <>
-                        <span className="font-medium mr-2">You</span>
+                        <span className="font-medium text-sm mr-2">You</span>
                         <User size={14} />
                       </>
                     ) : (
                       <>
-                        <span className="font-medium mr-2">Financial Assistant</span>
+                        <span className="font-medium text-sm mr-2">Financial Assistant</span>
                         <Bot size={14} />
                         {message.isRealTimeData && (
                           <span 
@@ -739,7 +739,7 @@ export default function FinancialChatWidget() {
                     )
                   ) : null}
                 </div>
-                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-sm sm:text-sm whitespace-pre-wrap">{message.content}</p>
                 
                 {/* Display market data details for real-time data */}
                 {message.isRealTimeData && message.marketData && (
@@ -825,22 +825,22 @@ export default function FinancialChatWidget() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-10">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30">
           <div className="flex">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onFocus={handleInputFocus}
-              placeholder="Ask..."
-              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[50px] text-sm"
+              placeholder="Ask about stocks or crypto..."
+              className="flex-1 p-2 sm:p-3 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[46px] sm:min-h-[50px] text-base sm:text-sm"
               disabled={isLoading}
               data-component-name="FinancialChatInput"
             />
             <button
               type="submit"
               disabled={isLoading || input.trim() === ""}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[50px] min-w-[50px] flex items-center justify-center"
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[46px] sm:min-h-[50px] min-w-[46px] sm:min-w-[50px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
               data-component-name="FinancialChatSendButton"
