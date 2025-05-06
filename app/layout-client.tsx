@@ -28,6 +28,15 @@ export default function RootLayoutClient({
           __html: `
             // Global scroll position protection
             (function() {
+              // Check if we're on the data analyst assistant page
+              var pathname = window.location.pathname;
+              var isDataAnalystPage = pathname.includes('/demos/data-analyst-assistant');
+              
+              // Skip scroll protection for data analyst assistant page
+              if (isDataAnalystPage) {
+                return;
+              }
+              
               var initialScrollPosition = 0;
               var preventAutoScroll = function() {
                 // Record initial position once DOM is ready
@@ -92,4 +101,3 @@ export default function RootLayoutClient({
     </html>
   )
 }
-
