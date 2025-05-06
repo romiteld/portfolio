@@ -160,41 +160,6 @@ function ChessAIDemo() {
                 </div>
               </div>
 
-              {/* Control buttons */}
-              <div className="flex flex-wrap justify-between gap-2 px-4 pb-4">
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {/* New Game logic */}}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white font-medium shadow-sm hover:bg-blue-700 transition-colors"
-                    data-component-name="ChessAIDemo"
-                  >
-                    <span>New Game</span>
-                  </button>
-                  <button 
-                    onClick={() => {/* Undo logic */}}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-medium shadow-sm hover:bg-gray-300 transition-colors"
-                    data-component-name="ChessAIDemo"
-                  >
-                    <span>Undo</span>
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {/* Offer Draw logic */}}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-gray-200 font-medium shadow-sm hover:bg-gray-300 transition-colors"
-                    data-component-name="ChessAIDemo"
-                  >
-                    <span>Offer Draw</span>
-                  </button>
-                  <button 
-                    onClick={() => {/* Resign logic */}}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm rounded-md bg-red-600 text-white font-medium shadow-sm hover:bg-red-700 transition-colors"
-                    data-component-name="ChessAIDemo"
-                  >
-                    <span>Resign</span>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -345,6 +310,68 @@ export function Head() {
         /* Hide original chess assistant input box */
         .chess-demo-container .lucide-message-circle + h3 + div + div + div.p-3.border-t {
           display: none !important;
+        }
+
+        /* Reorder sections - Chess Assistant should appear first */
+        .chess-demo-container .flex.flex-col.gap-4 {
+          display: flex;
+          flex-direction: column;
+        }
+        
+        /* Desktop layout (default) */
+        @media (min-width: 768px) {
+          /* Make Chess Assistant appear first (before Player Analysis) */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(3) {
+            order: 1;
+          }
+          
+          /* Make Player Analysis appear after Chess Assistant */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(1) {
+            order: 3;
+          }
+          
+          /* Keep Move History in second position */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(2) {
+            order: 2;
+          }
+        }
+        
+        /* Mobile-specific layout */
+        @media (max-width: 767px) {
+          /* More compact layout for mobile */
+          .chess-demo-container h1 {
+            margin-bottom: 0.5rem !important;
+          }
+          
+          /* Make Move History come first for mobile (most important after board) */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(2) {
+            order: 1;
+          }
+          
+          /* Make Chess Assistant second (easy access to help) */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(3) {
+            order: 2;
+          }
+          
+          /* Push Player Analysis further down as it's less critical during active play */
+          .chess-demo-container .flex.flex-col.gap-4 > div:nth-child(1) {
+            order: 3;
+          }
+          
+          /* Reduce spacing between elements */
+          .chess-demo-container .space-y-6 {
+            margin-top: 0.5rem !important;
+          }
+          
+          /* Make the chessboard a bit more compact on mobile */
+          .chess-demo-container .p-4.lg\\:p-5 {
+            padding: 0.5rem !important;
+          }
+          
+          /* The "How to Play" section should be collapsible on mobile but expanded by default */
+          .chess-demo-container .bg-blue-50 {
+            margin-bottom: 0.5rem !important;
+          }
         }
       `}</style>
     </>
