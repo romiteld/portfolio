@@ -38,42 +38,66 @@ export default function ChessAIDemo() {
   
   // Add effect to prevent automatic scrolling on focus or click
   useEffect(() => {
-    // Disable automatic scrolling behavior
+    // Completely disable automatic scrolling behavior
     if (typeof window !== 'undefined') {
       // Get initial scroll position
       const initialScrollPosition = window.scrollY;
+      let scrollLocked = false;
       
-      // Create handler for focus events that would cause scrolling
-      const preventScrollOnFocus = () => {
-        // If scroll position changed from external causes, don't override
-        if (Math.abs(window.scrollY - initialScrollPosition) < 100) {
+      // Aggressive function to prevent scrolling
+      const preventScroll = (e: Event) => {
+        if (scrollLocked) return;
+        scrollLocked = true;
+
+        // Force scroll position to stay the same
+        requestAnimationFrame(() => {
           window.scrollTo(0, initialScrollPosition);
-        }
+          setTimeout(() => { scrollLocked = false; }, 50);
+        });
       };
       
-      // Create a MutationObserver to watch for focus changes
-      const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          if (mutation.type === 'attributes' && 
-              mutation.attributeName === 'tabindex') {
-            preventScrollOnFocus();
-          }
-        }
+      // Block programmatic scrolling
+      const originalScrollTo = window.scrollTo;
+      // Use proper typing to match both function signatures of scrollTo
+      window.scrollTo = function(xOrOptions?: number | ScrollToOptions, y?: number): void {
+        console.log('Scroll attempt blocked');
+        return; // Block all scrolling
+      };
+      
+      // Capture all events that might trigger scrolling
+      document.addEventListener('focus', preventScroll, true);
+      document.addEventListener('click', preventScroll, true);
+      document.addEventListener('touchstart', preventScroll, true);
+      document.addEventListener('wheel', (e) => e.preventDefault(), { passive: false });
+      
+      // Create MutationObserver to watch for any DOM changes that might affect scrolling
+      const observer = new MutationObserver(() => {
+        window.scrollTo(0, initialScrollPosition);
       });
       
-      // Apply the observer to the chess game container
-      const chessGameContainer = document.querySelector('.chess-game');
-      if (chessGameContainer) {
-        observer.observe(chessGameContainer, { 
-          attributes: true,
-          childList: true,
-          subtree: true
-        });
-      }
+      // Observe entire document for changes
+      observer.observe(document.body, { 
+        childList: true,
+        subtree: true,
+        attributes: true
+      });
+      
+      // Set up a periodic check to force scroll position
+      const intervalId = setInterval(() => {
+        if (Math.abs(window.scrollY - initialScrollPosition) > 5) {
+          window.scrollTo(0, initialScrollPosition);
+        }
+      }, 100);
       
       // Cleanup function
       return () => {
+        document.removeEventListener('focus', preventScroll, true);
+        document.removeEventListener('click', preventScroll, true);
+        document.removeEventListener('touchstart', preventScroll, true);
+        document.removeEventListener('wheel', (e) => e.preventDefault());
         observer.disconnect();
+        clearInterval(intervalId);
+        window.scrollTo = originalScrollTo;
       };
     }
   }, []);
@@ -116,7 +140,7 @@ export default function ChessAIDemo() {
             Play against a neural network chess engine trained with deep reinforcement learning techniques
           </p>
           
-          <div className="absolute top-2 md:top-4 right-2 md:right-4 md:top-8 md:right-8 flex space-x-2 z-10">
+          <div className="absolute top-2 right-2 md:top-8 md:right-8 flex space-x-2 z-10">
             <div className="inline-flex items-center px-2 py-0.5 md:px-3 md:py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300">
               <span className="mr-1">✨</span> AI Chess Demo
             </div>
@@ -124,7 +148,7 @@ export default function ChessAIDemo() {
 
           {/* Game Instructions - conditionally shown with compact styling */}
           {instructionsVisible && (
-            <div className="mb-2 md:mb-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 md:p-4 md:p-6 relative instruction-box">
+            <div className="mb-2 md:mb-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-2 md:p-6 relative instruction-box">
               <button 
                 onClick={() => setInstructionsVisible(false)}
                 className="absolute top-1 right-1 md:top-3 md:right-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
@@ -305,7 +329,7 @@ export default function ChessAIDemo() {
                       </div>
                     </div>
                   </div>
-
+                  
                   <div>
                     <h3 className="font-medium mb-2">Training Process</h3>
                     <ul className="space-y-2 text-sm">
@@ -337,7 +361,7 @@ export default function ChessAIDemo() {
                       <span className="font-bold">3000+</span>
                     </div>
                     <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: "85%" }}></div>
+                      <div className="bg-blue-600 h-2.5 rounded-full w-[85%]"></div>
                     </div>
                   </div>
                 </div>
@@ -361,94 +385,6 @@ export default function ChessAIDemo() {
                     <span className="md:hidden">How to play</span>
                   </button>
                 )}
-              </div>
-
-              {/* AI Playing Style */}
-              <div className="bg-white/95 dark:bg-[#1e293b]/80 rounded-xl shadow-xl border border-gray-300 dark:border-gray-800 backdrop-blur-lg p-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
-                  <Trophy className="text-amber-500" />
-                  Magnus-like Playing Style
-                </h2>
-
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Positional Understanding</span>
-                      <span className="text-sm font-medium">Excellent</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: "90%" }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Endgame Technique</span>
-                      <span className="text-sm font-medium">Masterful</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: "95%" }}></div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Opening Preparation</span>
-                      <span className="text-sm font-medium">Very Strong</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: "85%" }}></div>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm">Tactical Awareness</span>
-                      <span className="text-sm font-medium">Excellent</span>
-                    </div>
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                      <div className="bg-amber-500 h-2 rounded-full" style={{ width: "90%" }}></div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="font-medium mb-2 text-sm">Style Characteristics</h3>
-                  <ul className="space-y-2 text-sm">
-                    <li className="flex items-start gap-2">
-                      <Star className="w-4 h-4 text-amber-500 mt-0.5" />
-                      <p>Prefers positional advantages over material</p>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Star className="w-4 h-4 text-amber-500 mt-0.5" />
-                      <p>Excels in complex middlegame positions</p>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <Star className="w-4 h-4 text-amber-500 mt-0.5" />
-                      <p>Precise technical endgame conversion</p>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Technical Implementation */}
-              <div className="bg-white/95 dark:bg-[#1e293b]/80 rounded-xl shadow-xl border border-gray-300 dark:border-gray-800 backdrop-blur-lg p-6">
-                <h2 className="text-xl font-semibold flex items-center gap-2 mb-4">
-                  <Code className="text-green-500" />
-                  Technical Implementation
-                </h2>
-
-                <div className="space-y-3 text-sm">
-                  <p>This demo uses a client-side React chessboard with server-side AI move generation via a Next.js API route. The neural network model is stored in Supabase and dynamically loaded for inference.</p>
-                  
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">Next.js</div>
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">React</div>
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">TypeScript</div>
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">ONNX Runtime</div>
-                    <div className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded">Supabase</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

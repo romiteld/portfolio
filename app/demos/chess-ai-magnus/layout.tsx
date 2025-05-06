@@ -1,14 +1,8 @@
-import { Metadata, Viewport } from "next"
+import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Advanced Chess AI Engine | AI Demos",
-  description: "Play against a neural network chess engine trained with deep reinforcement learning techniques and test your skills against different AI difficulty levels."
-}
-
-export const viewport: Viewport = {
-  width: 'device-width',
-  initialScale: 1,
-  maximumScale: 5
+  title: "Chess AI Magnus | AI Demos",
+  description: "Play against a neural network chess engine trained with deep reinforcement learning techniques."
 }
 
 export default function ChessAILayout({
@@ -24,45 +18,67 @@ export default function ChessAILayout({
         overflowAnchor: 'none'
       }}
     >
-      {/* Script to prevent all automatic scrolling */}
+      {/* Script to completely disable automatic scrolling */}
       <script dangerouslySetInnerHTML={{
         __html: `
-          document.addEventListener('DOMContentLoaded', () => {
-            // Store the initial scroll position
-            const initialScrollPos = window.scrollY;
-            
-            // Helper function to restore scroll position
-            const restoreScroll = () => {
-              window.scrollTo(0, initialScrollPos);
+          (function() {
+            // Store current scroll position and restore it after any operation
+            let lastScrollPosition = 0;
+            let scrollLocked = false;
+
+            // Function to save current scroll position
+            function saveScrollPosition() {
+              lastScrollPosition = window.scrollY;
+            }
+
+            // Function to restore saved scroll position
+            function restoreScrollPosition() {
+              if (scrollLocked) return;
+              scrollLocked = true;
+              window.scrollTo(0, lastScrollPosition);
+              setTimeout(() => { scrollLocked = false; }, 50);
+            }
+
+            // Save position on load
+            window.addEventListener('load', saveScrollPosition);
+
+            // Hook into various events that might cause scrolling
+            document.addEventListener('click', saveScrollPosition);
+            document.addEventListener('touchstart', saveScrollPosition);
+            document.addEventListener('focusin', function(e) {
+              saveScrollPosition();
+              setTimeout(restoreScrollPosition, 10);
+            });
+
+            // Aggressive scroll position maintenance
+            const scrollHandler = function() {
+              if (Math.abs(window.scrollY - lastScrollPosition) > 5 && !scrollLocked) {
+                restoreScrollPosition();
+              }
             };
             
-            // Force overflow anchor to none
-            document.documentElement.style.overflowAnchor = 'none';
-            document.body.style.overflowAnchor = 'none';
-            
-            // Disable focus-induced scrolling
-            document.querySelectorAll('input, button, select, textarea, [tabindex]').forEach(el => {
-              el.addEventListener('focus', (e) => {
-                e.preventDefault();
-                setTimeout(restoreScroll, 0);
-              });
-            });
-            
-            // Add click handler to chess-related elements
-            document.querySelectorAll('.chess-board .square, .chess-piece, .control-button').forEach(el => {
-              el.addEventListener('click', () => {
-                setTimeout(restoreScroll, 10);
-              });
-            });
-            
-            // Restore scroll a few times to catch delayed scrolling
-            setTimeout(restoreScroll, 100);
-            setTimeout(restoreScroll, 500);
-            setTimeout(restoreScroll, 1000);
-          });
+            // We'll run this at a high frequency to catch any scroll changes
+            setInterval(scrollHandler, 100);
+
+            // Override any programmatic scrolling
+            const originalScrollTo = window.scrollTo;
+            window.scrollTo = function(...args) {
+              if (args[0] === 0 && args[1] === 0) {
+                // Allow scroll to top only if explicitly requested
+                originalScrollTo.apply(window, args);
+                setTimeout(() => { lastScrollPosition = 0; }, 50);
+              } else if (args[0] && typeof args[0] === 'object' && args[0].top === 0) {
+                // Handle the object version of scrollTo
+                originalScrollTo.apply(window, args);
+                setTimeout(() => { lastScrollPosition = 0; }, 50);
+              } else {
+                // Block other scroll attempts
+                console.log('Prevented automatic scroll');
+              }
+            };
+          })();
         `
       }} />
-      
       {children}
     </div>
   )

@@ -18,6 +18,9 @@
 14. Proper server/client rendering pattern for React Three Fiber components
 15. Successful Vercel deployment with fixed dependency issues (@headlessui/react)
 16. Enhanced user experience in Financial Assistant with improved news article modal
+17. Fixed cryptocurrency data validation issues with Yahoo Finance integration
+18. Implemented real-time financial news using firecrawl web scraping
+19. Disabled auto-scrolling behavior across the application to improve user experience
 
 - **Core Portfolio Website**
   - Home page with projects showcase
@@ -56,6 +59,10 @@
   - Example news and insights section
   - Enhanced news article modal with improved source attribution
   - Fixed issue with modal state handling when opening multiple articles
+  - Fixed cryptocurrency data fetching with robust validation error handling
+  - Implemented real-time news using multi-tiered scraping approach
+  - Added proper fallbacks for market data to ensure resilient display
+  - Prevented auto-scrolling issues when interacting with the UI
 
 ## Current Status
 
@@ -97,6 +104,14 @@
    - Added diagnostic endpoints for API troubleshooting
    - Improved API response validation and error handling
    - Implemented CORS headers for proper cross-origin requests
+   - Fixed cryptocurrency data validation issues in Yahoo Finance API
+   - Created reliable fallback mechanisms for market data retrieval
+   - Implemented firecrawl integration for real-time financial news
+   - Added multi-tiered news fetching with multiple source options
+   - Created intelligent article extraction from scraped content
+   - Implemented proper article categorization based on content
+   - Added normalized article format for consistent UI display
+   - Enhanced API error reporting with detailed diagnostics
 
 3. **Infrastructure**:
    - Vercel deployment configured for frontend
@@ -384,6 +399,10 @@
 - ✅ Enhance news article content with detailed information
 - ✅ Implement news article modal functionality
 - ✅ Improve API error handling and response validation
+- ✅ Fix cryptocurrency data validation issues with Yahoo Finance integration
+- ✅ Implement real-time news using firecrawl web scraping
+- ✅ Create robust fallback system for market data retrieval
+- ✅ Fix auto-scrolling issues across the application
 - 🔄 Populate embedding values for existing documents
 - 🔄 Implement automated scheduled updates
 - 🔄 Develop enhanced data visualization components
@@ -465,7 +484,9 @@ The Git repository has been optimized by removing large model files from trackin
 
 The chess AI is using a Lc0 fine-tuned model with a 256x10 distilled network. The infrastructure for downloading, training, and benchmarking is in place, and we've fixed various issues with the fine-tuning process.
 
-The financial assistant has a secure Supabase vector database with proper security measures, fixed UI issues, and improved error handling. 
+The financial assistant has a secure Supabase vector database with proper security measures, fixed UI issues, and improved error handling. Recently added features include robust cryptocurrency data fetching with proper validation error handling and real-time financial news integration using firecrawl web scraping. The application now fetches news from multiple sources (Reuters, CNBC, MarketWatch, Yahoo Finance) with intelligent article extraction and categorization.
+
+Auto-scrolling issues have been fixed across the application, providing a smoother user experience, especially when interacting with input fields in the financial assistant or making moves in the chess game.
 
 The next steps include completing the 3D chess visualization with detailed models and animations, improving UI/UX elements of the chess demo, executing further fine-tuning of the chess AI model, and enhancing the financial assistant visualization capabilities.
 

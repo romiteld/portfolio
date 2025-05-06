@@ -58,7 +58,28 @@ The current focus is on improving the 3D visualization components across the por
    - Enhanced source attribution display with better styling and layout
    - Fixed Dialog and Transition component usage for compatibility with @headlessui/react v1.4.3
 
-4. **Chess AI Demo Mobile Improvements**:
+4. **Financial Assistant Data Integration Improvements**:
+   - Fixed cryptocurrency data validation issues in Yahoo Finance integration
+   - Implemented error handling for cryptocurrency schema validation errors
+   - Added fallback data generation for cryptocurrencies that fail schema validation
+   - Disabled strict validation in Yahoo Finance API to allow more flexible data structures
+   - Created a robust fallback system for market data to ensure UI always displays something
+   - Implemented proper error logging and reporting for API issues
+   - Added global configuration for Yahoo Finance to handle validation issues consistently
+
+5. **Financial Assistant News Implementation**:
+   - Implemented real-time financial news using firecrawl web scraping
+   - Created a multi-tiered news retrieval system with multiple fallback approaches
+   - Set up firecrawl API integration to scrape Reuters, CNBC, MarketWatch, and Yahoo Finance
+   - Implemented article extraction from markdown content with intelligent parsing
+   - Added proper news categorization based on article content
+   - Created consistent article format normalized across different sources
+   - Implemented proper error handling and logging for news API
+   - Added caching to prevent rate limit issues during deployment
+   - Created environment variable support for API keys
+   - Added deployment guide for configuring API access
+
+6. **Chess AI Demo Mobile Improvements**:
    - Enhanced responsive design for the chess board on mobile devices
    - Made the chess board larger when viewing from mobile devices
    - Prevented automatic scrolling when moves are made or pieces are selected
@@ -72,7 +93,7 @@ The current focus is on improving the 3D visualization components across the por
    - Created mobile-specific CSS classes for layout changes when viewport width is below 767px
    - Implemented stacking of sidebar content below the chess board on mobile views
 
-5. **Chess AI 3D Visualization**:
+7. **Chess AI 3D Visualization**:
    - Implemented 3D chess board using React Three Fiber and Three.js
    - Created 3D chess piece geometries with proper materials
    - Added lighting and shadows for realistic 3D scene
@@ -81,34 +102,34 @@ The current focus is on improving the 3D visualization components across the por
    - Added toggle for switching between 2D and 3D views
    - Fixed SSR issues with dynamic imports for Three.js components
 
-6. **Git Repository Optimization**:
+8. **Git Repository Optimization**:
    - Removed large model files from git tracking
    - Added comprehensive rules to .gitignore for model files and sensitive directories
    - Moved models to Supabase storage for better accessibility
    - Cleaned repository history to reduce size and improve performance
    - Set up proper tracking between local and remote repositories
 
-7. **Chess AI Integration with Supabase**:
+9. **Chess AI Integration with Supabase**:
    - Uploaded ONNX model to Supabase storage bucket
    - Created database tables for chess model metadata, openings, and game history
    - Set up Row Level Security (RLS) policies for secure access
    - Implemented a more efficient model serving approach
 
-8. **Chess UI Implementation**:
-   - Created a responsive chess board component
-   - Implemented game state management with TypeScript
-   - Added AI difficulty level controls
-   - Implemented move validation and game rules
-   - Styled components to match portfolio design
+10. **Chess UI Implementation**:
+    - Created a responsive chess board component
+    - Implemented game state management with TypeScript
+    - Added AI difficulty level controls
+    - Implemented move validation and game rules
+    - Styled components to match portfolio design
 
-9. **Chess AI API Route Improvements**:
-   - Fixed recursive function calls causing "Maximum call stack size exceeded" errors
-   - Implemented a more direct approach to checking attacked squares
-   - Updated isCheck function to avoid circular dependencies
-   - Improved diagnostic endpoint for troubleshooting AI issues
-   - Removed heuristic evaluation fallbacks, ensuring model-based evaluation
+11. **Chess AI API Route Improvements**:
+    - Fixed recursive function calls causing "Maximum call stack size exceeded" errors
+    - Implemented a more direct approach to checking attacked squares
+    - Updated isCheck function to avoid circular dependencies
+    - Improved diagnostic endpoint for troubleshooting AI issues
+    - Removed heuristic evaluation fallbacks, ensuring model-based evaluation
 
-10. **Critical fixes to the chess AI fine-tuning script**:
+12. **Critical fixes to the chess AI fine-tuning script**:
     - Fixed torch.cuda.amp deprecation warnings by updating to the newer torch.amp API
     - Resolved mixed precision issues by adding explicit mixed precision control
     - Added command-line parameter to disable mixed precision when needed
@@ -117,7 +138,7 @@ The current focus is on improving the 3D visualization components across the por
     - Implemented better error handling for training loops
     - Enhanced progress reporting with more detailed metrics
 
-11. **Major improvements to the chess AI fine-tuning script**:
+13. **Major improvements to the chess AI fine-tuning script**:
     - Fixed critical memory management issues by implementing more aggressive memory control mechanisms
     - Corrected GPU utilization issues by resolving synchronization bottlenecks
     - Enhanced CPU utilization with optimized data pipeline and preprocessing
@@ -125,20 +146,20 @@ The current focus is on improving the 3D visualization components across the por
     - Implemented channel dimension fixes between the chess board representation and model input
     - Added proper tensor cleanup to reduce memory leaks
 
-12. **Added comprehensive GPU-accelerated chess AI implementation using**:
+14. **Added comprehensive GPU-accelerated chess AI implementation using**:
     - Neural network model in ONNX format (converted from Leela Chess Zero)
     - Monte Carlo Tree Search (MCTS) for move prediction
     - Fine-tuning capabilities to improve performance with GPU support
     - ONNX model stored in Supabase for efficient retrieval
     - Next.js API route for chess move generation
 
-13. **Fixed security issues with the financial assistant**:
+15. **Fixed security issues with the financial assistant**:
     - Removed hardcoded API keys from PowerShell scripts
     - Added environment variable loading
     - Added validation for required environment variables
     - Added .env.local-based configuration
 
-14. **Improved financial assistant UI**:
+16. **Improved financial assistant UI**:
     - Enhanced news article content
     - Implemented modal interface for article reading
     - Added formatting to preserve paragraph structure
@@ -155,7 +176,26 @@ The current focus is on improving the 3D visualization components across the por
    - Implement proper loading states for 3D components
    - Ensure consistent behavior across different browsers and devices
 
-2. **Chess AI 3D Visualization Completion**:
+2. **Financial News Enhancement**:
+   - Add article image support for a more visual news experience
+   - Implement more robust scraper fallback options
+   - Add search functionality within news articles
+   - Improve news categorization with machine learning
+   - Set up automatic news topic clustering
+   - Create a more efficient caching strategy
+   - Update news content more frequently
+   - Implement breaking news alerts
+
+3. **Market Data Robustness**:
+   - Add more alternative data sources for market information
+   - Implement a more sophisticated fallback system for unreliable APIs
+   - Improve data normalization across different sources
+   - Add more cryptocurrencies to the tracking list
+   - Create better visual indicators for simulated vs. real data
+   - Implement health checks for data source APIs
+   - Add performance metrics for data fetching operations
+
+4. **Chess AI 3D Visualization Completion**:
    - Replace placeholder geometric pieces with detailed 3D models
    - Add animations for piece movement, captures, and special moves
    - Implement interactive piece selection in 3D mode
@@ -163,7 +203,7 @@ The current focus is on improving the 3D visualization components across the por
    - Add visual effects for check, checkmate, and other game states
    - Ensure proper responsiveness of the 3D board
 
-3. **Chess AI Demo UI/UX Enhancement**:
+5. **Chess AI Demo UI/UX Enhancement**:
    - Implement proper game end detection and notification (checkmate, stalemate, draw)
    - Add a control panel with New Game, Resign, Draw, and Undo/Redo buttons
    - Create a move history panel showing algebraic notation
@@ -173,7 +213,7 @@ The current focus is on improving the 3D visualization components across the por
    - Make the board responsive for all screen sizes
    - Improve overall layout and spacing
 
-4. **Chess AI Functionality Improvements**:
+6. **Chess AI Functionality Improvements**:
    - Add proper game state management including game result
    - Implement PGN export functionality
    - Add game analysis with principal variation display
@@ -183,7 +223,7 @@ The current focus is on improving the 3D visualization components across the por
    - Implement move timer/clock functionality
    - Add ability to save and load games
 
-5. **Chess AI API Robustness**:
+7. **Chess AI API Robustness**:
    - Add comprehensive error handling
    - Implement caching for common positions
    - Add rate limiting

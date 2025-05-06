@@ -834,8 +834,13 @@ const ChessGame = ({
   // Handle AI move
   const handleAIMove = useCallback(async () => {
     if (turn !== playerColor && gameStatus === 'playing') {
-      // Save current scroll position before AI move
-      const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
+      // Block scroll behavior entirely during AI moves
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      const originalOverflowAnchor = document.body.style.overflowAnchor;
+      
+      // Disable all scrolling behaviors
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.overflowAnchor = 'none';
       
       setThinking(true)
       setMessage("AI is thinking...")
@@ -869,14 +874,7 @@ const ChessGame = ({
           onGameOver?.(data.status === 'checkmate' ? "Checkmate! You win!" : "Stalemate! Game drawn.")
           setMessage(data.status === 'checkmate' ? "Checkmate! You win!" : "Stalemate! Game drawn.")
         } else if (data.move) {
-          // Prevent scroll from happening during the move
-          document.documentElement.style.scrollBehavior = 'auto';
-          document.body.style.overflowAnchor = 'none';
-          
           const newBoard = makeMove(data.move)
-          
-          // Check if the AI's move put the player in check or checkmate
-          // This would require a full chess engine to implement properly
         }
       } catch (error) {
         console.error('Error getting AI move:', error)
@@ -885,14 +883,9 @@ const ChessGame = ({
         setThinking(false)
         setTimeout(() => setMessage(null), 3000)
         
-        // More reliable scroll restoration
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            window.scrollTo(0, currentScrollPosition);
-            document.documentElement.style.scrollBehavior = '';
-            document.body.style.overflowAnchor = '';
-          });
-        }, 10);
+        // Restore original scroll behavior settings
+        document.documentElement.style.scrollBehavior = originalScrollBehavior;
+        document.body.style.overflowAnchor = originalOverflowAnchor;
       }
     }
   }, [turn, playerColor, gameStatus, board, gamePhase, aiPersonality, castlingRights, aiLevel, moveHistory, enPassantTarget, makeMove, onGameOver])
@@ -900,23 +893,20 @@ const ChessGame = ({
   // Handle human player move
   const handlePlayerMove = useCallback((move: Move) => {
     if (turn === playerColor && gameStatus === 'playing') {
-      // Prevent automatic scrolling that can happen on move
-      const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
+      // Block scroll behavior entirely during player moves
+      const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+      const originalOverflowAnchor = document.body.style.overflowAnchor;
       
-      // Temporarily disable scroll behavior and anchor that could cause scroll jumps
+      // Disable all scrolling behaviors
       document.documentElement.style.scrollBehavior = 'auto';
       document.body.style.overflowAnchor = 'none';
       
+      // Make the move
       const newBoard = makeMove(move);
       
-      // More reliable scroll restoration using requestAnimationFrame
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          window.scrollTo(0, currentScrollPosition);
-          document.documentElement.style.scrollBehavior = '';
-          document.body.style.overflowAnchor = '';
-        });
-      }, 10);
+      // Restore original scroll behavior settings
+      document.documentElement.style.scrollBehavior = originalScrollBehavior;
+      document.body.style.overflowAnchor = originalOverflowAnchor;
     }
   }, [turn, playerColor, gameStatus, makeMove]);
   
