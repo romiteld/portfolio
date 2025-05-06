@@ -239,3 +239,17 @@
   animation: animateStars3 200s linear infinite;
 }
 
+/* Disable automatic scrolling globally */
+html {
+  scroll-behavior: auto !important;
+  overflow-anchor: none !important;
+}
+
+* {
+  overflow-anchor: none !important;
+}
+
+*:focus {
+  scroll-margin: 0 !important;
+}
+

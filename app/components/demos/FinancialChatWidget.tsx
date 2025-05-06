@@ -219,11 +219,19 @@ export default function FinancialChatWidget() {
   // Scroll to bottom function with modified behavior
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
+      // Save current page scroll position
+      const pageScrollY = window.scrollY;
+      
       // Use scrollIntoView on the container itself rather than allowing the whole page to scroll
       const chatContainer = chatContainerRef.current
       if (chatContainer) {
+        // Don't use scrollIntoView at all to avoid page scrolling
+        // Instead, directly set the scrollTop of the container
         const scrollHeight = chatContainer.scrollHeight
         chatContainer.scrollTop = scrollHeight
+        
+        // Restore the page's scroll position in case it changed
+        window.scrollTo(0, pageScrollY);
       }
     }
   }
@@ -336,6 +344,14 @@ export default function FinancialChatWidget() {
     // Prevent default browser behavior that might cause scrolling
     e.preventDefault()
     e.stopPropagation()
+    
+    // Save current scroll position
+    const currentScrollPosition = window.scrollY;
+    
+    // After a slight delay, restore the original scroll position
+    setTimeout(() => {
+      window.scrollTo(0, currentScrollPosition);
+    }, 10);
   }
 
   // Handle clicking a suggestion

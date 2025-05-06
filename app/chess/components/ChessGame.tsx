@@ -869,6 +869,10 @@ const ChessGame = ({
           onGameOver?.(data.status === 'checkmate' ? "Checkmate! You win!" : "Stalemate! Game drawn.")
           setMessage(data.status === 'checkmate' ? "Checkmate! You win!" : "Stalemate! Game drawn.")
         } else if (data.move) {
+          // Prevent scroll from happening during the move
+          document.documentElement.style.scrollBehavior = 'auto';
+          document.body.style.overflowAnchor = 'none';
+          
           const newBoard = makeMove(data.move)
           
           // Check if the AI's move put the player in check or checkmate
@@ -881,9 +885,13 @@ const ChessGame = ({
         setThinking(false)
         setTimeout(() => setMessage(null), 3000)
         
-        // Restore scroll position after AI move is complete
+        // More reliable scroll restoration
         setTimeout(() => {
-          window.scrollTo(0, currentScrollPosition);
+          requestAnimationFrame(() => {
+            window.scrollTo(0, currentScrollPosition);
+            document.documentElement.style.scrollBehavior = '';
+            document.body.style.overflowAnchor = '';
+          });
         }, 10);
       }
     }
@@ -895,11 +903,19 @@ const ChessGame = ({
       // Prevent automatic scrolling that can happen on move
       const currentScrollPosition = window.scrollY || document.documentElement.scrollTop;
       
+      // Temporarily disable scroll behavior and anchor that could cause scroll jumps
+      document.documentElement.style.scrollBehavior = 'auto';
+      document.body.style.overflowAnchor = 'none';
+      
       const newBoard = makeMove(move);
       
-      // Restore the scroll position after the move is made
+      // More reliable scroll restoration using requestAnimationFrame
       setTimeout(() => {
-        window.scrollTo(0, currentScrollPosition);
+        requestAnimationFrame(() => {
+          window.scrollTo(0, currentScrollPosition);
+          document.documentElement.style.scrollBehavior = '';
+          document.body.style.overflowAnchor = '';
+        });
       }, 10);
     }
   }, [turn, playerColor, gameStatus, makeMove]);

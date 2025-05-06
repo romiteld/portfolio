@@ -104,11 +104,93 @@ interface NewsItem {
   timestamp: string;
   title: string;
   summary: string;
-  fullContent?: string; // Placeholder for full article text
+  fullContent?: string;
   source?: string;
 }
 
-// Sample news data (replace with API fetch later)
+// Real-time news fetching function
+const fetchFinancialNews = async (): Promise<NewsItem[]> => {
+  try {
+    // Try to fetch news from our API endpoint
+    const response = await fetch('/api/financial-assistant/news', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch news: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Transform API data to NewsItem format
+    if (data && Array.isArray(data.articles) && data.articles.length > 0) {
+      return data.articles.map((article: any, index: number) => ({
+        id: index + 1,
+        category: article.category || determineCategory(article.title),
+        timestamp: article.publishedAt ? formatTimeAgo(new Date(article.publishedAt)) : 'Today',
+        title: article.title,
+        summary: article.description || article.summary || 'No description available.',
+        fullContent: article.content,
+        source: article.source?.name || article.sourceName || 'Financial News Source'
+      }));
+    }
+    
+    throw new Error('No articles returned from API');
+  } catch (error) {
+    console.error('Error fetching financial news:', error);
+    // Return sample data as fallback
+    return sampleNewsData;
+  }
+};
+
+// Helper function to determine news category from title
+const determineCategory = (title: string): string => {
+  const lowerTitle = title.toLowerCase();
+  
+  if (lowerTitle.includes('market') || lowerTitle.includes('stock') || 
+      lowerTitle.includes('nasdaq') || lowerTitle.includes('dow') || 
+      lowerTitle.includes('s&p') || lowerTitle.includes('bull') || 
+      lowerTitle.includes('bear')) {
+    return 'Markets';
+  } else if (lowerTitle.includes('fed') || lowerTitle.includes('inflation') || 
+             lowerTitle.includes('gdp') || lowerTitle.includes('economy') || 
+             lowerTitle.includes('interest rate') || lowerTitle.includes('federal reserve')) {
+    return 'Economy';
+  } else if (lowerTitle.includes('oil') || lowerTitle.includes('gold') || 
+             lowerTitle.includes('commodity') || lowerTitle.includes('energy') || 
+             lowerTitle.includes('metals')) {
+    return 'Commodities';
+  } else if (lowerTitle.includes('crypto') || lowerTitle.includes('bitcoin') || 
+             lowerTitle.includes('ethereum') || lowerTitle.includes('blockchain')) {
+    return 'Crypto';
+  }
+  
+  return 'Business';
+};
+
+// Helper function to format timestamps as "time ago"
+const formatTimeAgo = (date: Date): string => {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHrs = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHrs / 24);
+  
+  if (diffDays > 0) {
+    return diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+  } else if (diffHrs > 0) {
+    return `${diffHrs} hours ago`;
+  } else if (diffMin > 0) {
+    return `${diffMin} minutes ago`;
+  } else {
+    return 'Just now';
+  }
+};
+
+// Sample news data as fallback
 const sampleNewsData: NewsItem[] = [
   {
     id: 1,
@@ -183,6 +265,8 @@ export default function FinancialAssistantPage() {
   const isDark = resolvedTheme === 'dark'
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedNewsItem, setSelectedNewsItem] = useState<NewsItem | null>(null);
+  const [newsArticles, setNewsArticles] = useState<NewsItem[]>(sampleNewsData);
+  const [isLoadingNews, setIsLoadingNews] = useState<boolean>(false);
 
   // Load initial messages and data
   useEffect(() => {
@@ -302,8 +386,25 @@ export default function FinancialAssistantPage() {
   
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
+      // Save current page scroll position
+      const pageScrollY = window.scrollY;
+      
       timeoutRef.current = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        // Don't use scrollIntoView as it affects the whole page
+        // Instead, if we have access to the container, directly modify its scrollTop
+        if (chatContainerRef.current) {
+          const scrollHeight = chatContainerRef.current.scrollHeight;
+          chatContainerRef.current.scrollTop = scrollHeight;
+          
+          // Restore the page's scroll position
+          window.scrollTo(0, pageScrollY);
+        }
+        // Only use scrollIntoView as a fallback and with "auto" behavior
+        else if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "auto" });
+          // Restore the page's scroll position
+          window.scrollTo(0, pageScrollY);
+        }
       }, 100)
     }
   }
@@ -403,8 +504,10 @@ export default function FinancialAssistantPage() {
   }
   
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Scroll to bottom when input is focused to show latest messages
-    scrollToBottom()
+    // Prevent the default focus behavior that might cause scrolling
+    e.preventDefault()
+    // Don't scroll to bottom on input focus - this prevents the auto scrolling
+    // scrollToBottom() - Remove this line
   }
   
   const handleSuggestionClick = (suggestion: string) => {
@@ -553,16 +656,9 @@ export default function FinancialAssistantPage() {
     console.log('Modal state changed:', isModalOpen);
   }, [isModalOpen]);
 
-  const handleNewsItemClick = (item: NewsItem) => {
-    console.log('News item clicked:', item.title);
-    // Force a complete reset of the modal state before opening a new one
-    setIsModalOpen(false);
-    
-    // Use a longer timeout to ensure the modal fully closes before reopening
-    setTimeout(() => {
-      setSelectedNewsItem(item);
-      setIsModalOpen(true);
-    }, 100); // Increase timeout to ensure complete reset
+  const handleNewsItemClick = (newsItem: NewsItem) => {
+    setSelectedNewsItem(newsItem);
+    setIsModalOpen(true);
   };
 
   const closeModal = () => {
@@ -573,6 +669,31 @@ export default function FinancialAssistantPage() {
       setSelectedNewsItem(null);
     }, 300);
   };
+
+  // Fetch news articles on component mount
+  useEffect(() => {
+    const getNewsArticles = async () => {
+      setIsLoadingNews(true);
+      try {
+        const articles = await fetchFinancialNews();
+        setNewsArticles(articles);
+      } catch (error) {
+        console.error('Failed to fetch news articles:', error);
+        // Keep using sample data if fetch fails
+      } finally {
+        setIsLoadingNews(false);
+      }
+    };
+    
+    getNewsArticles();
+    
+    // Set up a refresh interval (every 30 minutes)
+    const refreshInterval = setInterval(() => {
+      getNewsArticles();
+    }, 30 * 60 * 1000); // 30 minutes
+    
+    return () => clearInterval(refreshInterval);
+  }, []);
 
   // Render the 3D scene backgrounds
   return (
@@ -1065,70 +1186,42 @@ export default function FinancialAssistantPage() {
                 </div>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* News Item 1 */}
-                <div 
-                  className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleNewsItemClick(sampleNewsData[0])}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-medium">
-                      Markets
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      2 hours ago
-                    </div>
-                  </div>
-                  <h3 className="mt-2 font-semibold text-gray-900 dark:text-white">
-                    S&P 500 reaches new highs amid strong earnings reports
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    Major indices continue upward trend as quarterly results exceed analyst expectations in tech and financial sectors.
-                  </p>
+              {isLoadingNews ? (
+                <div className="flex items-center justify-center p-6">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
-                
-                {/* News Item 2 */}
-                <div 
-                  className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleNewsItemClick(sampleNewsData[1])}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded text-xs font-medium">
-                      Economy
+              ) : (
+                <div className="space-y-4">
+                  {newsArticles.slice(0, 3).map((newsItem) => (
+                    <div 
+                      key={newsItem.id}
+                      className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                      onClick={() => handleNewsItemClick(newsItem)}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className={`px-2 py-1 rounded text-xs font-medium ${
+                          newsItem.category === 'Markets' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 
+                          newsItem.category === 'Economy' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 
+                          newsItem.category === 'Commodities' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          newsItem.category === 'Crypto' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                          'bg-gray-100 text-gray-700 dark:bg-gray-700/30 dark:text-gray-400'
+                        }`}>
+                          {newsItem.category}
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                          {newsItem.timestamp}
+                        </div>
+                      </div>
+                      <h3 className="mt-2 font-semibold text-gray-900 dark:text-white">
+                        {newsItem.title}
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                        {newsItem.summary}
+                      </p>
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      5 hours ago
-                    </div>
-                  </div>
-                  <h3 className="mt-2 font-semibold text-gray-900 dark:text-white">
-                    Federal Reserve signals potential pause in rate hikes
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    Central bank officials indicate inflation pressures may be easing, suggesting a shift in monetary policy approach.
-                  </p>
+                  ))}
                 </div>
-                
-                {/* News Item 3 */}
-                <div 
-                  className="bg-white/50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleNewsItemClick(sampleNewsData[2])}
-                >
-                  <div className="flex items-start gap-2">
-                    <div className="px-2 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 rounded text-xs font-medium">
-                      Commodities
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
-                      Yesterday
-                    </div>
-                  </div>
-                  <h3 className="mt-2 font-semibold text-gray-900 dark:text-white">
-                    Oil prices stabilize after recent volatility
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                    Crude markets find balance following supply concerns, with production adjustments offsetting geopolitical tensions.
-                  </p>
-                </div>
-              </div>
+              )}
               
               <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-end items-center">
                 <div className="text-xs text-gray-500 dark:text-gray-400">

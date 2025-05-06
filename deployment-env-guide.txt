@@ -1,0 +1,5 @@
+# Add these to your .env.local file for deployment
+FIRECRAWL_API_KEY=your_key_here
+
+# Optional fallback news source
+NEWS_API_KEY=your_key_here

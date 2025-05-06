@@ -684,4 +684,24 @@ th {
     flex-direction: column;
     align-items: center;
   }
+}
+
+/* Add these rules to the end of the file to disable automatic scrolling */
+
+/* Disable focus-induced scrolling for the financial assistant */
+.financial-assistant-layout input:focus,
+.financial-assistant-layout button:focus,
+.financial-assistant-layout textarea:focus,
+.financial-assistant-layout [tabindex]:focus {
+  scroll-margin: 0 !important;
+}
+
+/* Disable scroll anchoring for the financial assistant */
+.financial-assistant-layout {
+  overflow-anchor: none !important;
+}
+
+/* Prevent auto-scroll on element focus */
+.financial-assistant-layout * {
+  scroll-behavior: auto !important;
 } 
