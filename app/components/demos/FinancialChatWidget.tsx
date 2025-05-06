@@ -218,21 +218,36 @@ export default function FinancialChatWidget() {
 
   // Scroll to bottom function with modified behavior
   const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      // Save current page scroll position
-      const pageScrollY = window.scrollY;
+    if (!messagesEndRef.current || !chatContainerRef.current) return
+
+    try {
+      // Add a small visual effect to indicate scrolling
+      const messageEnd = messagesEndRef.current
       
-      // Use scrollIntoView on the container itself rather than allowing the whole page to scroll
-      const chatContainer = chatContainerRef.current
-      if (chatContainer) {
-        // Don't use scrollIntoView at all to avoid page scrolling
-        // Instead, directly set the scrollTop of the container
-        const scrollHeight = chatContainer.scrollHeight
-        chatContainer.scrollTop = scrollHeight
+      // Use requestAnimationFrame for smoother scrolling
+      requestAnimationFrame(() => {
+        // Use smoother scrolling on desktop
+        messageEnd.scrollIntoView({ 
+          behavior: window.innerWidth < 768 ? 'auto' : 'smooth', 
+          block: 'end' 
+        })
         
-        // Restore the page's scroll position in case it changed
-        window.scrollTo(0, pageScrollY);
-      }
+        // For mobile specifically, double-check scrolling after a small delay
+        if (window.innerWidth < 768) {
+          setTimeout(() => {
+            chatContainerRef.current?.scrollTo({
+              top: chatContainerRef.current.scrollHeight,
+              behavior: 'auto'
+            });
+            setIsScrolledUp(false);
+          }, 100);
+        }
+      })
+      
+      setAutoScroll(true)
+      setIsScrolledUp(false)
+    } catch (err) {
+      console.error('Error scrolling to bottom:', err)
     }
   }
 
@@ -642,10 +657,42 @@ export default function FinancialChatWidget() {
     }
   }, [])
 
+  // Add scroll to bottom effect when new messages are added
+  useEffect(() => {
+    // Create a small visual indicator when a new message arrives
+    if (messages.length > 1 && messagesEndRef.current) {
+      const pulse = document.createElement('div');
+      pulse.className = 'w-6 h-6 rounded-full bg-primary-500/50 absolute bottom-16 right-4 animate-ping';
+      pulse.style.zIndex = '15';
+      
+      // Add and then remove the pulse
+      if (chatContainerRef.current) {
+        chatContainerRef.current.appendChild(pulse);
+        setTimeout(() => {
+          if (chatContainerRef.current && chatContainerRef.current.contains(pulse)) {
+            chatContainerRef.current.removeChild(pulse);
+          }
+        }, 1000);
+      }
+    }
+  }, [messages.length]);
+
+  // Initial message demo effect - only show after component mounts
+  useEffect(() => {
+    if (isMounted && window.innerWidth > 768) {
+      // Only auto-run demo on larger screens
+      const timer = setTimeout(() => {
+        // No demo auto-start on mobile to avoid issues with chat visibility
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isMounted]);
+
   return (
-    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[600px] md:h-[600px] relative" data-component-name="FinancialAssistantDemo">
+    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[600px] md:h-[600px] relative overflow-hidden" data-component-name="FinancialAssistantDemo">
       {/* Main chat area */}
-      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[calc(100vh-340px)] sm:h-[calc(100vh-360px)] md:h-[calc(100%-140px)]">
+      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[550px] sm:h-[600px] md:h-auto">
         {/* Header - Update the light mode styling */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between shadow-sm relative overflow-hidden">
           {/* Add subtle background pattern for light mode only */}
@@ -680,7 +727,7 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages area */}
         <div 
-          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative h-[calc(100vh-340px)] sm:h-[calc(100vh-360px)] md:h-[calc(100%-140px)]"
+          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative min-h-[300px] h-[350px] sm:h-[400px] md:h-[calc(100%-140px)]"
           ref={chatContainerRef}
           data-component-name="FinancialChatMessages"
         >
@@ -693,7 +740,7 @@ export default function FinancialChatWidget() {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} mb-4`}
             >
               <div
-                className={`max-w-[85%] sm:max-w-[85%] md:max-w-[80%] p-2 sm:p-3 rounded-lg ${
+                className={`max-w-[80%] sm:max-w-[85%] md:max-w-[80%] p-2 sm:p-3 rounded-lg ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
                     : message.isRealTimeData 
@@ -825,7 +872,7 @@ export default function FinancialChatWidget() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30 w-full">
           <div className="flex">
             <input
               type="text"
@@ -880,7 +927,7 @@ export default function FinancialChatWidget() {
         </form>
       </div>
 
-      {/* Market data sidebar */}
+      {/* Market data sidebar - hidden on mobile, only visible on md and up */}
       <div className="hidden md:flex md:col-span-1 flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden" ref={marketDataContainerRef}>
         <div className="bg-neutral-100 dark:bg-neutral-700 p-3 border-b border-neutral-200 dark:border-neutral-600">
           <div className="flex items-center justify-between">
