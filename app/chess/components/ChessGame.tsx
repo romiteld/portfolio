@@ -235,6 +235,7 @@ const ChessGame = ({
           
           // Castling
           if (castlingRights[piece.color]) {
+            const isKingside = turn === 'w' ? true : false
             const row = piece.color === 'w' ? 7 : 0
             
             // Kingside castling
@@ -333,7 +334,7 @@ const ChessGame = ({
     });
     
     return metrics;
-  }, [moveHistory, gamePhase]);
+  }, [moveHistory, gamePhase])
   
   // Function to toggle sections
   const toggleSection = (section: string) => {
@@ -474,6 +475,7 @@ const ChessGame = ({
           const kingPos = findKing(newBoard, nextTurn)
           if (kingPos) {
             const explanation = chessAnalysis.getCheckmateExplanation(newBoard, kingPos, nextTurn)
+            
             setChatMessages(prev => [...prev, {
               id: getUniqueMessageId('checkmate'),
               text: explanation,
@@ -580,6 +582,8 @@ const ChessGame = ({
         if (piece.type === 'p') {
           // Pawns
           const direction = piece.color === 'w' ? -1 : 1
+          
+          // Forward move
           if ((r + direction === kingPos.row) && 
               (c - 1 === kingPos.col || c + 1 === kingPos.col)) {
             return true
@@ -812,6 +816,8 @@ const ChessGame = ({
             const isKingside = move.to.col === 6
             const rookFromCol = isKingside ? 7 : 0
             const rookToCol = isKingside ? 5 : 3
+            
+            // Move the rook
             testBoard[move.to.row][rookToCol] = testBoard[move.from.row][rookFromCol]
             testBoard[move.from.row][rookFromCol] = null
           }
@@ -1172,7 +1178,7 @@ const ChessGame = ({
                       <span className="group relative ml-1">
                         <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
                         <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                          Knowledge of standard opening theory
+                        Knowledge of standard opening theory
                         </span>
                       </span>
                     </span>
@@ -1525,166 +1531,6 @@ const ChessGame = ({
         response = "The AI is evaluating positions several moves ahead, looking for material gain, positional advantages, or checkmate opportunities."
       }
     }
-    else if (lowerMessage.includes("analyze") || lowerMessage.includes("current position") || lowerMessage.includes("evaluation")) {
-      // Count material to evaluate basic position strength
-      const material = { w: 0, b: 0 }
-      let whitePieces = 0
-      let blackPieces = 0
-      
-      board.forEach(row => {
-        row.forEach(square => {
-          if (square) {
-            if (square.color === 'w') {
-              material.w += getPieceValue(square.type)
-              whitePieces++
-            } else {
-              material.b += getPieceValue(square.type)
-              blackPieces++
-            }
-          }
-        })
-      })
-      
-      const materialDiff = material.w - material.b
-      const advantage = Math.abs(materialDiff) > 0 ? 
-        `${materialDiff > 0 ? 'White' : 'Black'} has a material advantage of ${Math.abs(materialDiff)} point${Math.abs(materialDiff) !== 1 ? 's' : ''}.` : 
-        'The material is equal.'
-      
-      // Game phase determination
-      let phaseInfo = ''
-      if (gamePhase === 'opening') {
-        phaseInfo = `We're in the opening phase. ${moveHistory.length < 6 ? 'Focus on developing your pieces and controlling the center.' : 'Consider completing development and castling for king safety.'}`
-      } else if (gamePhase === 'middlegame') {
-        phaseInfo = `We're in the middlegame. Look for tactical opportunities and strategic plans based on the pawn structure.`
-      } else {
-        phaseInfo = `We're in the endgame with ${whitePieces + blackPieces} pieces remaining. King activity becomes crucial now.`
-      }
-      
-      // Check for key positional factors
-      const kingPos = findKing(board, playerColor)
-      let kingInfo = ''
-      if (kingPos) {
-        // Check if king is safe
-        if (moveHistory.length > 10 && !castlingRights[playerColor].kingside && !castlingRights[playerColor].queenside) {
-          kingInfo = `Your king has moved or both rooks have moved, so castling is no longer available.`
-        } else if (castlingRights[playerColor].kingside || castlingRights[playerColor].queenside) {
-          kingInfo = `Your king can still castle ${
-            castlingRights[playerColor].kingside && castlingRights[playerColor].queenside ? 
-            'on either side' : 
-            castlingRights[playerColor].kingside ? 'kingside' : 'queenside'
-          }, which is often a good idea for safety.`
-        }
-      }
-      
-      response = `${advantage} ${phaseInfo} ${kingInfo}`
-    }
-    else if (lowerMessage.includes("hint") || lowerMessage.includes("suggest move") || lowerMessage.includes("help me")) {
-      // Only provide hints if it's the player's turn
-      if (turn === playerColor && gameStatus === 'playing') {
-        // Look for tactical opportunities - captures and checks
-        let hint = ""
-        let foundHint = false
-        
-        // First, look for check moves
-        for (const move of legalMoves) {
-          const testBoard = JSON.parse(JSON.stringify(board))
-          testBoard[move.to.row][move.to.col] = testBoard[move.from.row][move.from.col]
-          testBoard[move.from.row][move.from.col] = null
-          
-          const opponentColor = playerColor === 'w' ? 'b' : 'w'
-          const opponentKingPos = findKing(testBoard, opponentColor)
-          
-          if (opponentKingPos) {
-            const isCheck = checkForCheck(testBoard, opponentColor)
-            if (isCheck) {
-              const piece = board[move.from.row][move.from.col]
-              const from = `${String.fromCharCode(97 + move.from.col)}${8 - move.from.row}`
-              const to = `${String.fromCharCode(97 + move.to.col)}${8 - move.to.row}`
-              hint = `Consider moving your ${getPieceName(piece!.type)} from ${from} to ${to} to put your opponent in check.`
-              foundHint = true
-              break
-            }
-          }
-        }
-        
-        // If no check moves, look for captures
-        if (!foundHint) {
-          const captureMoves = legalMoves.filter(move => 
-            board[move.to.row][move.to.col] !== null && 
-            board[move.to.row][move.to.col]?.color !== playerColor
-          )
-          
-          if (captureMoves.length > 0) {
-            // Find the most valuable capture
-            let bestCapture = captureMoves[0]
-            let bestValue = getPieceValue((board[bestCapture.to.row][bestCapture.to.col] as Piece).type)
-            
-            for (const move of captureMoves) {
-              const captureValue = getPieceValue((board[move.to.row][move.to.col] as Piece).type)
-              if (captureValue > bestValue) {
-                bestValue = captureValue
-                bestCapture = move
-              }
-            }
-            
-            const piece = board[bestCapture.from.row][bestCapture.from.col]
-            const capturedPiece = board[bestCapture.to.row][bestCapture.to.col]
-            const from = `${String.fromCharCode(97 + bestCapture.from.col)}${8 - bestCapture.from.row}`
-            const to = `${String.fromCharCode(97 + bestCapture.to.col)}${8 - bestCapture.to.row}`
-            
-            hint = `You can capture a ${getPieceName(capturedPiece!.type)} at ${to} with your ${getPieceName(piece!.type)} from ${from}.`
-            foundHint = true
-          }
-        }
-        
-        // If no tactical moves, give generic development advice
-        if (!foundHint) {
-          if (gamePhase === 'opening' && moveHistory.length < 10) {
-            hint = "Try developing your knights and bishops toward the center, and consider castling for king safety."
-          } else if (pieceCount.total < 20) {
-            hint = "In the endgame, activate your king and try to advance pawns toward promotion."
-          } else {
-            // Find undeveloped pieces to suggest moving
-            for (let r = 0; r < 8; r++) {
-              for (let c = 0; c < 8; c++) {
-                const piece = board[r][c]
-                if (piece && piece.color === playerColor) {
-                  // Check if piece hasn't moved yet
-                  if ((piece.type === 'n' || piece.type === 'b') && 
-                      ((playerColor === 'w' && r === 7) || (playerColor === 'b' && r === 0))) {
-                    const from = `${String.fromCharCode(97 + c)}${8 - r}`
-                    hint = `Consider developing your ${getPieceName(piece.type)} at ${from} to a more active position.`
-                    foundHint = true
-                    break
-                  }
-                  
-                  // Suggest castling if king and rook haven't moved
-                  if (piece.type === 'k' && 
-                      ((playerColor === 'w' && r === 7 && c === 4) || (playerColor === 'b' && r === 0 && c === 4)) &&
-                      castlingRights[playerColor].kingside) {
-                    hint = "If safe, consider castling to protect your king and activate your rook."
-                    foundHint = true
-                    break
-                  }
-                }
-              }
-              if (foundHint) break
-            }
-            
-            // If still no hint, give a generic suggestion
-            if (!foundHint) {
-              hint = "Look for pieces that can be improved in position, and always be alert for tactical opportunities."
-            }
-          }
-        }
-        
-        response = hint
-      } else if (gameStatus !== 'playing') {
-        response = "The game is already over. You can start a new game to continue playing."
-      } else {
-        response = "It's currently the AI's turn. I'll provide analysis once the AI has made its move."
-      }
-    }
     else {
       // Generic response for other questions
       response = "I'm your chess assistant and can help with rules, strategies, and analysis. For specific position analysis, try asking about openings, tactics, or particular pieces on the board."
@@ -1813,7 +1659,7 @@ const ChessGame = ({
                               <span className="group relative ml-1">
                                 <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
                                 <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                  Knowledge of standard opening theory
+                                Knowledge of standard opening theory
                                 </span>
                               </span>
                             </span>
@@ -2069,7 +1915,7 @@ const ChessGame = ({
                 </div>
               </div>
               
-              {/* Chess Assistant - Fixed height issues */}
+              {/* Chess Assistant */}
               <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-md border border-gray-200 dark:border-gray-700 overflow-hidden flex flex-col">
                 <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <h3 className="text-sm font-medium flex items-center">
@@ -2159,7 +2005,7 @@ const ChessGame = ({
         
         {/* Add a disclaimer at the bottom of the page */}
         <div className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
-          This is a demonstration project and not affiliated with Magnus Carlsen or Star Wars.
+          This is a demonstration project and not affiliated with Magnus Carlsen.
           <br />
           Chess pieces imagery used under Creative Commons license.
         </div>
