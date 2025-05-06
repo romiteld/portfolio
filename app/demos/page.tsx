@@ -92,7 +92,7 @@ const demos = [
   {
     slug: "data-analyst-assistant",
     title: "AI Data Analyst Assistant",
-    description: "Let AI help you analyze and interpret complex datasets.",
+    description: "Let AI help you analyze and interpret complex datasets with interactive charts, statistics, and automated insights.",
     gradient: "from-violet-500 to-indigo-500",
     icon: <AreaChart strokeWidth={1.5} className="w-10 h-10" />,
   },

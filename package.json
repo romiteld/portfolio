@@ -6,10 +6,10 @@
     "node": ">=20.x"
   },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
+    "dev": "npm exec next dev",
+    "build": "npm exec next build",
+    "start": "npm exec next start",
+    "lint": "npm exec next lint",
     "upload-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/upload-woodworking-photos.ts",
     "cleanup-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/cleanup-photos.ts",
     "convert-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-webp.ts",
@@ -88,6 +88,7 @@
     "node-fetch": "^2.7.0",
     "nodemailer": "^6.10.0",
     "openai": "^4.29.0",
+    "papaparse": "^5.5.2",
     "pg": "^8.15.6",
     "react": "18.2.0",
     "react-chartjs-2": "^5.3.0",
@@ -105,11 +106,13 @@
     "uuid": "^11.1.0",
     "vaul": "^0.9.6",
     "ws": "latest",
+    "xlsx": "^0.18.5",
     "yahoo-finance2": "^2.13.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^20.11.25",
+    "@types/papaparse": "^5.3.15",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
     "@types/three": "^0.162.0",
