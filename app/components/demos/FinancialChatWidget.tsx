@@ -341,17 +341,17 @@ export default function FinancialChatWidget() {
 
   // Handle input focus without triggering scroll
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    // Prevent default browser behavior that might cause scrolling
     e.preventDefault()
-    e.stopPropagation()
+    // On mobile, we need to ensure the input is visible when focused
+    if (window.innerWidth < 768) {
+      // Adjust scroll position to ensure input is visible
+      setTimeout(() => {
+        e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+    }
     
-    // Save current scroll position
-    const currentScrollPosition = window.scrollY;
-    
-    // After a slight delay, restore the original scroll position
-    setTimeout(() => {
-      window.scrollTo(0, currentScrollPosition);
-    }, 10);
+    // Prevent the auto-scroll behavior during this focus
+    setAutoScroll(false)
   }
 
   // Handle clicking a suggestion
@@ -643,9 +643,9 @@ export default function FinancialChatWidget() {
   }, [])
 
   return (
-    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[500px] md:h-[600px] relative" data-component-name="FinancialAssistantDemo">
+    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[600px] md:h-[600px] relative" data-component-name="FinancialAssistantDemo">
       {/* Main chat area */}
-      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden">
+      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[calc(100vh-240px)] sm:h-[550px] md:h-auto">
         {/* Header - Update the light mode styling */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between shadow-sm relative overflow-hidden">
           {/* Add subtle background pattern for light mode only */}
@@ -680,7 +680,7 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages area */}
         <div 
-          className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
+          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative h-[calc(100vh-340px)] sm:h-[calc(100%-140px)]"
           ref={chatContainerRef}
           data-component-name="FinancialChatMessages"
         >
@@ -693,7 +693,7 @@ export default function FinancialChatWidget() {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} mb-4`}
             >
               <div
-                className={`max-w-[85%] p-3 rounded-lg ${
+                className={`max-w-[80%] sm:max-w-[85%] p-3 rounded-lg ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
                     : message.isRealTimeData 
@@ -825,22 +825,22 @@ export default function FinancialChatWidget() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-10">
           <div className="flex">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onFocus={handleInputFocus}
-              placeholder="Ask about markets..."
-              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[40px] text-sm"
+              placeholder="Ask..."
+              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[50px] text-sm"
               disabled={isLoading}
               data-component-name="FinancialChatInput"
             />
             <button
               type="submit"
               disabled={isLoading || input.trim() === ""}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[50px] min-w-[50px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
               data-component-name="FinancialChatSendButton"
@@ -864,17 +864,17 @@ export default function FinancialChatWidget() {
             ))}
           </div>
           
-          {/* Status Message */}
-          <div className="mt-1 sm:mt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] sm:text-xs text-neutral-500">
+          {/* Status Message - Hide on mobile to save space */}
+          <div className="hidden sm:flex mt-1 sm:mt-2 flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] sm:text-xs text-neutral-500">
             <p className="truncate max-w-full">
               {isUsingSimulatedData ? "Demo mode: Using simulated data." : "Connected to live market data."}
               {apiStatusMessage && (
                 <span className="ml-1 text-amber-500">{apiStatusMessage}</span>
               )}
             </p>
-            <div className="flex items-center">
+            <div className="flex items-center mt-1 sm:mt-0">
               <Clock size={10} className="mr-1" />
-              <span>Updated: {refreshTime}</span>
+              <span className="ml-1">Updated: {refreshTime}</span>
             </div>
           </div>
         </form>

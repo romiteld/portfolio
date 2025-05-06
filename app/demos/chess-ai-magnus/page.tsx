@@ -431,7 +431,7 @@ function ChessAIDemo() {
       } else {
         // Generic responses
         const genericResponses = [
-          "I'm here to help with chess! Feel free to ask about rules, strategies, or get advice about your current position.",
+          "I'm here to help with chess! Feel free to ask about rules, strategies, or get advice during your game.",
           "Try to think a few moves ahead and consider what your opponent might do in response to your moves.",
           "Chess is about balance - material (pieces), development (activating pieces), and king safety are all important factors.",
           "Looking for your next move? Try to identify your opponent's threats first, then consider your opportunities.",
@@ -513,16 +513,16 @@ function ChessAIDemo() {
                 <span className="font-mono text-gray-500 dark:text-gray-400 text-center">{moveNumber}.</span>
                 <div 
                   className={`font-medium px-2 py-0.5 rounded ${move.check || move.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
-                  title={`${move.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(move.piece.type)}`}
+                  title={move.piece && move.piece.color ? `${move.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(move.piece?.type || 'p')}` : 'Chess move'}
                 >
-                  {move.notation}
+                  {move.notation || `${String.fromCharCode(97 + move.from.col)}${8 - move.from.row}${String.fromCharCode(97 + move.to.col)}${8 - move.to.row}`}
                 </div>
                 {blackMove && (
                   <div 
                     className={`font-medium px-2 py-0.5 rounded ${blackMove.check || blackMove.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
-                    title={`${blackMove.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(blackMove.piece.type)}`}
+                    title={blackMove.piece && blackMove.piece.color ? `${blackMove.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(blackMove.piece?.type || 'p')}` : 'Chess move'}
                   >
-                    {blackMove.notation}
+                    {blackMove.notation || `${String.fromCharCode(97 + blackMove.from.col)}${8 - blackMove.from.row}${String.fromCharCode(97 + blackMove.to.col)}${8 - blackMove.to.row}`}
                   </div>
                 )}
                 {!blackMove && <div className="text-gray-400 dark:text-gray-600">...</div>}
@@ -1147,6 +1147,54 @@ function ChessAIDemo() {
                   onMove={(board, move) => {
                     if (move) {
                       // Handle move
+                      // Check if this move is already in history to avoid duplicates
+                      const moveExists = moveHistory.some(
+                        existingMove => 
+                          existingMove.from.row === move.from.row && 
+                          existingMove.from.col === move.from.col &&
+                          existingMove.to.row === move.to.row && 
+                          existingMove.to.col === move.to.col
+                      );
+                      
+                      if (!moveExists) {
+                        const newMoveHistory = [...moveHistory, move];
+                        setMoveHistory(newMoveHistory);
+                        
+                        // Update turn
+                        setTurn(turn === 'w' ? 'b' : 'w');
+                        
+                        // Generate AI thought
+                        if (newMoveHistory.length > 0 && newMoveHistory.length % 4 === 0) {
+                          const analysis = getAIAnalysis(newMoveHistory, gamePhase);
+                          setChatMessages(prev => [...prev, {
+                            id: `ai-${Date.now()}`,
+                            role: 'assistant',
+                            text: analysis,
+                            type: 'analysis',
+                            timestamp: new Date()
+                          }]);
+                        }
+                      }
+                    }
+                  }}
+                />
+              ) : (
+                <Chess3D
+                  board={EMPTY_BOARD}
+                  orientation={playerColor}
+                  legalMoves={[]}
+                  onMove={(move) => {
+                    // Handle move in 3D view
+                    // Check if this move is already in history to avoid duplicates
+                    const moveExists = moveHistory.some(
+                      existingMove => 
+                        existingMove.from.row === move.from.row && 
+                        existingMove.from.col === move.from.col &&
+                        existingMove.to.row === move.to.row && 
+                        existingMove.to.col === move.to.col
+                    );
+                    
+                    if (!moveExists) {
                       const newMoveHistory = [...moveHistory, move];
                       setMoveHistory(newMoveHistory);
                       
@@ -1164,32 +1212,6 @@ function ChessAIDemo() {
                           timestamp: new Date()
                         }]);
                       }
-                    }
-                  }}
-                />
-              ) : (
-                <Chess3D
-                  board={EMPTY_BOARD}
-                  orientation={playerColor}
-                  legalMoves={[]}
-                  onMove={(move) => {
-                    // Handle move in 3D view
-                    const newMoveHistory = [...moveHistory, move];
-                    setMoveHistory(newMoveHistory);
-                    
-                    // Update turn
-                    setTurn(turn === 'w' ? 'b' : 'w');
-                    
-                    // Generate AI thought
-                    if (newMoveHistory.length > 0 && newMoveHistory.length % 4 === 0) {
-                      const analysis = getAIAnalysis(newMoveHistory, gamePhase);
-                      setChatMessages(prev => [...prev, {
-                        id: `ai-${Date.now()}`,
-                        role: 'assistant',
-                        text: analysis,
-                        type: 'analysis',
-                        timestamp: new Date()
-                      }]);
                     }
                   }}
                 />
