@@ -14,9 +14,11 @@ const DataAnalystAssistant = dynamic(
   { ssr: false }
 );
 
+import './styles.css';
+
 export default function DataAnalystAssistantPage() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="data-analyst-root">
       <ClientOnly>
         <DataAnalystAssistant />
       </ClientOnly>

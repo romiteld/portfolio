@@ -118,8 +118,8 @@ const DataAnalystAssistant: React.FC = () => {
     initDataAnalystAssistant();
   }, []);
   
-  // COLORS for charts
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#8DD1E1', '#A4DE6C', '#D0ED57'];
+  // COLORS for charts - Updated with more vibrant colors
+  const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4', '#EC4899', '#F97316', '#14B8A6', '#6366F1'];
   
   // Handle file upload
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1082,78 +1082,115 @@ const DataAnalystAssistant: React.FC = () => {
   };
   
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-black dark:text-white data-analyst-container" data-component-name="DataAnalystAssistant">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950 text-black dark:text-white data-analyst-container" data-component-name="DataAnalystAssistant">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-md p-4">
+      <header className="bg-gradient-to-r from-indigo-600 to-blue-500 shadow-lg p-4 text-white">
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold">Data Analyst Assistant</h1>
-          <div className="flex space-x-2">
-            <button className="px-3 py-1 bg-blue-600 text-white rounded-md text-sm flex items-center">
-              <Save className="w-4 h-4 mr-1" />
-              Save
-            </button>
-            <button className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm flex items-center">
-              <Share2 className="w-4 h-4 mr-1" />
-              Share
-            </button>
+          <div className="flex items-center space-x-2">
+            <BarChart3 className="h-6 w-6" />
+            <h1 className="text-xl font-bold">Data Analyst Assistant</h1>
+          </div>
+          <div className="text-sm opacity-80">
+            {fileName ? `Working with: ${fileName}` : 'No file loaded'}
           </div>
         </div>
       </header>
       
       {/* Main Content */}
-      <main className="flex-grow flex flex-col md:flex-row">
-        {/* Left Sidebar - Tabs */}
-        <div className="w-full md:w-20 bg-white dark:bg-gray-800 shadow-md p-2 flex flex-row md:flex-col">
-          <button 
-            className={`flex flex-col items-center justify-center p-3 rounded-md w-full mb-2 ${activeTab === 'upload' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            onClick={() => setActiveTab('upload')}
-          >
-            <Upload className="w-6 h-6 mb-1" />
-            <span className="text-xs">Upload</span>
-          </button>
-          <button 
-            className={`flex flex-col items-center justify-center p-3 rounded-md w-full mb-2 ${activeTab === 'explore' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            onClick={() => setActiveTab('explore')}
-            disabled={!data}
-          >
-            <Table2 className="w-6 h-6 mb-1" />
-            <span className="text-xs">Explore</span>
-          </button>
-          <button 
-            className={`flex flex-col items-center justify-center p-3 rounded-md w-full mb-2 ${activeTab === 'visualize' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            onClick={() => setActiveTab('visualize')}
-            disabled={!data}
-          >
-            <BarChart3 className="w-6 h-6 mb-1" />
-            <span className="text-xs">Visualize</span>
-          </button>
-          <button 
-            className={`flex flex-col items-center justify-center p-3 rounded-md w-full mb-2 ${activeTab === 'insights' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            onClick={() => setActiveTab('insights')}
-            disabled={!data}
-          >
-            <Brain className="w-6 h-6 mb-1" />
-            <span className="text-xs">Insights</span>
-          </button>
-          <button 
-            className={`flex flex-col items-center justify-center p-3 rounded-md w-full ${activeTab === 'statistics' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            onClick={() => setActiveTab('statistics')}
-            disabled={!data}
-          >
-            <Sigma className="w-6 h-6 mb-1" />
-            <span className="text-xs">Stats</span>
-          </button>
+      <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
+        {/* Tabs Navigation */}
+        <div className="mb-6">
+          <div className="flex flex-wrap gap-2 border-b dark:border-gray-700 pb-2">
+            <button
+              className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
+                activeTab === 'upload'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-700'
+              }`}
+              onClick={() => setActiveTab('upload')}
+              data-component-name="DataAnalystAssistant"
+            >
+              <div className="flex items-center space-x-2">
+                <Upload className="h-4 w-4" />
+                <span>Upload</span>
+              </div>
+            </button>
+            
+            <button
+              className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
+                activeTab === 'explore'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-700'
+              } ${!data ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => data && setActiveTab('explore')}
+              disabled={!data}
+              data-component-name="DataAnalystAssistant"
+            >
+              <div className="flex items-center space-x-2">
+                <Table2 className="h-4 w-4" />
+                <span>Explore</span>
+              </div>
+            </button>
+            
+            <button
+              className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
+                activeTab === 'visualization'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-700'
+              } ${!data ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => data && setActiveTab('visualization')}
+              disabled={!data}
+              data-component-name="DataAnalystAssistant"
+            >
+              <div className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Visualization</span>
+              </div>
+            </button>
+            
+            <button
+              className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
+                activeTab === 'insights'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-700'
+              } ${!data ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => data && setActiveTab('insights')}
+              disabled={!data}
+              data-component-name="DataAnalystAssistant"
+            >
+              <div className="flex items-center space-x-2">
+                <Brain className="h-4 w-4" />
+                <span>Insights</span>
+              </div>
+            </button>
+            
+            <button
+              className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
+                activeTab === 'statistics'
+                ? 'bg-indigo-500 text-white shadow-md'
+                : 'bg-gray-100 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-700'
+              } ${!data ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={() => data && setActiveTab('statistics')}
+              disabled={!data}
+              data-component-name="DataAnalystAssistant"
+            >
+              <div className="flex items-center space-x-2">
+                <Sigma className="h-4 w-4" />
+                <span>Statistics</span>
+              </div>
+            </button>
+          </div>
         </div>
         
         {/* Main Content Area */}
         <div className="flex-grow p-4" data-component-name="DataAnalystAssistant">
           {/* Upload Tab */}
           {activeTab === 'upload' && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6" data-component-name="DataAnalystAssistant">
-              <h2 className="text-xl font-semibold mb-4">Upload Your Data</h2>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-indigo-100 dark:border-gray-700 p-6" data-component-name="DataAnalystAssistant">
+              <h2 className="text-xl font-semibold mb-4 text-indigo-700 dark:text-indigo-300">Upload Your Data</h2>
               
               <div 
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center"
+                className="border-2 border-dashed border-indigo-300 dark:border-indigo-700 rounded-lg p-8 text-center bg-indigo-50 dark:bg-gray-800 hover:bg-indigo-100 dark:hover:bg-gray-750 transition-colors duration-200"
                 data-component-name="DataAnalystAssistant"
               >
                 <input 
@@ -1170,9 +1207,9 @@ const DataAnalystAssistant: React.FC = () => {
                   className="cursor-pointer"
                   data-component-name="DataAnalystAssistant"
                 >
-                  <FilePlus className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
-                  <p className="mb-2 text-lg font-medium">Click to upload or drag and drop</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">CSV, Excel, or JSON files</p>
+                  <FilePlus className="w-16 h-16 mx-auto text-indigo-400 dark:text-indigo-500 mb-4" />
+                  <p className="mb-2 text-lg font-medium text-indigo-700 dark:text-indigo-300">Click to upload or drag and drop</p>
+                  <p className="text-sm text-indigo-500 dark:text-indigo-400">CSV, Excel, or JSON files</p>
                 </label>
               </div>
               
@@ -1204,8 +1241,11 @@ const DataAnalystAssistant: React.FC = () => {
               )}
               
               {errorMessage && (
-                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/30 rounded-md text-red-600 dark:text-red-400">
-                  {errorMessage}
+                <div className="mt-4 p-3 bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-300">
+                  <p className="flex items-center">
+                    <X className="h-4 w-4 mr-2" />
+                    {errorMessage}
+                  </p>
                 </div>
               )}
               
@@ -1229,7 +1269,7 @@ const DataAnalystAssistant: React.FC = () => {
           
           {/* Explore Tab */}
           {activeTab === 'explore' && data && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Explore Your Data</h2>
               
               <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1310,9 +1350,9 @@ const DataAnalystAssistant: React.FC = () => {
             </div>
           )}
           
-          {/* Visualize Tab */}
-          {activeTab === 'visualize' && data && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+          {/* Visualization Tab */}
+          {activeTab === 'visualization' && data && (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Visualize Your Data</h2>
               
               <div className="mb-6 grid grid-cols-1 md:grid-cols-6 gap-2">
@@ -1490,7 +1530,7 @@ const DataAnalystAssistant: React.FC = () => {
           
           {/* Insights Tab */}
           {activeTab === 'insights' && data && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Automated Insights</h2>
               
               {isAnalyzing ? (
@@ -1563,7 +1603,7 @@ const DataAnalystAssistant: React.FC = () => {
           
           {/* Statistics Tab */}
           {activeTab === 'statistics' && data && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Statistical Analysis</h2>
               
               {Object.keys(statistics).length === 0 ? (
