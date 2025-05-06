@@ -643,7 +643,7 @@ export default function FinancialChatWidget() {
   }, [])
 
   return (
-    <div className="grid md:grid-cols-4 gap-4 h-[600px] relative">
+    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[500px] md:h-[600px] relative" data-component-name="FinancialAssistantDemo">
       {/* Main chat area */}
       <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden">
         {/* Header - Update the light mode styling */}
@@ -680,8 +680,9 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages area */}
         <div 
-          className="flex-1 p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
+          className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
           ref={chatContainerRef}
+          data-component-name="FinancialChatMessages"
         >
           {messages.map((message, index) => (
             <motion.div
@@ -824,30 +825,32 @@ export default function FinancialChatWidget() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleSubmit} className="p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
+        <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800">
           <div className="flex">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onFocus={handleInputFocus}
-              placeholder="Ask about markets, stocks, or investment advice..."
-              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="Ask about markets..."
+              className="flex-1 p-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[40px] text-sm"
               disabled={isLoading}
+              data-component-name="FinancialChatInput"
             />
             <button
               type="submit"
               disabled={isLoading || input.trim() === ""}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[40px] min-w-[40px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
+              data-component-name="FinancialChatSendButton"
             >
-              <Send size={20} />
+              <Send size={18} />
             </button>
           </div>
           
           {/* Smart Suggestions */}
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-2 flex flex-wrap gap-1 sm:gap-2">
             {chatHistory.map((suggestion, index) => (
               <button
                 key={index}
@@ -862,9 +865,9 @@ export default function FinancialChatWidget() {
           </div>
           
           {/* Status Message */}
-          <div className="mt-2 flex justify-between items-center text-xs text-neutral-500">
-            <p>
-              {isUsingSimulatedData ? "Demo mode: Using simulated market data." : "Connected to live market data."}
+          <div className="mt-1 sm:mt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center text-[10px] sm:text-xs text-neutral-500">
+            <p className="truncate max-w-full">
+              {isUsingSimulatedData ? "Demo mode: Using simulated data." : "Connected to live market data."}
               {apiStatusMessage && (
                 <span className="ml-1 text-amber-500">{apiStatusMessage}</span>
               )}
