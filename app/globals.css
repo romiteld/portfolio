@@ -253,3 +253,7 @@ html {
   scroll-margin: 0 !important;
 }
 
+/* Hide NextJS development elements */
+nextjs-portal {
+  display: none !important;
+}
