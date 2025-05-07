@@ -56,3 +56,11 @@ lib/supabase-migrations/keys/
 *.pth
 *.h5
 *.npz
+context7-mcp/cline_mcp_settings.json
+context7-mcp/start-context7-mcp.bat
+firecrawl-mcp/cline_mcp_settings.json
+firecrawl-mcp/firecrawl-mcp-readme.md
+firecrawl-mcp/start-firecrawl-mcp.bat
+context7-mcp/SETUP_INSTRUCTIONS.md
+context7-mcp/context7-mcp-readme.md
+context7-mcp/context7-demo.js

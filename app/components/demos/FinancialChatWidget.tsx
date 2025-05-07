@@ -690,7 +690,7 @@ export default function FinancialChatWidget() {
   }, [isMounted]);
 
   return (
-    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[600px] md:h-[600px] relative overflow-hidden" data-component-name="FinancialAssistantDemo">
+    <div className="grid md:grid-cols-4 gap-4 h-auto min-h-[550px] md:h-[600px] relative overflow-hidden" data-component-name="FinancialAssistantDemo">
       {/* Main chat area */}
       <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-[550px] sm:h-[600px] md:h-auto">
         {/* Header - Update the light mode styling */}
@@ -727,9 +727,10 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages area */}
         <div 
-          className="flex-1 p-2 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative min-h-[300px] h-[350px] sm:h-[400px] md:h-[calc(100%-140px)]"
+          className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative min-h-[320px] sm:min-h-[350px]"
           ref={chatContainerRef}
           data-component-name="FinancialChatMessages"
+          style={{ maxHeight: 'calc(70vh - 140px)' }}
         >
           {messages.map((message, index) => (
             <motion.div
@@ -740,7 +741,7 @@ export default function FinancialChatWidget() {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} mb-4`}
             >
               <div
-                className={`max-w-[80%] sm:max-w-[85%] md:max-w-[80%] p-2 sm:p-3 rounded-lg ${
+                className={`max-w-[95%] sm:max-w-[90%] md:max-w-[80%] p-3 sm:p-3.5 rounded-lg shadow-sm ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
                     : message.isRealTimeData 
@@ -748,7 +749,7 @@ export default function FinancialChatWidget() {
                       : "bg-neutral-200 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 rounded-tl-none"
                 }`}
               >
-                <div className="flex items-center mb-1 justify-between">
+                <div className="flex items-center mb-2 justify-between">
                   <div className="flex items-center">
                     {message.role === "user" ? (
                       <>
@@ -786,11 +787,11 @@ export default function FinancialChatWidget() {
                     )
                   ) : null}
                 </div>
-                <p className="text-sm sm:text-sm whitespace-pre-wrap">{message.content}</p>
+                <p className="text-[15px] sm:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
                 
                 {/* Display market data details for real-time data */}
                 {message.isRealTimeData && message.marketData && (
-                  <div className="mt-2 pt-2 border-t border-white/20 text-xs">
+                  <div className="mt-2 pt-2 border-t border-white/20 text-sm sm:text-xs">
                     <div className="flex justify-between items-center">
                       <span className="opacity-80">Index Value:</span>
                       <span className="font-mono font-medium">{message.marketData.value}</span>
@@ -880,19 +881,25 @@ export default function FinancialChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onFocus={handleInputFocus}
               placeholder="Ask about stocks or crypto..."
-              className="flex-1 p-2 sm:p-3 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[46px] sm:min-h-[50px] text-base sm:text-sm"
+              className="flex-1 p-3 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[50px] text-base"
               disabled={isLoading}
               data-component-name="FinancialChatInput"
+              style={{ 
+                fontSize: '16px', 
+                lineHeight: '1.4',
+                WebkitTextSizeAdjust: '100%',
+                textSizeAdjust: '100%'
+              }} /* Prevent zoom and text size adjustments on mobile */
             />
             <button
               type="submit"
               disabled={isLoading || input.trim() === ""}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[46px] sm:min-h-[50px] min-w-[46px] sm:min-w-[50px] flex items-center justify-center"
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[50px] min-w-[54px] sm:min-w-[50px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
               data-component-name="FinancialChatSendButton"
             >
-              <Send size={18} />
+              <Send size={24} className="sm:size-20" />
             </button>
           </div>
           
@@ -902,10 +909,10 @@ export default function FinancialChatWidget() {
               <button
                 key={index}
                 onClick={(e) => { e.stopPropagation(); handleSuggestionClick(suggestion) }}
-                className="text-xs bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 py-1 px-2 rounded-full transition-colors flex items-center"
+                className="text-sm sm:text-xs bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 py-1.5 sm:py-1 px-3 sm:px-2 rounded-full transition-colors flex items-center"
                 disabled={isLoading}
               >
-                <Zap size={10} className="mr-1 text-primary-500" />
+                <Zap size={12} className="mr-1.5 sm:mr-1 sm:size-10 text-primary-500" />
                 {suggestion}
               </button>
             ))}
@@ -1029,4 +1036,4 @@ ALPACA_DATA_ENDPOINT=https://data.alpaca.markets
       </div>
     </div>
   )
-} 
+}

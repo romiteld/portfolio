@@ -326,9 +326,9 @@ export default function ChessAiMagnus() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-6 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-md">
+    <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 p-3 sm:p-6 bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-md">
       {/* Chess board */}
-      <div className="flex-1">
+      <div className="w-full lg:flex-1">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold">
@@ -390,7 +390,7 @@ export default function ChessAiMagnus() {
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.3 }}
-                        className="w-[70%] h-[70%] flex items-center justify-center"
+                        className="w-[80%] h-[80%] sm:w-[70%] sm:h-[70%] flex items-center justify-center"
                       >
                         <ChessPieceIcon type={piece.type} color={piece.color} />
                       </motion.div>
@@ -413,10 +413,10 @@ export default function ChessAiMagnus() {
           )}
         </div>
         
-        <div className="mt-4 flex justify-between items-center">
-          <div>
+        <div className="mt-4 flex flex-col sm:flex-row justify-between gap-3">
+          <div className="flex items-center">
             <span className="font-medium mr-2">Turn:</span>
-            <span className={`font-bold ${currentTurn === "white" ? "text-amber-600" : "text-neutral-800"}`}>
+            <span className={`font-bold ${currentTurn === "white" ? "text-amber-600" : "text-neutral-800 dark:text-neutral-200"}`}>
               {currentTurn === "white" ? "White (Magnus)" : "Black (AI)"}
             </span>
             {moveTimeSpent && (
@@ -427,17 +427,17 @@ export default function ChessAiMagnus() {
             )}
           </div>
           
-          <div className="space-x-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleToggleHeatmap}
-              className={`px-3 py-1.5 text-sm ${showHeatmap ? 'bg-blue-500 text-white' : 'bg-neutral-200 dark:bg-neutral-700'} rounded-md transition-colors`}
+              className={`px-3 py-2 sm:py-1.5 text-sm ${showHeatmap ? 'bg-blue-500 text-white' : 'bg-neutral-200 dark:bg-neutral-700'} rounded-md transition-colors`}
               aria-label="Toggle heatmap"
             >
               Heatmap
             </button>
             <button
               onClick={handleReset}
-              className="px-3 py-1.5 text-sm bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-md transition-colors"
+              className="px-3 py-2 sm:py-1.5 text-sm bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-md transition-colors"
               aria-label="Reset game"
             >
               <RotateCcw className="h-4 w-4" />
@@ -445,7 +445,7 @@ export default function ChessAiMagnus() {
             <button
               onClick={handleNextMove}
               disabled={thinking || moveIndex >= presetMoves.length - 1}
-              className="px-4 py-1.5 bg-primary-500 hover:bg-primary-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+              className="px-4 py-2 sm:py-1.5 bg-primary-500 hover:bg-primary-600 text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
               aria-label="Make next move"
             >
               <span>{thinking ? "Thinking..." : "Next Move"}</span>
@@ -454,7 +454,7 @@ export default function ChessAiMagnus() {
             <button
               onClick={handleSkipToEnd}
               disabled={thinking || moveIndex >= presetMoves.length - 1}
-              className="px-3 py-1.5 text-sm bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-2 sm:py-1.5 text-sm bg-neutral-200 hover:bg-neutral-300 dark:bg-neutral-700 dark:hover:bg-neutral-600 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Skip to end"
             >
               <SkipForward className="h-4 w-4" />
@@ -464,16 +464,16 @@ export default function ChessAiMagnus() {
       </div>
       
       {/* Game analysis */}
-      <div className="flex-1">
-        <div className="bg-neutral-100 dark:bg-neutral-900 rounded-lg p-6 h-full">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-primary-600 dark:text-primary-400">
+      <div className="w-full lg:flex-1 mt-6 lg:mt-0">
+        <div className="bg-neutral-100 dark:bg-neutral-900 rounded-lg p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+            <h2 className="text-xl sm:text-2xl font-bold text-primary-600 dark:text-primary-400">
               Magnus AI Analysis
             </h2>
             
             <div className="flex items-center space-x-2">
               <div className="text-sm font-medium">Confidence:</div>
-              <div className="w-16 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full">
+              <div className="w-20 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full">
                 <div 
                   className="h-full bg-green-500 rounded-full" 
                   style={{ width: `${aiConfidence}%` }}
@@ -610,8 +610,8 @@ function ChessPieceIcon({ type, color }: { type: ChessPiece["type"], color: Ches
   }
   
   return (
-    <span className={`text-4xl ${color === "white" ? "text-amber-50" : "text-neutral-900"}`}>
+    <span className={`text-5xl sm:text-4xl ${color === "white" ? "text-amber-50" : "text-neutral-900"}`}>
       {pieceSymbols[color][type]}
     </span>
   )
-} 
+}
