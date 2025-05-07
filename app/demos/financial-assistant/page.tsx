@@ -717,7 +717,7 @@ export default function FinancialAssistantPage() {
             {/* Add a className to the content container to make it more responsive */}
             <div className="flex flex-col lg:flex-row gap-8 min-h-[650px]">
               {/* Chat Interface (widened) */}
-              <div className="flex-1 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 flex flex-col h-[600px] max-h-[600px]">
+              <div className="flex-1 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 flex flex-col min-h-0 md:h-[600px] md:max-h-[600px]">
                 <div 
                   className="flex-1 overflow-y-auto p-6" 
                   ref={chatContainerRef}

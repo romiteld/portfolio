@@ -374,9 +374,9 @@ export default function FinancialChatWidget() {
   }, [])
 
   return (
-    <div className="grid md:grid-cols-4 gap-4 h-auto md:h-[600px] relative">
+    <div className="flex flex-col md:grid md:grid-cols-4 gap-4 min-h-[100dvh] relative">
       {/* Main chat area */}
-      <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-auto md:h-[600px]">
+      <div className="md:col-span-3 flex flex-col flex-1 min-h-0 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden md:h-[600px]">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-500 to-indigo-600 dark:bg-primary-700 text-white p-4 flex items-center justify-between shadow-sm relative">
           <div className="absolute inset-0 bg-repeat opacity-10 pattern-grid-lg dark:opacity-0"></div>
@@ -417,7 +417,7 @@ export default function FinancialChatWidget() {
 
         {/* Chat messages */}
         <div
-          className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
+          className="flex-1 min-h-0 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
           ref={chatContainerRef}
         >
           {messages.map((message, idx) => (
