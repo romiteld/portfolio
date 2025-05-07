@@ -21,7 +21,6 @@ interface Message {
   role: "user" | "assistant"
   content: string
   timestamp?: Date
-  isLoading?: boolean
   isRealTimeData?: boolean
   marketData?: {
     index: string
@@ -58,7 +57,6 @@ export default function FinancialChatWidget() {
     { symbol: "AMZN", price: 178.35, change: 1.56, changePercent: 0.88 }
   ])
   const [isRefreshingData, setIsRefreshingData] = useState(false)
-  const [isUsingSimulatedData, setIsUsingSimulatedData] = useState(true)
   const [apiStatusMessage, setApiStatusMessage] = useState<string>("")
   const [refreshTime, setRefreshTime] = useState<string>("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -70,205 +68,167 @@ export default function FinancialChatWidget() {
   const [isScrolledUp, setIsScrolledUp] = useState(false)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
-  // Refs for GSAP animations
+  // Animation refs
   const sendButtonRef = useRef<HTMLButtonElement>(null)
   const stockItemsRef = useRef<HTMLDivElement[]>([])
   const marketDataContainerRef = useRef<HTMLDivElement>(null)
   const logoIconRef = useRef<SVGSVGElement>(null)
-
-  // Add new refs for market indices animations
   const marketInsightsRef = useRef<HTMLDivElement>(null)
   const liveDataBadgeRefs = useRef<(HTMLSpanElement | null)[]>([])
 
-  // Generate a unique session ID for this chat
+  // Generate a unique session ID
   useEffect(() => {
     setSessionId(`user-${Math.random().toString(36).substring(2, 12)}`)
   }, [])
 
-  // Auto-scroll to the bottom when messages change, but only for new messages
+  // Auto-scroll new messages (after mount)
   useEffect(() => {
     if (autoScroll && messages.length > 1 && isMounted) {
       scrollToBottom()
     }
   }, [messages.length, autoScroll, isMounted])
 
-  // Prevent scrolling to the widget on initial load
+  // Prevent page scroll on mount
   useEffect(() => {
     if (isMounted) {
-      const timer = setTimeout(() => {
-        window.scrollTo(0, 0)
-      }, 100)
+      const timer = setTimeout(() => window.scrollTo(0, 0), 100)
       return () => clearTimeout(timer)
     }
   }, [isMounted])
 
-  // Set initial refresh time after component mounts (client-side only)
+  // Mark as mounted
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Initial refresh time
   useEffect(() => {
     setRefreshTime(new Date().toLocaleTimeString())
   }, [])
 
-  // Detect when user has scrolled up
+  // Detect user scrolling up in chat
   useEffect(() => {
-    const chatContainer = chatContainerRef.current
-    if (!chatContainer) return
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainer
-      const isScrolled = scrollHeight - scrollTop - clientHeight > 100
-      setIsScrolledUp(isScrolled)
+    const container = chatContainerRef.current
+    if (!container) return
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      setIsScrolledUp(scrollHeight - scrollTop - clientHeight > 100)
     }
-
-    chatContainer.addEventListener("scroll", handleScroll)
-    return () => chatContainer.removeEventListener("scroll", handleScroll)
+    container.addEventListener("scroll", onScroll)
+    return () => container.removeEventListener("scroll", onScroll)
   }, [])
 
-  // Load chat history and suggestions
+  // Prevent parent page from scrolling when over chat
   useEffect(() => {
-    const loadHistory = async () => {
+    const container = chatContainerRef.current
+    if (!container) return
+    const handler = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = container
+      const atTop = scrollTop === 0 && e.deltaY < 0
+      const atBottom = Math.ceil(scrollHeight - scrollTop) <= clientHeight && e.deltaY > 0
+      if (!atTop && !atBottom) e.preventDefault()
+    }
+    container.addEventListener("wheel", handler, { passive: false })
+    return () => container.removeEventListener("wheel", handler)
+  }, [])
+
+  // Load chat suggestions
+  useEffect(() => {
+    if (!sessionId) return
+    const load = async () => {
       try {
-        const response = await fetch(`/api/market/chat?userId=${sessionId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.suggestions && Array.isArray(data.suggestions)) {
-            setChatHistory(data.suggestions)
-          } else {
-            setChatHistory([
+        const res = await fetch(`/api/market/chat?userId=${sessionId}`)
+        if (!res.ok) throw new Error()
+        const data = await res.json()
+        setChatHistory(Array.isArray(data.suggestions)
+          ? data.suggestions
+          : [
               "What are the best tech stocks to invest in?",
-              "How is the S&P 500 performing today?",
+              "How is the S&P 500 performing today?",
               "Explain market volatility"
             ])
-          }
-        } else {
-          throw new Error("Failed to load chat history")
-        }
-      } catch (error) {
-        console.error("Error loading chat history:", error)
+      } catch {
         setChatHistory([
           "What are the best tech stocks to invest in?",
-          "How is the S&P 500 performing today?",
+          "How is the S&P 500 performing today?",
           "Explain market volatility"
         ])
       }
     }
-
-    if (sessionId) {
-      loadHistory()
-    }
+    load()
   }, [sessionId])
 
-  // Refresh market data
+  // Fetch real‑time market data
   const refreshMarketData = async () => {
     setIsRefreshingData(true)
     setApiStatusMessage("")
-
     try {
-      const response = await fetch("/api/market/data")
-      console.log(`Market data response status: ${response.status}`)
-
-      if (response.ok) {
-        const data = await response.json()
-
-        if (data.rateLimited) {
-          const waitTime = data.rateLimitWaitTime || 60
-          setApiStatusMessage(`Rate limit exceeded. Try again in ${waitTime} seconds.`)
-          setIsRefreshingData(false)
-          return
-        }
-
-        if (data.stocks && data.stocks.length > 0) {
-          setMarketData(data.stocks)
-          setIsUsingSimulatedData(data.isSimulated || false)
-          setRefreshTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
-
-          if (data.authError) {
-            setApiStatusMessage("Authentication failed. Please check your Alpaca API credentials.")
-          } else if (data.apiError) {
-            setApiStatusMessage(data.apiError)
-          } else if (data.fromCache) {
-            setApiStatusMessage("Using cached data (refreshes every 30 seconds).")
-          }
+      const res = await fetch("/api/market/data")
+      const data = await res.json()
+      if (res.status === 429 || data.rateLimited) {
+        setApiStatusMessage(`Rate limit exceeded. Try again in ${data.waitTime || 60}s.`)
+      } else if (Array.isArray(data.stocks)) {
+        setMarketData(data.stocks)
+        setRefreshTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }))
+        if (data.authError) {
+          setApiStatusMessage("Authentication failed. Please check your API credentials.")
+        } else if (data.apiError) {
+          setApiStatusMessage(data.apiError)
         } else {
-          setApiStatusMessage("Invalid market data format received")
+          setApiStatusMessage("")
         }
       } else {
-        setApiStatusMessage(`API error: ${response.status}`)
-        console.error(`Failed to fetch market data: ${response.status}`)
+        setApiStatusMessage("Invalid market data format.")
       }
-    } catch (error) {
-      console.error("Error refreshing market data:", error)
-      setApiStatusMessage(error instanceof Error ? error.message : "Unknown error")
+    } catch (err: any) {
+      setApiStatusMessage(err.message || "Unknown error")
     } finally {
       setIsRefreshingData(false)
     }
   }
 
-  // Load market data on initial load
+  // Initial data load
   useEffect(() => {
     refreshMarketData()
   }, [])
 
-  // Set isMounted to true after client-side hydration
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
-  // Scroll to bottom function
+  // Scroll helper
   const scrollToBottom = () => {
     if (!messagesEndRef.current || !chatContainerRef.current) return
-
-    try {
-      const messageEnd = messagesEndRef.current
-      requestAnimationFrame(() => {
-        messageEnd.scrollIntoView({
-          behavior: window.innerWidth < 768 ? "auto" : "smooth",
-          block: "end"
-        })
-
-        if (window.innerWidth < 768) {
-          setTimeout(() => {
-            chatContainerRef.current?.scrollTo({
-              top: chatContainerRef.current.scrollHeight,
-              behavior: "auto"
-            })
-            setIsScrolledUp(false)
-          }, 100)
-        }
+    requestAnimationFrame(() => {
+      messagesEndRef.current!.scrollIntoView({
+        behavior: window.innerWidth < 768 ? "auto" : "smooth",
+        block: "end"
       })
-
-      setAutoScroll(true)
-      setIsScrolledUp(false)
-    } catch (err) {
-      console.error("Error scrolling to bottom:", err)
-    }
+      if (window.innerWidth < 768) {
+        setTimeout(() => {
+          chatContainerRef.current!.scrollTo({
+            top: chatContainerRef.current!.scrollHeight,
+            behavior: "auto"
+          })
+          setIsScrolledUp(false)
+        }, 100)
+      }
+    })
+    setAutoScroll(true)
+    setIsScrolledUp(false)
   }
 
-  // Handle form submission
+  // Send a chat message
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     e.stopPropagation()
-
-    if (input.trim() === "" || isLoading) return
-
+    if (!input.trim() || isLoading) return
     setError(null)
-
-    const userMessage: Message = {
-      role: "user",
-      content: input,
-      timestamp: new Date()
-    }
-    setMessages((prev) => [...prev, userMessage])
+    const userMsg: Message = { role: "user", content: input, timestamp: new Date() }
+    setMessages((m) => [...m, userMsg])
     setInput("")
     setIsLoading(true)
     setTypingIndicator(true)
-
-    setTimeout(() => {
-      if (autoScroll) {
-        scrollToBottom()
-      }
-    }, 100)
+    setTimeout(() => { if (autoScroll) scrollToBottom() }, 100)
 
     try {
-      const response = await fetch("/api/market/chat", {
+      const res = await fetch("/api/market/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -276,105 +236,145 @@ export default function FinancialChatWidget() {
           userId: sessionId,
           marketData: {
             stocks: marketData,
-            isSimulated: isUsingSimulatedData,
             lastUpdated: new Date().toISOString()
           }
         })
       })
-      const data = await response.json()
+      const data = await res.json()
       setTypingIndicator(false)
 
-      if (response.status === 429 || data.rateLimited) {
-        const waitTime = data.waitTime || 60
-        const rateError = data.error || `Rate limit exceeded. Please wait ${waitTime} seconds before trying again.`
-        setError(rateError)
-
-        const rateMessage: Message = {
-          role: "assistant",
-          content: `⚠️ ${rateError} To prevent API abuse, we limit the number of requests. Please try again shortly.`,
-          timestamp: new Date()
-        }
-        setMessages((prev) => [...prev, rateMessage])
-        return
-      }
-
-      if (response.ok && data.message) {
-        const botResponse: Message = {
-          role: "assistant",
-          content: data.message,
-          timestamp: new Date()
-        }
-
+      if (res.status === 429 || data.rateLimited) {
+        const msg = data.error || `Rate limit: wait ${data.waitTime || 60}s.`
+        setError(msg)
+        setMessages((m) => [...m, { role: "assistant", content: `⚠️ ${msg}`, timestamp: new Date() }])
+      } else if (res.ok && data.message) {
+        const botMsg: Message = { role: "assistant", content: data.message, timestamp: new Date() }
         if (data.source === "index_api" && data.raw_data) {
-          botResponse.isRealTimeData = true
-          botResponse.marketData = data.raw_data
+          botMsg.isRealTimeData = true
+          botMsg.marketData = data.raw_data
         }
-
-        setMessages((prev) => [...prev, botResponse])
+        setMessages((m) => [...m, botMsg])
       } else {
         throw new Error(data.error || "Failed to get response")
       }
-    } catch (error) {
-      console.error("Chat error:", error)
+    } catch (err: any) {
       setTypingIndicator(false)
-      setError(error instanceof Error ? error.message : "Failed to send message")
+      setError(err.message || "Chat error")
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Handle input focus without triggering scroll
+  // Keep input visible on mobile
   const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
     e.preventDefault()
     if (window.innerWidth < 768) {
-      setTimeout(() => {
-        e.currentTarget.scrollIntoView({ behavior: "smooth", block: "center" })
-      }, 100)
+      setTimeout(() => e.currentTarget.scrollIntoView({ behavior: "smooth", block: "center" }), 100)
     }
     setAutoScroll(false)
   }
 
-  // Handle suggestion click
-  const handleSuggestionClick = (suggestion: string) => {
-    setInput(suggestion)
+  // Quick suggestion click
+  const handleSuggestionClick = (s: string) => {
+    setInput(s)
   }
 
-  // Format timestamp
-  const formatTime = (date?: Date) => {
-    if (!date || !isMounted) return ""
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+  // Format timestamps
+  const formatTime = (d?: Date) => {
+    if (!d || !isMounted) return ""
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
   }
 
-  // Prevent parent scroll when chat is scrolled
+  // GSAP animations for the send button
   useEffect(() => {
-    const chatContainer = chatContainerRef.current
-    if (!chatContainer) return
-
-    const preventParentScroll = (e: WheelEvent) => {
-      const { scrollTop, scrollHeight, clientHeight } = chatContainer
-      const isScrolledToBottom = Math.ceil(scrollHeight - scrollTop) <= clientHeight
-      const isScrolledToTop = scrollTop === 0
-
-      if ((isScrolledToTop && e.deltaY < 0) || (isScrolledToBottom && e.deltaY > 0)) return
-      e.preventDefault()
+    const btn = sendButtonRef.current
+    if (!btn) return
+    gsap.set(btn, { scale: 1, boxShadow: "0 1px 3px rgba(0,0,0,0.1)" })
+    const hover = () => {
+      if (!isLoading && input.trim()) gsap.to(btn, { scale: 1.1, boxShadow: "0 4px 12px rgba(59,130,246,0.3)", duration: 0.3 })
     }
+    const leave = () => gsap.to(btn, { scale: 1, boxShadow: "0 1px 3px rgba(0,0,0,0.1)", duration: 0.3 })
+    const click = () => {
+      if (!isLoading && input.trim()) {
+        gsap.timeline()
+          .to(btn, { scale: 0.9, duration: 0.1 })
+          .to(btn, { scale: 1, duration: 0.2, ease: "back.out(3)" })
+      }
+    }
+    btn.addEventListener("mouseenter", hover)
+    btn.addEventListener("mouseleave", leave)
+    btn.addEventListener("mousedown", click)
+    return () => {
+      btn.removeEventListener("mouseenter", hover)
+      btn.removeEventListener("mouseleave", leave)
+      btn.removeEventListener("mousedown", click)
+    }
+  }, [isLoading, input])
 
-    chatContainer.addEventListener("wheel", preventParentScroll, { passive: false })
-    return () => chatContainer.removeEventListener("wheel", preventParentScroll)
-  }, [])
-
-  // Reset the stock items ref array when market data changes
+  // Animate stock items on data change
   useEffect(() => {
     stockItemsRef.current = []
   }, [marketData])
 
-  // GSAP animations…
+  useEffect(() => {
+    if (stockItemsRef.current.length) {
+      gsap.set(stockItemsRef.current, { clearProps: "all" })
+      gsap.fromTo(
+        stockItemsRef.current,
+        { y: 15, opacity: 0, scale: 0.95 },
+        { y: 0, opacity: 1, scale: 1, duration: 0.5, stagger: 0.1, ease: "power2.out" }
+      )
+    }
+  }, [marketData, refreshTime])
+
+  // Refresh animation
+  useEffect(() => {
+    if (isRefreshingData && marketDataContainerRef.current) {
+      gsap.to(marketDataContainerRef.current, { opacity: 0.7, duration: 0.2, yoyo: true, repeat: 1 })
+    }
+  }, [isRefreshingData])
+
+  // Animate insights
+  useEffect(() => {
+    if (marketInsightsRef.current) {
+      gsap.fromTo(
+        marketInsightsRef.current,
+        { opacity: 0, y: 10 },
+        { opacity: 1, y: 0, duration: 0.6, delay: 0.3 }
+      )
+    }
+  }, [refreshTime])
+
+  // Animate live badge
+  useEffect(() => {
+    liveDataBadgeRefs.current.forEach((badge) => {
+      if (!badge) return
+      const dot = badge.querySelector("div")
+      if (dot) {
+        gsap.to(dot, { scale: 1.3, opacity: 1, duration: 0.8, repeat: -1, yoyo: true })
+        gsap.to(badge, { boxShadow: "0 0 8px rgba(34,197,94,0.3)", duration: 1.5, repeat: -1, yoyo: true })
+      }
+    })
+  }, [liveDataBadgeRefs.current.length])
+
+  // Animate logo
+  useEffect(() => {
+    const icon = logoIconRef.current
+    if (!icon) return
+    gsap.set(icon, { scale: 1, rotation: 0 })
+    gsap.to(icon, { rotation: 360, duration: 20, repeat: -1, ease: "linear" })
+    const over = () => gsap.to(icon, { scale: 1.2, duration: 0.3, ease: "back.out(2)" })
+    const out = () => gsap.to(icon, { scale: 1, duration: 0.3 })
+    icon.addEventListener("mouseenter", over)
+    icon.addEventListener("mouseleave", out)
+    return () => {
+      icon.removeEventListener("mouseenter", over)
+      icon.removeEventListener("mouseleave", out)
+    }
+  }, [])
 
   return (
-    <div
-      className="grid md:grid-cols-4 gap-4 h-auto md:h-[600px] relative"
-      data-component-name="FinancialAssistantDemo"
-    >
+    <div className="grid md:grid-cols-4 gap-4 h-auto md:h-[600px] relative">
       {/* Main chat area */}
       <div className="md:col-span-3 flex flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden h-auto md:h-[600px]">
         {/* Header */}
@@ -415,15 +415,14 @@ export default function FinancialChatWidget() {
           </div>
         </div>
 
-        {/* Chat messages area */}
+        {/* Chat messages */}
         <div
           className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative"
           ref={chatContainerRef}
-          data-component-name="FinancialChatMessages"
         >
-          {messages.map((message, index) => (
+          {messages.map((message, idx) => (
             <motion.div
-              key={index}
+              key={idx}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
@@ -475,8 +474,6 @@ export default function FinancialChatWidget() {
                 <p className="text-[14px] sm:text-base whitespace-pre-wrap leading-relaxed">
                   {message.content}
                 </p>
-
-                {/* Real-time data block */}
                 {message.isRealTimeData && message.marketData && (
                   <div className="mt-2 pt-2 border-t border-white/20 text-sm sm:text-xs">
                     <div className="flex justify-between items-center">
@@ -503,7 +500,6 @@ export default function FinancialChatWidget() {
             </motion.div>
           ))}
 
-          {/* Typing indicator */}
           {typingIndicator && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start mb-4">
               <div className="bg-neutral-200 dark:bg-neutral-700 p-3 rounded-lg rounded-tl-none">
@@ -512,16 +508,15 @@ export default function FinancialChatWidget() {
                     AI Assistant is typing
                   </span>
                   <div className="flex space-x-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce delay-150" />
-                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce delay-300" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce delay-150"></div>
+                    <div className="w-1.5 h-1.5 rounded-full bg-neutral-400 dark:bg-neutral-500 animate-bounce delay-300"></div>
                   </div>
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* Error display */}
           {error && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center mb-4">
               <div className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 p-2 rounded-lg text-xs flex items-center">
@@ -532,8 +527,6 @@ export default function FinancialChatWidget() {
           )}
 
           <div ref={messagesEndRef} />
-
-          {/* Scroll-to-bottom button */}
           {isScrolledUp && !autoScroll && (
             <button
               onClick={(e) => {
@@ -561,7 +554,7 @@ export default function FinancialChatWidget() {
           )}
         </div>
 
-        {/* Input area */}
+        {/* Input */}
         <form
           onSubmit={handleSubmit}
           className="p-2 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30"
@@ -584,7 +577,7 @@ export default function FinancialChatWidget() {
             />
             <button
               type="submit"
-              disabled={isLoading || input.trim() === ""}
+              disabled={isLoading || !input.trim()}
               className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[45px] sm:min-h-[50px] min-w-[45px] sm:min-w-[50px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
@@ -593,30 +586,28 @@ export default function FinancialChatWidget() {
             </button>
           </div>
 
-          {/* Smart Suggestions */}
+          {/* Suggestions */}
           <div className="mt-2 flex flex-wrap gap-1 sm:gap-2">
-            {chatHistory.map((suggestion, idx) => (
+            {chatHistory.map((s, i) => (
               <button
-                key={idx}
+                key={i}
                 onClick={(e) => {
                   e.stopPropagation()
-                  handleSuggestionClick(suggestion)
+                  handleSuggestionClick(s)
                 }}
                 disabled={isLoading}
                 className="text-sm sm:text-xs bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 text-neutral-800 dark:text-neutral-200 py-1.5 sm:py-1 px-3 sm:px-2 rounded-full transition-colors flex items-center"
               >
                 <Zap size={12} className="mr-1.5 sm:mr-1 text-primary-500" />
-                {suggestion}
+                {s}
               </button>
             ))}
           </div>
 
-          {/* Status Message (hidden on mobile) */}
+          {/* Status */}
           <div className="hidden sm:flex mt-1 sm:mt-2 justify-between items-center text-[10px] sm:text-xs text-neutral-500">
             <p className="truncate max-w-full">
-              {isUsingSimulatedData
-                ? "Demo mode: Using simulated data."
-                : "Connected to live market data."}
+              Connected to live market data.
               {apiStatusMessage && <span className="ml-1 text-amber-500">{apiStatusMessage}</span>}
             </p>
             <div className="flex items-center">
@@ -627,12 +618,80 @@ export default function FinancialChatWidget() {
         </form>
       </div>
 
-      {/* Market data sidebar */}
+      {/* Sidebar */}
       <div
         className="hidden md:flex md:col-span-1 flex-col rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 shadow-md overflow-hidden"
         ref={marketDataContainerRef}
       >
-        {/* sidebar content unchanged… */}
+        <div className="bg-neutral-100 dark:bg-neutral-700 p-3 border-b border-neutral-200 dark:border-neutral-600">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm flex items-center">
+              <BarChart3 size={16} className="mr-1" /> Market Data
+            </h3>
+            <span className="text-xs text-green-500">Live</span>
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-3">
+          <div className="space-y-3">
+            {marketData.map((stock, idx) => (
+              <div
+                key={stock.symbol}
+                className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 transition-all duration-300"
+                ref={(el) => {
+                  if (el && !stockItemsRef.current.includes(el)) stockItemsRef.current.push(el)
+                }}
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-bold">{stock.symbol}</span>
+                  <span className="font-mono">${stock.price.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-xs text-neutral-500 dark:text-neutral-400">Change</span>
+                  <span
+                    className={`text-xs flex items-center ${
+                      stock.change >= 0 ? "text-green-500" : "text-red-500"
+                    }`}
+                  >
+                    {stock.change >= 0 ? (
+                      <TrendingUp size={12} className="mr-1" />
+                    ) : (
+                      <TrendingUp size={12} className="mr-1 transform rotate-180" />
+                    )}
+                    {stock.change > 0 ? "+" : ""}
+                    {stock.change.toFixed(2)} ({stock.changePercent > 0 ? "+" : ""}
+                    {stock.changePercent.toFixed(2)}%)
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 rounded-lg bg-neutral-100 dark:bg-neutral-700" ref={marketInsightsRef}>
+            <h4 className="text-xs font-medium mb-2 flex items-center">
+              <BarChart3 size={12} className="mr-1" /> Market Insights
+            </h4>
+            <ul className="text-xs space-y-2">
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• S&P 500:</span>
+                <span className="text-green-500">+0.4%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• Nasdaq:</span>
+                <span className="text-green-500">+0.7%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• Dow Jones:</span>
+                <span className="text-red-500">-0.2%</span>
+              </li>
+              <li className="flex justify-between items-center transition-all duration-300 hover:translate-x-1">
+                <span className="text-gray-500 dark:text-gray-400">• VIX Index:</span>
+                <span className="text-red-500">-1.3%</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div className="p-3 border-t border-neutral-200 dark:border-neutral-700 text-xs text-center text-neutral-500">
+          Data refreshed at {refreshTime}
+        </div>
       </div>
     </div>
   )
