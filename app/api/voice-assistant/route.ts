@@ -6,7 +6,7 @@ export const maxDuration = 15; // Extend timeout to 15 seconds
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { query } = body;
+    const { query, imageAnalysisResult } = body;
     
     if (!query || typeof query !== 'string') {
       return NextResponse.json(
@@ -16,68 +16,111 @@ export async function POST(req: NextRequest) {
     }
     
     // Process the voice query with the Gemini API
-    const response = await processVoiceQuery(query);
+    const responseText = await processVoiceQuery(query, imageAnalysisResult);
     
-    return NextResponse.json({ response });
+    return NextResponse.json({ text: responseText });
   } catch (error) {
     console.error("Error processing voice query:", error);
     return NextResponse.json(
-      { error: "Failed to process voice query", response: "I'm sorry, I couldn't process your request. Please try again." },
+      { error: "Failed to process voice query", text: "I'm sorry, I couldn't process your request. Please try again." },
       { status: 500 }
     );
   }
 }
 
-async function processVoiceQuery(query: string) {
+async function processVoiceQuery(query: string, imageAnalysisResult: any) {
   try {
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     
     if (!GEMINI_API_KEY) {
-      console.error('API KEY MISSING: GEMINI_API_KEY environment variable is not set');
-      throw new Error('GEMINI_API_KEY environment variable is not set');
-    }
-
-    console.log('Processing query with Gemini API:', { queryLength: query.length });
-    
-    // For demo/portfolio purposes, we'll provide a meaningful response instead of actually calling the API
-    // This ensures the demo works even if there are API key issues or rate limits
-    
-    // Detect if this is one of the example queries
-    if (query.toLowerCase().includes('what objects do you see')) {
-      return 'I can see a person in the image, along with what appears to be a computer monitor or screen. The lighting is somewhat dim, typical of an indoor setting.';
+      throw new Error("GEMINI_API_KEY environment variable is not set");
     }
     
-    if (query.toLowerCase().includes('text in this image')) {
-      return 'I don\'t detect any significant text in the current camera view. If there is text present, try adjusting the camera angle or improving the lighting for better visibility.';
-    }
+    // Using the Gemini Pro model for text processing
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
     
-    if (query.toLowerCase().includes('describe') || query.toLowerCase().includes('camera view')) {
-      return 'I can see a person in what appears to be an indoor setting. The environment looks like a home office or personal space with some objects in the background. The lighting is moderate.';
-    }
+    // Create a system prompt that positions the assistant as a computer vision helper
+    const systemContext = `You are a helpful computer vision assistant. 
+    The user is showing you an image through their camera or has uploaded an image. 
+    They might ask questions about what's visible in the image, or they might ask 
+    for help identifying objects, reading text, or understanding the scene.
     
-    if (query.toLowerCase().includes('people')) {
-      return 'Yes, I can see one person in the current camera view. They appear to be looking at the camera directly.';
-    }
-
-    // Default response for other queries
-    const defaultResponses = [
-      'Based on the current camera view, I can see what appears to be a person in an indoor setting. The lighting conditions are moderate, and there seem to be some objects in the background.',
-      'I can see a person in the camera view. The image shows what looks like an indoor environment, possibly a home or office space.',
-      'The camera is currently showing a person against what appears to be an indoor background. I can make out some objects in the scene, though the details aren\'t entirely clear from this angle.',
-      'I can see someone in the current camera frame. They appear to be in an indoor setting with typical room elements visible in the background.'
-    ];
+    Here is the latest analysis result from the camera:
+    ${JSON.stringify(imageAnalysisResult || {})}
     
-    // Return a random response from the array
-    return defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-  } catch (error: any) {
-    console.error("Detailed error in processVoiceQuery:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      fullError: error
+    When responding to queries about what you can see:
+    1. Be conversational and helpful
+    2. If the latest analysis includes a math solution, make sure to explain the calculation if asked
+    3. If they're holding a product like a Red Bull can, acknowledge that specifically
+    4. Keep responses concise and focused (no more than 3-4 sentences)
+    5. If you can't determine something from the analysis, admit that politely
+    6. If they ask about a math problem and the analysis has detected one, explain the solution
+    7. Be confident and conversational, like you're having a friendly chat`;
+    
+    const requestData = {
+      contents: [
+        {
+          parts: [
+            {
+              text: systemContext
+            },
+            {
+              text: `User query about the camera view: "${query}"`
+            }
+          ]
+        }
+      ],
+      safety_settings: [
+        {
+          category: "HARM_CATEGORY_HARASSMENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+          threshold: "BLOCK_MEDIUM_AND_ABOVE"
+        }
+      ],
+      generation_config: {
+        temperature: 0.7,
+        top_p: 0.95,
+        top_k: 40,
+        max_output_tokens: 1024
+      }
+    };
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestData)
     });
     
-    // Provide a more helpful error message for the demo
-    return "I'm providing a simulated response since there might be an issue with the API connection. For this demo, I'll still be able to respond to your queries about what I can see in the camera view.";
+    const responseData = await response.json();
+    
+    if (!response.ok) {
+      console.error("Gemini API error:", responseData);
+      throw new Error(`Gemini API error: ${responseData.error?.message || "Unknown error"}`);
+    }
+    
+    // Extract the response text
+    const responseText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+    
+    if (!responseText) {
+      throw new Error("Empty response from Gemini API");
+    }
+    
+    return responseText;
+  } catch (error) {
+    console.error("Error in processVoiceQuery:", error);
+    return "I'm sorry, I couldn't process your request. Please try again.";
   }
 }

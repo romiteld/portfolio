@@ -5,18 +5,27 @@ import { motion } from "framer-motion";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface AnalysisResult {
-  labels: string[];
-  description: string;
+  labels?: string[];
+  description?: string;
+  text?: string[];
+  math_solution?: string;
   faces?: {
     emotions?: string[];
     headwear?: string;
     glasses?: boolean;
   }[];
-  text?: string[];
   landmarks?: string[];
+  objects?: {
+    name: string;
+    confidence: number;
+  }[];
 }
 
-export default function CameraCapture() {
+interface CameraCaptureProps {
+  onAnalysisComplete?: (result: AnalysisResult) => void;
+}
+
+export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -27,6 +36,7 @@ export default function CameraCapture() {
   const [autoAnalyze, setAutoAnalyze] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoAnalyzeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [cameraFacingMode, setCameraFacingMode] = useState<'user' | 'environment'>('user');
 
   useEffect(() => {
     return () => {
@@ -47,18 +57,16 @@ export default function CameraCapture() {
     setError(null);
     
     try {
-      // First check if permissions are already granted
-      const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName });
-      
-      if (permissions.state === 'denied') {
-        throw new Error('Camera permission has been blocked. Please reset permissions in your browser settings.');
+      if (stream) {
+        // If there's an existing stream, stop all tracks
+        stream.getTracks().forEach(track => track.stop());
       }
       
       const newStream = await navigator.mediaDevices.getUserMedia({
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
-          facingMode: "user"
+          facingMode: cameraFacingMode
         }
       });
       
@@ -69,18 +77,9 @@ export default function CameraCapture() {
         videoRef.current.srcObject = newStream;
         await videoRef.current.play();
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Error accessing camera:", err);
-      
-      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        setError("Camera permission denied. Please click 'Allow' when prompted by your browser, or reset permissions in your browser settings.");
-      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
-        setError("No camera detected. Please connect a camera and try again.");
-      } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
-        setError("Camera is in use by another application. Please close other applications that might be using your camera.");
-      } else {
-        setError(`Could not access camera: ${err.message || 'Unknown error'}. Please ensure you've granted permission in your browser settings.`);
-      }
+      setError("Could not access camera. Please ensure you've granted permission and no other app is using it.");
     } finally {
       setIsLoading(false);
     }
@@ -96,6 +95,20 @@ export default function CameraCapture() {
       if (autoAnalyzeTimerRef.current) {
         clearTimeout(autoAnalyzeTimerRef.current);
       }
+    }
+  };
+
+  const switchCamera = async () => {
+    // Toggle camera facing mode
+    const newMode = cameraFacingMode === 'user' ? 'environment' : 'user';
+    setCameraFacingMode(newMode);
+    
+    // Restart camera with new mode
+    if (isCameraActive) {
+      stopCamera();
+      setTimeout(() => {
+        startCamera();
+      }, 300);
     }
   };
 
@@ -144,6 +157,11 @@ export default function CameraCapture() {
       const data = await response.json();
       setAnalysisResults(data);
       
+      // Pass analysis results to parent component if callback provided
+      if (onAnalysisComplete) {
+        onAnalysisComplete(data);
+      }
+      
       // Schedule next analysis if auto-analyze is enabled
       if (autoAnalyze) {
         autoAnalyzeTimerRef.current = setTimeout(() => {
@@ -158,14 +176,15 @@ export default function CameraCapture() {
     }
   };
 
+  // Trigger auto-analysis when enabled
   useEffect(() => {
     if (isCameraActive && autoAnalyze && !isAnalyzing) {
       analyzeFrame();
     }
   }, [isCameraActive, autoAnalyze, isAnalyzing]);
 
+  // Start camera when component mounts
   useEffect(() => {
-    // Start camera when component mounts
     startCamera();
     
     // Clean up function
@@ -177,30 +196,26 @@ export default function CameraCapture() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="bg-gray-900 p-4 rounded-xl">
-        <div className="relative bg-gray-800 rounded-xl overflow-hidden border border-gray-700" style={{ minHeight: '300px' }} data-component-name="CameraCapture">
+        <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
           {isLoading ? (
-            <div className="flex items-center justify-center h-[300px]" data-component-name="CameraCapture">
+            <div className="absolute inset-0 flex items-center justify-center">
               <LoadingSpinner size="large" />
+              <span className="ml-3 text-gray-400">Initializing camera...</span>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center h-[300px] p-6 text-center" data-component-name="CameraCapture">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" className="text-red-500 mx-auto mb-4">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
-              </svg>
-              <p className="text-red-400" data-component-name="CameraCapture">{error}</p>
-              <div className="mt-4 flex flex-col space-y-2">
+            <div className="absolute inset-0 flex items-center justify-center text-center p-6">
+              <div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" className="text-red-500 mx-auto mb-4">
+                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                </svg>
+                <p className="text-red-400">{error}</p>
                 <button 
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                   onClick={startCamera}
-                  data-component-name="CameraCapture"
+                  className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                 >
                   Try Again
                 </button>
-                <p className="text-xs text-gray-400 max-w-md" data-component-name="CameraCapture">
-                  If your browser blocked camera permissions, you may need to reset them. Look for the camera icon in your address bar
-                  or go to your browser settings to enable camera access for this site.
-                </p>
               </div>
             </div>
           ) : (
@@ -221,8 +236,8 @@ export default function CameraCapture() {
           )}
         </div>
         
-        <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center">
+        <div className="flex flex-wrap items-center justify-between mt-4 gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={isCameraActive ? stopCamera : startCamera}
               className={`px-4 py-2 rounded-md text-sm font-medium ${
@@ -235,17 +250,29 @@ export default function CameraCapture() {
             </button>
             
             {isCameraActive && (
-              <button
-                onClick={analyzeFrame}
-                disabled={isAnalyzing}
-                className={`ml-3 px-4 py-2 rounded-md text-sm font-medium ${
-                  isAnalyzing
-                    ? 'bg-gray-700 text-gray-300 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isAnalyzing ? 'Analyzing...' : 'Analyze Now'}
-              </button>
+              <>
+                <button
+                  onClick={analyzeFrame}
+                  disabled={isAnalyzing}
+                  className={`px-4 py-2 rounded-md text-sm font-medium ${
+                    isAnalyzing
+                      ? 'bg-gray-700 text-gray-300 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isAnalyzing ? 'Analyzing...' : 'Analyze Now'}
+                </button>
+                
+                <button
+                  onClick={switchCamera}
+                  className="px-4 py-2 rounded-md text-sm font-medium bg-gray-700 hover:bg-gray-600"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline-block mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                  Switch Camera
+                </button>
+              </>
             )}
           </div>
           
@@ -305,15 +332,58 @@ interface AnalysisResultsProps {
 function AnalysisResults({ results }: AnalysisResultsProps) {
   return (
     <div className="space-y-4">
-      {results.labels && (
+      {results.math_solution && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-blue-900/30 border border-blue-500/50 p-3 rounded-md"
+        >
+          <h4 className="font-medium text-blue-400 mb-2">Math Solution</h4>
+          <div className="bg-gray-800 p-3 rounded-md text-sm">
+            <p className="text-lg font-semibold">{results.math_solution}</p>
+          </div>
+        </motion.div>
+      )}
+      
+      {results.objects && results.objects.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h4 className="font-medium text-blue-400 mb-2">Objects & Elements</h4>
+          <h4 className="font-medium text-blue-400 mb-2">Objects Detected</h4>
           <ul className="grid grid-cols-2 gap-2">
-            {results.labels.map((label: string, i: number) => (
+            {results.objects.map((object, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.2, delay: i * 0.05 }}
+                className="bg-gray-800 px-3 py-2 rounded-md text-sm flex items-center justify-between"
+              >
+                <span className="flex items-center">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                  {object.name}
+                </span>
+                <span className="text-xs bg-gray-700 px-2 py-1 rounded">
+                  {Math.round(object.confidence * 100)}%
+                </span>
+              </motion.li>
+            ))}
+          </ul>
+        </motion.div>
+      )}
+      
+      {results.labels && results.labels.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h4 className="font-medium text-blue-400 mb-2">Things I See</h4>
+          <ul className="grid grid-cols-2 gap-2">
+            {results.labels.map((label, i) => (
               <motion.li
                 key={i}
                 initial={{ opacity: 0, x: -10 }}
@@ -342,6 +412,19 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
         </motion.div>
       )}
       
+      {results.text && results.text.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <h4 className="font-medium text-blue-400 mb-2">Text Detected</h4>
+          <div className="bg-gray-800 p-3 rounded-md text-sm">
+            {results.text.join(' ')}
+          </div>
+        </motion.div>
+      )}
+      
       {results.faces && results.faces.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -350,7 +433,7 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
         >
           <h4 className="font-medium text-blue-400 mb-2">Face Analysis</h4>
           <div className="space-y-2">
-            {results.faces.map((face: any, i: number) => (
+            {results.faces.map((face, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, x: -10 }}
@@ -370,19 +453,6 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
         </motion.div>
       )}
       
-      {results.text && results.text.length > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, delay: 0.3 }}
-        >
-          <h4 className="font-medium text-blue-400 mb-2">Text Detected</h4>
-          <div className="bg-gray-800 p-3 rounded-md text-sm">
-            {results.text.join(' ')}
-          </div>
-        </motion.div>
-      )}
-      
       {results.landmarks && results.landmarks.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -391,7 +461,7 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
         >
           <h4 className="font-medium text-blue-400 mb-2">Landmarks</h4>
           <ul className="space-y-1">
-            {results.landmarks.map((landmark: string, i: number) => (
+            {results.landmarks.map((landmark, i) => (
               <motion.li
                 key={i}
                 initial={{ opacity: 0, x: -10 }}
