@@ -730,7 +730,7 @@ export default function FinancialChatWidget() {
           className="flex-1 p-3 sm:p-4 overflow-y-auto bg-neutral-50 dark:bg-neutral-900 relative min-h-[320px] sm:min-h-[350px]"
           ref={chatContainerRef}
           data-component-name="FinancialChatMessages"
-          style={{ maxHeight: 'calc(70vh - 140px)' }}
+          style={{ maxHeight: '100%', height: 'calc(100% - 140px)' }}
         >
           {messages.map((message, index) => (
             <motion.div
@@ -741,7 +741,7 @@ export default function FinancialChatWidget() {
               className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} mb-4`}
             >
               <div
-                className={`max-w-[95%] sm:max-w-[90%] md:max-w-[80%] p-3 sm:p-3.5 rounded-lg shadow-sm ${
+                className={`max-w-[90%] sm:max-w-[90%] md:max-w-[80%] p-3 sm:p-3.5 rounded-lg shadow-sm ${
                   message.role === "user"
                     ? "bg-primary-500 text-white rounded-tr-none"
                     : message.isRealTimeData 
@@ -787,7 +787,7 @@ export default function FinancialChatWidget() {
                     )
                   ) : null}
                 </div>
-                <p className="text-[15px] sm:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
+                <p className="text-[14px] sm:text-base whitespace-pre-wrap leading-relaxed">{message.content}</p>
                 
                 {/* Display market data details for real-time data */}
                 {message.isRealTimeData && message.marketData && (
@@ -873,7 +873,7 @@ export default function FinancialChatWidget() {
         </div>
 
         {/* Input area */}
-        <form onSubmit={handleSubmit} className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30 w-full">
+        <form onSubmit={handleSubmit} className="p-2 sm:p-4 border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 sticky bottom-0 z-30 w-full">
           <div className="flex">
             <input
               type="text"
@@ -881,7 +881,7 @@ export default function FinancialChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               onFocus={handleInputFocus}
               placeholder="Ask about stocks or crypto..."
-              className="flex-1 p-3 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[50px] text-base"
+              className="flex-1 px-3 py-2 border border-neutral-300 dark:border-neutral-600 rounded-l-md bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[45px] sm:min-h-[50px] text-base"
               disabled={isLoading}
               data-component-name="FinancialChatInput"
               style={{ 
@@ -894,12 +894,12 @@ export default function FinancialChatWidget() {
             <button
               type="submit"
               disabled={isLoading || input.trim() === ""}
-              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[50px] min-w-[54px] sm:min-w-[50px] flex items-center justify-center"
+              className="bg-primary-500 hover:bg-primary-600 text-white p-2 rounded-r-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[45px] sm:min-h-[50px] min-w-[45px] sm:min-w-[50px] flex items-center justify-center"
               aria-label="Send message"
               ref={sendButtonRef}
               data-component-name="FinancialChatSendButton"
             >
-              <Send size={24} className="sm:size-20" />
+              <Send size={20} className="sm:size-20" />
             </button>
           </div>
           

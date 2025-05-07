@@ -183,7 +183,7 @@ export default function ChatWidget() {
           <motion.div
             ref={chatWidgetRef}
             className={`fixed ${
-              isMaximized ? "inset-4" : "bottom-6 right-6 w-[320px] h-[500px]"
+              isMaximized ? "inset-4" : "bottom-6 right-6 w-[95%] sm:w-[350px] h-[70vh] sm:h-[550px] max-h-[90vh]"
             } bg-white/15 dark:bg-black/15 backdrop-blur-xl border border-white/30 dark:border-white/20 rounded-[2.5rem] rounded-br-xl shadow-2xl flex flex-col z-50 overflow-hidden chat-widget-container`}
             initial={false}
             animate="open"
@@ -215,7 +215,7 @@ export default function ChatWidget() {
               </div>
             </div>
             <div
-              className={`flex-1 overflow-y-auto px-5 py-4 space-y-4 animate-in ${isMaximized ? "h-[calc(100vh-120px)]" : ""}`}
+              className={`flex-1 overflow-y-auto px-3 sm:px-5 py-4 space-y-4 animate-in ${isMaximized ? "h-[calc(100vh-120px)]" : "h-[calc(100%-116px)]"}`}
             >
               {messages.map((message, index) => (
                 <motion.div
@@ -226,7 +226,7 @@ export default function ChatWidget() {
                   transition={{ duration: 0.3 }}
                 >
                   <div
-                    className={`message-bubble max-w-[75%] p-3 ${
+                    className={`message-bubble max-w-[90%] p-3 text-sm sm:text-base ${
                       message.role === "user" 
                         ? "bg-blue-500/90 backdrop-blur-sm text-white rounded-2xl rounded-tr-sm shadow-lg" 
                         : "bg-white/30 dark:bg-white/20 backdrop-blur-sm text-neutral-800 dark:text-white rounded-2xl rounded-tl-sm shadow-lg"
@@ -238,7 +238,7 @@ export default function ChatWidget() {
               ))}
               <div ref={messagesEndRef} />
             </div>
-            <div className="p-5 border-t border-white/10 bg-white/5 dark:bg-white/5 animate-in">
+            <div className="p-2 sm:p-4 border-t border-white/10 bg-white/5 dark:bg-white/5 animate-in">
               <div className="flex items-center gap-2 w-full bg-white/20 dark:bg-white/10 backdrop-blur-sm p-2 rounded-xl shadow-inner">
                 <input
                   type="text"
