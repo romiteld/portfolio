@@ -1,24 +1,26 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
-import dynamic from 'next/dynamic'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import ClientSideAI, { useAIModelStatus } from '@/app/chess/components/ClientSideAI';
 import {
     Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap,
     Github, Info, RotateCcw, Undo, AlertCircle, Layers,
     MessageCircle, Send, ChevronUp, ChevronDown, Check,
     X, Lightbulb, User, Shield, Crown, Settings, RefreshCw,
-    Clock, Square, Users, Flame, BarChart2, FileDown,
+    Clock, Square as SquareIcon, Users, Flame, BarChart2, FileDown,
     HelpCircle, BookOpen, Award, ExternalLink, Loader2,
-    Medal, TrendingUp
-} from "lucide-react"
+    Medal, TrendingUp, BrainCircuit
+} from "lucide-react";
 // Import types from the types file
 import { 
-    Board, Move, PieceColor, PieceType, ChessPiece, CastlingRights, 
+    Board, Move, Square, PieceColor, PieceType, ChessPiece, CastlingRights, 
     MoveHistoryItem, GamePhase, GameStatus, PlayerMetrics, AIPersonality,
     ChatMessage as PageChatMessage // Use PageChatMessage alias
 } from '@/app/chess/types'; // Adjusted path and removed duplicate Piece alias
-import ChatBox, { ChatMessage as ChatBoxChatMessage } from "@/app/chess/components/ChatBox" // Import ChatBox type
+import ChatBox, { ChatMessage as ChatBoxChatMessage } from "@/app/chess/components/ChatBox";
 import * as chessAnalysis from '@/app/chess/utils/chessAnalysis'; // Ensure this path is correct
+
 
 // --- Constants (Defined Outside Component) ---
 
@@ -50,7 +52,7 @@ const gameStatusInfo: Record<GameStatus, { icon: React.ElementType, color: strin
     'playing': { icon: Clock, color: 'text-blue-500 dark:text-blue-400', text: 'Game in progress' },
     'check': { icon: AlertCircle, color: 'text-orange-500 dark:text-orange-400', text: 'Check!' },
     'checkmate': { icon: Trophy, color: 'text-red-500 dark:text-red-400', text: 'Checkmate' },
-    'stalemate': { icon: Square, color: 'text-purple-500 dark:text-purple-400', text: 'Stalemate' },
+    'stalemate': { icon: SquareIcon, color: 'text-purple-500 dark:text-purple-400', text: 'Stalemate' },
     'draw': { icon: Users, color: 'text-gray-500 dark:text-gray-400', text: 'Draw' }
 };
 
@@ -411,6 +413,28 @@ function ChessAIDemo() {
     const mainContainerRef = useRef<HTMLDivElement>(null);
     const messageIdCounter = useRef(0);
 
+    // Neural Network Status Component - Shows the loading status of the client-side AI model
+    const NeuralNetworkStatus = () => {
+        const status = useAIModelStatus();
+        
+        // Render appropriate icon based on status
+        if (status === 'ready') {
+            return <span title="Neural network ready" className="ml-2 flex items-center">
+                <BrainCircuit size={18} className="text-emerald-500" />
+            </span>;
+        } else if (status === 'loading') {
+            return <span title="Loading neural network..." className="ml-2 flex items-center">
+                <Loader2 size={18} className="text-blue-500 animate-spin" />
+            </span>;
+        } else if (status === 'error') {
+            return <span title="Neural network failed to load" className="ml-2 flex items-center">
+                <X size={18} className="text-red-500" />
+            </span>;
+        }
+        
+        return null;
+    };
+
     // --- Utility Functions ---
     const getUniqueMessageId = (prefix: string) => {
         messageIdCounter.current += 1;
@@ -661,15 +685,8 @@ function ChessAIDemo() {
             setMessage("AI is thinking...");
             const originalScrollBehavior = document.documentElement.style.scrollBehavior;
             const originalOverflowAnchor = document.body.style.overflowAnchor;
-            const originalHtmlOverflow = document.documentElement.style.overflow;
-            const originalBodyOverflow = document.body.style.overflow;
-            
             document.documentElement.style.scrollBehavior = 'auto';
             document.body.style.overflowAnchor = 'none';
-            
-            // Ensure scrolling remains enabled
-            document.documentElement.style.overflow = 'auto';
-            document.body.style.overflow = 'auto';
 
             try {
                 const response = await fetch('/api/chess-ai/move', {
@@ -704,16 +721,6 @@ function ChessAIDemo() {
                 setTimeout(() => setMessage(null), 3000);
                 document.documentElement.style.scrollBehavior = originalScrollBehavior;
                 document.body.style.overflowAnchor = originalOverflowAnchor;
-                document.documentElement.style.overflow = originalHtmlOverflow;
-                document.body.style.overflow = originalBodyOverflow;
-                
-                // Double-check that scrolling is enabled after AI move
-                if (document.documentElement.style.overflow === 'hidden') {
-                    document.documentElement.style.overflow = 'auto';
-                }
-                if (document.body.style.overflow === 'hidden') {
-                    document.body.style.overflow = 'auto';
-                }
             }
         }
     // Corrected dependencies
@@ -724,31 +731,14 @@ function ChessAIDemo() {
         if (turn === playerColor && gameStatus === 'playing' && !thinking) {
             const originalScrollBehavior = document.documentElement.style.scrollBehavior;
             const originalOverflowAnchor = document.body.style.overflowAnchor;
-            const originalHtmlOverflow = document.documentElement.style.overflow;
-            const originalBodyOverflow = document.body.style.overflow;
-            
             document.documentElement.style.scrollBehavior = 'auto';
             document.body.style.overflowAnchor = 'none';
-            
-            // Ensure scrolling remains enabled
-            document.documentElement.style.overflow = 'auto';
-            document.body.style.overflow = 'auto';
 
             makeMove(move); // Apply player move using makeMove
 
             setTimeout(() => {
                 document.documentElement.style.scrollBehavior = originalScrollBehavior;
                 document.body.style.overflowAnchor = originalOverflowAnchor;
-                document.documentElement.style.overflow = originalHtmlOverflow;
-                document.body.style.overflow = originalBodyOverflow;
-                
-                // Double-check that scrolling is enabled after move processing
-                if (document.documentElement.style.overflow === 'hidden') {
-                    document.documentElement.style.overflow = 'auto';
-                }
-                if (document.body.style.overflow === 'hidden') {
-                    document.body.style.overflow = 'auto';
-                }
             }, 100); 
         }
     // Dependencies
@@ -901,6 +891,68 @@ function ChessAIDemo() {
             </div>
         )
     );
+
+    // AI Model Information Component
+    const ModelInfo = () => {
+        // Get the neural network status
+        const status = useAIModelStatus();
+        
+        return (
+            <div className="p-4 space-y-3" data-component-name="ModelInfo">
+                <p className="text-sm">Magnus Chess AI is powered by a neural network trained on thousands of master-level chess games.</p>
+                
+                <div className="flex items-center mt-2 bg-gray-50 dark:bg-gray-700/50 p-2.5 rounded-lg">
+                    <span className="mr-2 text-sm">Neural Network:</span>
+                    {status === 'ready' && (
+                        <span className="flex items-center text-emerald-600 dark:text-emerald-400 text-sm">
+                            <BrainCircuit size={16} className="mr-1" />
+                            Ready (Client-side)
+                        </span>
+                    )}
+                    {status === 'loading' && (
+                        <span className="flex items-center text-blue-600 dark:text-blue-400 text-sm">
+                            <Loader2 size={16} className="mr-1 animate-spin" />
+                            Loading...
+                        </span>
+                    )}
+                    {status === 'error' && (
+                        <span className="flex items-center text-amber-600 dark:text-amber-400 text-sm">
+                            <AlertCircle size={16} className="mr-1" />
+                            Using server fallback
+                        </span>
+                    )}
+                    {status === 'idle' && (
+                        <span className="flex items-center text-gray-600 dark:text-gray-400 text-sm">
+                            <Clock size={16} className="mr-1" />
+                            Initializing...
+                        </span>
+                    )}
+                </div>
+                
+                <p className="text-sm mt-2">The model evaluates positions based on material balance, piece positioning, board control, king safety, and other chess principles.</p>
+                
+                <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                    <h4 className="text-sm font-medium mb-2">Client-Side AI Benefits:</h4>
+                    <ul className="text-xs space-y-1 list-disc list-inside">
+                        <li>Faster move calculation</li>
+                        <li>Works offline after initial load</li>
+                        <li>Reduced server load</li>
+                        <li>Smoother gameplay experience</li>
+                    </ul>
+                </div>
+                
+                <a
+                    href="https://arxiv.org/abs/1712.01815"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-xs font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 mt-3"
+                >
+                    <ExternalLink size={14} className="mr-1" />
+                    Learn more about neural networks in chess
+                </a>
+            </div>
+        );
+    };
 
     const LeftSidebarSection = () => (
     <div className="space-y-4 w-full">
@@ -1075,25 +1127,7 @@ const GameStats = ({ moveHistory, gamePhase }: { moveHistory: MoveHistoryItem[],
     </div>
 );
 
-const ModelInfo = () => (
-    <div className="p-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
-        <p>This AI uses a neural network (similar to AlphaZero) trained with reinforcement learning and Monte Carlo Tree Search (MCTS).</p>
-        <ul className="list-disc list-inside space-y-1">
-            <li>Evaluates positions without traditional heuristics.</li>
-            <li>Trained through self-play.</li>
-            <li>ONNX model format for fast inference.</li>
-        </ul>
-        <a
-            href="https://arxiv.org/abs/1712.01815"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center text-xs font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
-        >
-            Learn more about AlphaZero
-            <ExternalLink className="ml-1 h-3 w-3" />
-        </a>
-    </div>
-);
+// Reference to ModelInfo component has been removed because it's now defined earlier in the file
 
 const PlayerAnalysis = ({ moveHistory, metrics }: { moveHistory: MoveHistoryItem[], metrics: PlayerMetrics }) => (
     <div className="p-4 space-y-3">
@@ -1213,7 +1247,7 @@ const formatMetricName = (name: string) => {
                                 return acc;
                             }, [] as JSX.Element[]))}
                      </div>
-                ) : (
+                ) : activeTabRightSidebar === 'assistant' ? (
                      <div 
                          role="tabpanel"
                          id="assistantPanel"
@@ -1229,6 +1263,15 @@ const formatMetricName = (name: string) => {
                             maxHeight="none" 
                             title="" 
                          />
+                    </div>
+                ) : (
+                     <div 
+                         role="tabpanel"
+                         id="modelInfoPanel"
+                         aria-labelledby="modelInfoTab"
+                         className="h-full"
+                     >
+                         <ModelInfo />
                     </div>
                 )}
             </div>
@@ -1262,11 +1305,18 @@ const formatMetricName = (name: string) => {
 
     return (
         <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100" ref={mainContainerRef} data-component-name="ChessAIDemo">
+            {/* Preload client-side neural network model */}
+            <ClientSideAI />
             <div className="max-w-8xl mx-auto">
                 {/* Header Section */}
                 <div className="flex flex-col items-center text-center mb-8">
-                    <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3"><Cpu className="h-7 w-7 md:h-8 md:w-8 text-blue-500" />Chess AI Magnus</h1>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mt-2 mb-4">Play against a neural network-based chess AI.</p>
+                    <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3">
+                        <Cpu className="h-7 w-7 md:h-8 md:w-8 text-blue-500" />
+                        Chess AI Magnus
+                        {/* Neural Network Status Indicator */}
+                        <NeuralNetworkStatus />
+                    </h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mt-2 mb-4">Play against a neural network-based chess AI with both client-side and server-side intelligence.</p>
                     <div className="flex items-center gap-3 mt-2">
                         <button onClick={handleResetGame} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><RotateCcw size={16} />New Game</button>
                         <button onClick={() => toggleSection('howToPlay')} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><HelpCircle size={16} />How to Play</button>
