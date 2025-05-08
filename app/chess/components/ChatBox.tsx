@@ -17,6 +17,8 @@ interface ChatBoxProps {
   maxHeight?: string
   title?: string
   onSendMessage?: (message: string) => void
+  inputRef?: React.RefObject<HTMLInputElement>
+  isLoading?: boolean
 }
 
 const ChatBox = ({ 
@@ -24,12 +26,14 @@ const ChatBox = ({
   className = '',
   maxHeight = '15rem',
   title = 'Chess Assistant',
-  onSendMessage
+  onSendMessage,
+  inputRef,
+  isLoading = false
 }: ChatBoxProps) => {
   const [isOpen, setIsOpen] = useState(true)
   const [messageText, setMessageText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const localInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -45,7 +49,7 @@ const ChatBox = ({
       
       // Focus the input again after sending
       setTimeout(() => {
-        inputRef.current?.focus()
+        (inputRef || localInputRef).current?.focus()
       }, 0)
     }
   }
@@ -99,8 +103,7 @@ const ChatBox = ({
             className="overflow-hidden"
           >
             <div 
-              className="p-3 overflow-y-auto"
-              style={{ maxHeight }}
+              className={`p-3 overflow-y-auto chatbox-messages-container max-h-[${maxHeight}]`}
             >
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 p-4">
@@ -145,7 +148,7 @@ const ChatBox = ({
             {onSendMessage && (
               <form onSubmit={handleSubmit} className="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
                 <input
-                  ref={inputRef}
+                  ref={inputRef || localInputRef}
                   type="text"
                   placeholder="Ask a chess question..."
                   value={messageText}

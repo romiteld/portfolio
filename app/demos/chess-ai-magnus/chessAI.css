@@ -1,6 +1,5 @@
 /* Chess AI Demo Styles */
 
-/* Prevent automatic scrolling on move/selection */
 html {
   scroll-behavior: auto !important;
   overflow-anchor: none !important;
@@ -10,12 +9,12 @@ body {
   overflow-anchor: none !important;
 }
 
-/* Disable focus-induced scrolling */
 *:focus {
   scroll-margin: 0 !important;
-} 
+}
 
-/* Core chess board styles */
+/* Removed empty .move-history-panel and .chat-panel rulesets */
+
 .chess-board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
@@ -33,7 +32,7 @@ body {
   justify-content: center;
   align-items: center;
   position: relative;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease;
 }
 
 .chess-square.white {
@@ -45,11 +44,7 @@ body {
 }
 
 .chess-square.selected {
-  background-color: rgba(106, 179, 76, 0.5) !important;
-}
-
-.chess-square.valid-move {
-  position: relative;
+  background-color: rgba(106, 179, 76, 0.6) !important;
 }
 
 .chess-square.valid-move::before {
@@ -58,395 +53,293 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 16px;
-  height: 16px;
+  width: 30%;
+  height: 30%;
   border-radius: 50%;
-  background-color: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.25);
   z-index: 1;
+  pointer-events: none;
 }
 
 .chess-square.valid-capture::before {
   content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border: 3px solid rgba(220, 0, 0, 0.4);
+  top: 5%;
+  left: 5%;
+  right: 5%;
+  bottom: 5%;
+  border: 4px solid rgba(220, 0, 0, 0.5);
   border-radius: 50%;
   z-index: 1;
+  pointer-events: none;
 }
 
 .chess-piece {
-  width: 80%;
-  height: 80%;
+  width: 85%;
+  height: 85%;
   cursor: pointer;
   object-fit: contain;
   z-index: 2;
   -webkit-user-select: none;
   user-select: none;
-  transition: transform 0.2s ease, filter 0.2s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .chess-piece:hover {
-  transform: scale(1.05);
-  filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.7));
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 5px rgba(59, 130, 246, 0.6));
 }
 
 .chess-piece:active {
   cursor: grabbing;
+  transform: scale(1.05);
 }
 
-/* Board container styles */
-.board-container {
-  position: relative;
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0));
-  padding: 10px;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-}
-
-/* Improved UI component styling */
-.tab-button {
-  position: relative;
-  padding: 0.75rem 1rem;
-  font-weight: 500;
-  color: #6b7280;
-  transition: all 0.2s ease;
-}
-
-.tab-button.active {
-  color: #3b82f6;
-}
-
-.tab-button.active::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #3b82f6;
-}
-
-/* Move history styling */
 .move-entry {
   display: grid;
   grid-template-columns: 3rem 1fr 1fr;
   gap: 0.5rem;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid theme('colors.gray.100');
+  /* consider dark:border-gray-700 if using Tailwind JIT or custom dark variants here */
 }
-
 .move-entry:nth-child(odd) {
-  background-color: rgba(243, 244, 246, 0.3);
+  background-color: theme('colors.gray.50');
+   /* consider dark:bg-gray-800/50 if using Tailwind JIT or custom dark variants here */
 }
 
-.move-number {
-  font-family: monospace;
-  color: #6b7280;
-  text-align: center;
-}
 
-.move-notation {
-  font-weight: 500;
-  padding: 0.125rem 0.5rem;
-  border-radius: 0.25rem;
-}
-
-.move-notation.check {
-  background-color: rgba(59, 130, 246, 0.1);
-  color: #1e40af;
-}
-
-.move-notation.checkmate {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
-}
-
-/* Chat message styling */
-.chat-message {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  margin-bottom: 0.75rem;
-}
-
-.chat-message-icon {
-  flex-shrink: 0;
-  margin-top: 0.25rem;
-}
-
-.chat-message-content {
-  flex: 1;
-}
-
-.chat-message-time {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  margin-top: 0.25rem;
-}
-
-.chat-message.info {
-  background-color: rgba(59, 130, 246, 0.1);
-}
-
-.chat-message.warning {
-  background-color: rgba(245, 158, 11, 0.1);
-}
-
-.chat-message.error {
-  background-color: rgba(239, 68, 68, 0.1);
-}
-
-.chat-message.success {
-  background-color: rgba(16, 185, 129, 0.1);
-}
-
-.chat-message.user {
-  background-color: rgba(107, 114, 128, 0.1);
-}
-
-.chat-input {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.chat-input input {
-  flex: 1;
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  border: 1px solid #d1d5db;
-  font-size: 0.875rem;
-  transition: all 0.2s ease;
-}
-
-.chat-input input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-}
-
-.chat-input button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  background-color: #3b82f6;
-  color: white;
-  transition: all 0.2s ease;
-}
-
-.chat-input button:hover {
-  background-color: #2563eb;
-}
-
-.chat-input button:disabled {
-  background-color: #9ca3af;
-  cursor: not-allowed;
-}
-
-/* Game controls styling */
-.game-controls {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-  justify-content: center;
-}
-
-.control-button {
-  padding: 0.5rem 1rem;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-
-/* Player analysis styling */
-.meter {
-  height: 0.5rem;
-  background-color: #e5e7eb;
-  border-radius: 9999px;
-  overflow: hidden;
-}
-
-.meter-fill {
-  height: 100%;
-  border-radius: 9999px;
-  transition: width 0.5s ease;
-}
-
-.meter-label {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.875rem;
-  margin-bottom: 0.25rem;
-}
-
-.style-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: white;
-  transition: all 0.2s ease;
-}
-
-.style-badge:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-.style-badge.positional {
-  background-color: #f59e0b;
-}
-
-.style-badge.defensive {
-  background-color: #3b82f6;
-}
-
-.style-badge.endgame {
-  background-color: #10b981;
-}
-
-/* Animation for piece movement */
 @keyframes movePiece {
-  0% {
-    transform: translate(0, 0);
-  }
-  100% {
-    transform: translate(var(--targetX), var(--targetY));
-  }
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(var(--targetXHalf), var(--targetYHalf)) scale(1.1); }
+  100% { transform: translate(var(--targetX), var(--targetY)) scale(1); }
 }
 
 .chess-piece.moving {
   position: absolute;
-  animation: movePiece 0.3s forwards;
+  animation: movePiece 0.3s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+  pointer-events: none;
 }
 
-/* Loading animation for AI thinking */
-@keyframes pulse {
-  0%, 100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
+/* CSS for progress bar fill using custom property */
+.progress-bar-fill {
+  width: var(--progress-width, 0%); /* Default to 0% if property not set */
+  transition: width 0.3s ease-in-out; /* Animate width changes */
 }
 
-.ai-thinking-indicator {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+/* Player metrics progress bar styling */
+:root {
+  --progress-width: 0%;
+  --progress-width-opening: 0%;
+  --progress-width-tactical: 0%;
+  --progress-width-positional: 0%;
+  --progress-width-endgame: 0%;
+  --progress-width-aggressiveness: 0%;
+  --progress-width-defensiveness: 0%;
+  --progress-width-opening-preparation: 0%;
+  --progress-width-tactical-awareness: 0%;
+  --progress-width-positional-understanding: 0%;
+  --chatbox-max-height: 15rem; /* Default from ChatBox.tsx */
 }
 
-.ai-thinking-dots {
-  display: flex;
-  gap: 0.25rem;
+/* Core player metric bar class with all shared properties */
+.player-metric-bar {
+  height: 100%;
+  border-radius: 9999px; /* rounded-full */
+  transition-property: width;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* transition-all */
+  transition-duration: 500ms; /* duration-500 */
+  background-color: theme('colors.blue.500');
 }
 
-.ai-thinking-dot {
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background-color: currentColor;
-  animation: pulse 1.5s infinite;
+/* Opening preparation bar */
+.player-metric-opening-preparation {
+  width: var(--progress-width-opening-preparation, 0%);
 }
 
-.ai-thinking-dot:nth-child(2) {
-  animation-delay: 0.2s;
+/* Positional understanding bar */
+.player-metric-positional-understanding {
+  width: var(--progress-width-positional-understanding, 0%);
 }
 
-.ai-thinking-dot:nth-child(3) {
-  animation-delay: 0.4s;
+/* Tactical awareness bar */
+.player-metric-tactical-awareness {
+  width: var(--progress-width-tactical-awareness, 0%);
 }
 
-/* Game status badge styling */
-.game-status {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
-  background-color: #f3f4f6;
-  font-weight: 500;
-  font-size: 0.875rem;
+/* Endgame skill bar */
+.player-metric-endgame-skill {
+  width: var(--progress-width-endgame-skill, 0%);
 }
 
-.game-status.check {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: #92400e;
+/* Playing style metrics */
+.player-metric-aggressive {
+  width: var(--progress-width-aggressive, 60%);
 }
 
-.game-status.checkmate {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
+.player-metric-defensive {
+  width: var(--progress-width-defensive, 70%);
 }
 
-.game-status.stalemate, .game-status.draw {
-  background-color: rgba(107, 114, 128, 0.1);
-  color: #4b5563;
+/* AI strength metrics for left sidebar */
+.ai-strength-metric-calculation {
+  width: var(--progress-width-calculation, 85%);
 }
 
-.game-status.playing {
-  background-color: rgba(16, 185, 129, 0.1);
-  color: #065f46;
+.ai-strength-metric-strategy {
+  width: var(--progress-width-strategy, 90%);
+}
+
+.ai-strength-metric-knowledge {
+  width: var(--progress-width-knowledge, 95%);
+}
+
+.ai-strength-metric-creativity {
+  width: var(--progress-width-creativity, 75%);
+}
+
+.ai-strength-metric-psychology {
+  width: var(--progress-width-psychology, 70%);
+}
+
+.ai-strength-metric-endurance {
+  width: var(--progress-width-endurance, 100%);
+}
+
+.player-metric-bar-opening {
+    width: var(--progress-width-opening);
+}
+
+.player-metric-bar-tactical {
+    width: var(--progress-width-tactical);
+}
+
+.player-metric-bar-capture {
+    width: var(--progress-width-capture);
+}
+
+.player-metric-bar-check {
+    width: var(--progress-width-check);
+}
+
+.player-metric-bar-accuracy {
+  width: var(--progress-width-accuracy);
+}
+
+.player-metric-bar-opening-preparation {
+  width: var(--progress-width-opening-preparation);
+}
+
+.player-metric-bar-tactical-awareness {
+  width: var(--progress-width-tactical-awareness);
+}
+
+.player-metric-bar-positional-understanding {
+  width: var(--progress-width-positional-understanding); /* New class */
+}
+
+.progress-bar-opening {
+    width: var(--progress-width-opening);
+}
+
+.progress-bar-tactical {
+    width: var(--progress-width-tactical);
+}
+
+.progress-bar-positional {
+    width: var(--progress-width-positional);
+}
+
+.progress-bar-endgame {
+    width: var(--progress-width-endgame);
+}
+
+.progress-bar-aggressiveness {
+    width: var(--progress-width-aggressiveness);
+}
+
+.progress-bar-defensiveness {
+    width: var(--progress-width-defensiveness);
+}
+
+.chatbox-messages-container {
+  max-height: var(--chatbox-max-height, 15rem); /* Default to 15rem if variable not set */
+  overflow-y: auto;
 }
 
 /* Responsive adjustments */
-@media (max-width: 1023px) {
-  /* For tablet and below */
-  .board-container {
-    max-width: 500px;
+/* Removed empty media query blocks for .board-container and .chess-board */
+
+@media (max-width: 767px) { /* md breakpoint in Tailwind */
+  .chess-piece {
+    width: 88%;
+    height: 88%;
   }
 }
 
-@media (max-width: 767px) {
-  /* For mobile */
-  .board-container {
-    max-width: 100%;
-    width: 100%;
-  }
-  
-  .chess-board {
-    width: 100%;
-    max-width: 100%;
-  }
-  
+@media (max-width: 480px) { /* sm or xs breakpoint in Tailwind */
   .chess-piece {
-    width: 85%;
-    height: 85%;
+    width: 90%;
+    height: 90%;
   }
-  
-  /* Specifically for small mobile screens */
-  @media (max-width: 480px) {
-    .board-container {
-      padding: 5px;
-    }
-    
-    .chess-piece {
-      width: 90%;
-      height: 90%;
-    }
-    
-    .game-controls {
-      flex-wrap: wrap;
-    }
-    
-    .control-button {
-      padding: 0.375rem 0.625rem;
-      font-size: 0.75rem;
-    }
-  }
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: theme('colors.blue.500');
+  cursor: pointer;
+  border-radius: 50%;
+  margin-top: -5px; 
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: theme('colors.blue.500');
+  cursor: pointer;
+  border-radius: 50%;
+  border: none;
+}
+
+/* Tailwind Custom Scrollbar (Optional) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: theme('colors.gray.200');
+  /* Apply dark mode using Tailwind's dark variant if configured in tailwind.config.js */
+  /* e.g., @apply dark:bg-gray-700; */
+  border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-track { /* Example for dark mode */
+    background: theme('colors.gray.700');
+}
+
+::-webkit-scrollbar-thumb {
+  background: theme('colors.gray.400');
+  border-radius: 10px;
+}
+.dark ::-webkit-scrollbar-thumb { /* Example for dark mode */
+    background: theme('colors.gray.500');
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: theme('colors.gray.500');
+}
+.dark ::-webkit-scrollbar-thumb:hover { /* Example for dark mode */
+    background: theme('colors.gray.400');
+}
+
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.gray.400') theme('colors.gray.200');
+}
+/* For dark mode scrollbar in Firefox, you might need JavaScript or more complex CSS if not using OS theme */
+.dark * {
+  scrollbar-color: theme('colors.gray.500') theme('colors.gray.700');
 }

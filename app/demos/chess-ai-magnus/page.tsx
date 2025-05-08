@@ -1,1346 +1,1294 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import dynamic from 'next/dynamic'
-import { 
-  Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap, 
-  Github, Info, RotateCcw, Undo, AlertCircle, Layers, 
-  MessageCircle, Send, ChevronUp, ChevronDown, Check, 
-  X, Lightbulb, User, Shield, Crown, Settings, RefreshCw,
-  Clock, Square, Users, Flame, BarChart2, FileDown, 
-  HelpCircle, BookOpen, Award, ExternalLink, Loader2
+import {
+    Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap,
+    Github, Info, RotateCcw, Undo, AlertCircle, Layers,
+    MessageCircle, Send, ChevronUp, ChevronDown, Check,
+    X, Lightbulb, User, Shield, Crown, Settings, RefreshCw,
+    Clock, Square, Users, Flame, BarChart2, FileDown,
+    HelpCircle, BookOpen, Award, ExternalLink, Loader2,
+    Medal, TrendingUp
 } from "lucide-react"
+// Import types from the types file
 import { 
-  Board, Move, PieceColor 
-} from "@/app/chess/components/ChessBoard"
-import ChatBox from "@/app/chess/components/ChatBox"
+    Board, Move, PieceColor, PieceType, ChessPiece, CastlingRights, 
+    MoveHistoryItem, GamePhase, GameStatus, PlayerMetrics, AIPersonality,
+    ChatMessage as PageChatMessage // Use PageChatMessage alias
+} from '@/app/chess/types'; // Adjusted path and removed duplicate Piece alias
+import ChatBox, { ChatMessage as ChatBoxChatMessage } from "@/app/chess/components/ChatBox" // Import ChatBox type
+import * as chessAnalysis from '@/app/chess/utils/chessAnalysis'; // Ensure this path is correct
 
-// Initial empty board state
-const EMPTY_BOARD: Board = [
+// --- Constants (Defined Outside Component) ---
+
+const INITIAL_BOARD: Board = [
+  [{ type: 'r', color: 'b' }, { type: 'n', color: 'b' }, { type: 'b', color: 'b' }, { type: 'q', color: 'b' }, { type: 'k', color: 'b' }, { type: 'b', color: 'b' }, { type: 'n', color: 'b' }, { type: 'r', color: 'b' }],
+  [{ type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }, { type: 'p', color: 'b' }],
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
   [null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null],
-  [null, null, null, null, null, null, null, null]
-]
+  [{ type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }, { type: 'p', color: 'w' }],
+  [{ type: 'r', color: 'w' }, { type: 'n', color: 'w' }, { type: 'b', color: 'w' }, { type: 'q', color: 'w' }, { type: 'k', color: 'w' }, { type: 'b', color: 'w' }, { type: 'n', color: 'w' }, { type: 'r', color: 'w' }],
+];
 
-// Dynamically import ChessGame with no SSR
-const ChessGame = dynamic(() => import('@/app/chess/components/ChessGame'), { 
-  ssr: false,
-  loading: () => (
-    <div className="h-full flex items-center justify-center min-h-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-300">Loading Chess Game...</p>
-      </div>
-    </div>
-  )
-})
-
-// Dynamically import Chess3D with no SSR - keeping for future use
-const Chess3D = dynamic(() => import('@/app/chess/components/Chess3D'), { 
-  ssr: false,
-  loading: () => (
-    <div className="h-full flex items-center justify-center min-h-[300px] bg-gray-100 dark:bg-gray-800 rounded-lg">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-        <p className="mt-4 text-gray-600 dark:text-gray-300">Loading 3D Chess Board...</p>
-      </div>
-    </div>
-  )
-})
-
-// Fixed game phases
-type GamePhase = 'opening' | 'middlegame' | 'endgame'
-
-// Difficulty levels
-const difficultyLevels = [
-  { name: "Beginner", value: 1, description: "Perfect for learning the basics" },
-  { name: "Casual", value: 3, description: "Relaxed play with moderate challenge" },
-  { name: "Intermediate", value: 5, description: "Solid chess strategy and tactics" },
-  { name: "Advanced", value: 7, description: "Strong opposition requiring careful play" },
-  { name: "Grandmaster", value: 10, description: "Magnus Carlsen-like play at its finest" }
-]
-
-// Game result info display helper
-const gameStatusInfo = {
-  'playing': { icon: Clock, color: 'text-blue-500 dark:text-blue-400', text: 'Game in progress' },
-  'check': { icon: AlertCircle, color: 'text-orange-500 dark:text-orange-400', text: 'Check!' },
-  'checkmate': { icon: Trophy, color: 'text-red-500 dark:text-red-400', text: 'Checkmate' },
-  'stalemate': { icon: Square, color: 'text-purple-500 dark:text-purple-400', text: 'Stalemate' },
-  'draw': { icon: Users, color: 'text-gray-500 dark:text-gray-400', text: 'Draw' }
-}
-
-// Convert move number to algebraic notation (e.g. 1. e4)
-const formatMoveNumber = (index: number) => {
-  return `${Math.floor(index / 2) + 1}${index % 2 === 0 ? '.' : '...'}`;
-}
-
-// Function to get human-readable piece name
-const getPieceName = (type: string): string => {
-  switch (type) {
-    case 'p': return 'pawn'
-    case 'n': return 'knight'
-    case 'b': return 'bishop'
-    case 'r': return 'rook'
-    case 'q': return 'queen'
-    case 'k': return 'king'
-    default: return 'piece'
-  }
-}
-
-// Helper function to generate AI analysis based on game state
-const getAIAnalysis = (moveHistory: Move[], gamePhase: 'opening' | 'middlegame' | 'endgame'): string => {
-  // Simple analysis based on game phase and recent moves
-  const moveCount = moveHistory.length;
-  
-  if (moveCount <= 8) {
-    const openingAnalyses = [
-      "I'm developing my pieces toward the center, following good opening principles.",
-      "Controlling the center early is crucial for creating attacking opportunities later.",
-      "A solid pawn structure supports piece development and controls key squares.",
-      "Knight development to active squares creates tactical opportunities.",
-      "Bishop development completes fianchetto, controlling long diagonals."
-    ];
-    return openingAnalyses[Math.floor(Math.random() * openingAnalyses.length)];
-  }
-  
-  if (gamePhase === 'middlegame') {
-    const middlegameAnalyses = [
-      "I'm looking for tactical opportunities while maintaining a solid position.",
-      "Piece coordination is key in the middlegame - notice how my pieces work together.",
-      "I'm preparing to transition to a favorable endgame by simplifying the position.",
-      "Pawn breaks can change the structure dramatically, opening lines for my pieces.",
-      "I'm targeting your weakened pawn structure with coordinated piece attacks."
-    ];
-    return middlegameAnalyses[Math.floor(Math.random() * middlegameAnalyses.length)];
-  }
-  
-  // Endgame
-  const endgameAnalyses = [
-    "In the endgame, king activity becomes much more important.",
-    "Connected passed pawns are often decisive in endgames - they support each other's advance.",
-    "I'm trying to create a passed pawn that can be supported all the way to promotion.",
-    "Rook endgames require precise calculation and patience.",
-    "The principle of two weaknesses applies - I need to create pressure on multiple sides."
-  ];
-  return endgameAnalyses[Math.floor(Math.random() * endgameAnalyses.length)];
+const DEFAULT_AI_PERSONALITY: AIPersonality = { // Use AIPersonality type
+  aggressiveness: 0.7, defensiveness: 0.6, mobility: 0.8,
+  positionality: 0.9, riskTaking: 0.5, opening: 'versatile'
 };
 
-function ChessAIDemo() {
-  // Core game state
-  const [aiLevel, setAiLevel] = useState(5)
-  const [playerColor, setPlayerColor] = useState<'w' | 'b'>('w')
-  const [boardState, setBoardState] = useState<Board>(EMPTY_BOARD)
-  const [lastMove, setLastMove] = useState<Move | null>(null)
-  const [isCheck, setIsCheck] = useState(false)
-  const [checkPosition, setCheckPosition] = useState<{row: number, col: number} | null>(null)
-  const [legalMoves, setLegalMoves] = useState<Move[]>([])
-  const [gamePhase, setGamePhase] = useState<GamePhase>('opening')
-  const [gameStatus, setGameStatus] = useState<'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw'>('playing')
-  const [moveHistory, setMoveHistory] = useState<any[]>([])
-  const [thinking, setThinking] = useState(false)
-  const [turn, setTurn] = useState<'w' | 'b'>('w') // Added to track current turn
-  const [message, setMessage] = useState<string | null>(null)
-  
-  // UI state
-  const [activeTab, setActiveTab] = useState<'history' | 'assistant'>('history')
-  const [expandedSections, setExpandedSections] = useState({
-    gameControls: true,
-    playerAnalysis: false,
-    howToPlay: false,
-    modelInfo: false
-  })
-  
-  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d')
-  const [chatMessages, setChatMessages] = useState<{
-    id: string;
-    text: string;
-    type: string;
-    timestamp: Date;
-  }[]>([{
-    id: 'welcome',
-    text: 'Welcome to the chess game! I\'ll provide analysis and tips as you play.',
-    type: 'info',
-    timestamp: new Date()
-  }])
-  
-  // Refs
-  const mainContainerRef = useRef<HTMLDivElement>(null)
-  const isUpdatingRef = useRef(false)
-  const moveHistoryRef = useRef<HTMLDivElement>(null)
-  const chatInputRef = useRef<HTMLInputElement>(null)
-  
-  // Toggle section expansion
-  const toggleSection = (section: 'gameControls' | 'playerAnalysis' | 'howToPlay' | 'modelInfo') => {
-    setExpandedSections(prev => ({
-      ...prev,
-      [section]: !prev[section]
-    }))
-  }
-  
-  // Improved scroll prevention implementation
-  useEffect(() => {
-    if (!mainContainerRef.current) return
-    
-    // Store the initial scroll position
-    let lastScrollY = window.scrollY
-    
-    // Function to prevent scrolling
-    const preventScroll = () => {
-      window.scrollTo(0, lastScrollY)
-    }
-    
-    // Update the last known good scroll position
-    const updateScrollPosition = () => {
-      lastScrollY = window.scrollY
-    }
-    
-    // Setup mutation observer to detect DOM changes that might cause scrolling
-    const observer = new MutationObserver(() => {
-      updateScrollPosition()
-    })
-    
-    // Start the observer with comprehensive options
-    observer.observe(mainContainerRef.current, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style', 'data-focused']
-    })
-    
-    // Set initial scroll position
-    updateScrollPosition()
-    
-    // Aggressive scroll prevention during critical operations (AI thinking)
-    if (thinking) {
-      window.addEventListener('scroll', preventScroll, { passive: false })
-    }
-    
-    // Disable CSS smooth scrolling and focus-induced scrolling
-    const htmlElement = document.documentElement
-    const originalScrollBehavior = htmlElement.style.scrollBehavior
-    const originalOverflowAnchor = document.body.style.overflowAnchor
-    
-    htmlElement.style.scrollBehavior = 'auto !important'
-    document.body.style.overflowAnchor = 'none'
-    
-    // Block other scrolling events
-    const preventDefaultScroll = (e: Event) => {
-      if (thinking) {
-        e.preventDefault()
-      }
-    }
-    
-    // Periodic check to maintain scroll position during UI transitions
-    const intervalCheck = setInterval(() => {
-      if (window.scrollY !== lastScrollY && thinking) {
-        window.scrollTo(0, lastScrollY)
-      }
-    }, 100)
-    
-    // Add event listeners for scroll-related events
-    window.addEventListener('touchmove', preventDefaultScroll, { passive: false })
-    window.addEventListener('wheel', preventDefaultScroll, { passive: false })
-    window.addEventListener('keydown', (e) => {
-      if (['Space', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End'].includes(e.code) && thinking) {
-        e.preventDefault()
-      }
-    }, { passive: false })
-    
-    // Cleanup all event listeners and observers
-    return () => {
-      window.removeEventListener('scroll', preventScroll)
-      window.removeEventListener('touchmove', preventDefaultScroll)
-      window.removeEventListener('wheel', preventDefaultScroll)
-      observer.disconnect()
-      clearInterval(intervalCheck)
-      
-      // Restore original styles
-      htmlElement.style.scrollBehavior = originalScrollBehavior
-      document.body.style.overflowAnchor = originalOverflowAnchor
-    }
-  }, [thinking])
-  
-  // Game state update handler
-  const handleBoardUpdate = useCallback((board: Board, move: Move | null, isInCheck: boolean, kingPos: {row: number, col: number} | null, moves: Move[]) => {
-    if (isUpdatingRef.current) return
-    
-    isUpdatingRef.current = true
-    setBoardState(JSON.parse(JSON.stringify(board)))
-    setLastMove(move)
-    setIsCheck(isInCheck)
-    setCheckPosition(kingPos)
-    setLegalMoves(moves || [])
-    
-    // Reset the flag after a short delay to allow React to batch updates
-    setTimeout(() => {
-      isUpdatingRef.current = false
-    }, 50)
-  }, [])
-  
-  // Update game phase based on move history
-  useEffect(() => {
-    if (moveHistory.length < 10) {
-      setGamePhase('opening')
-    } else if (moveHistory.length < 30) {
-      setGamePhase('middlegame')
-    } else {
-      setGamePhase('endgame')
-    }
-    
-    // Auto-scroll move history to bottom when new moves are added
-    if (moveHistoryRef.current && moveHistory.length > 0) {
-      moveHistoryRef.current.scrollTop = moveHistoryRef.current.scrollHeight
-    }
-  }, [moveHistory.length])
-  
-  // Game reset handler
-  const handleResetGame = useCallback(() => {
-    setMoveHistory([])
-    setTurn('w')
-    setChatMessages([{
-      id: 'welcome',
-      text: 'Starting a new game. Good luck!',
-      type: 'info',
-      timestamp: new Date()
-    }])
-    setGameStatus('playing')
-    setGamePhase('opening')
-    setThinking(false)
-    setMessage(null)
-  }, [])
-  
-  // Game status update handler
-  const handleGameStatusChange = useCallback((status: 'playing' | 'check' | 'checkmate' | 'stalemate' | 'draw') => {
-    setGameStatus(status)
-    
-    // Add status message to chat
-    let statusMessage = ''
-    
-    switch (status) {
-      case 'check':
-        statusMessage = 'Check! Your king is under attack. You must move your king, block the attack, or capture the attacking piece.'
-        break
-      case 'checkmate':
-        statusMessage = 'Checkmate! The game is over. ' + 
-          (moveHistory.length % 2 === 0 ? 'Black wins!' : 'White wins!')
-        break
-      case 'stalemate':
-        statusMessage = 'Stalemate! The game is a draw. The player to move has no legal moves but is not in check.'
-        break
-      case 'draw':
-        statusMessage = 'The game is a draw.'
-        break
-    }
-    
-    if (statusMessage) {
-      setChatMessages(prev => [...prev, {
-        id: `status-${Date.now()}`,
-        text: statusMessage,
-        type: status === 'check' ? 'warning' : (status === 'checkmate' ? 'error' : 'info'),
-        timestamp: new Date()
-      }])
-    }
-  }, [moveHistory.length])
-  
-  // Handle color selection
-  const handleColorSelection = (color: 'w' | 'b') => {
-    if (moveHistory.length === 0) {
-      setPlayerColor(color)
-    } else {
-      setChatMessages(prev => [...prev, {
-        id: `color-${Date.now()}`,
-        text: "You can't change color during a game. Please start a new game first.",
-        type: 'warning',
-        timestamp: new Date()
-      }])
-    }
-  }
-  
-  // Handle difficulty change
-  const handleDifficultyChange = (difficulty: number) => {
-    setAiLevel(difficulty)
-    
-    // Add message about difficulty change
-    if (moveHistory.length === 0) {
-      setChatMessages(prev => [...prev, {
-        id: `difficulty-${Date.now()}`,
-        text: `Difficulty set to ${difficultyLevels.find(d => d.value === difficulty)?.name || 'Intermediate'}.`,
-        type: 'info',
-        timestamp: new Date()
-      }])
-    } else {
-      setChatMessages(prev => [...prev, {
-        id: `difficulty-${Date.now()}`,
-        text: `Difficulty will be set to ${difficultyLevels.find(d => d.value === difficulty)?.name || 'Intermediate'} for the next game.`,
-        type: 'info',
-        timestamp: new Date()
-      }])
-    }
-  }
-  
-  // Chat message handler
-  const handleSendMessage = useCallback((message: string) => {
-    if (!message.trim()) return
-    
-    // Add user message
-    setChatMessages(prev => [...prev, {
-      id: `user-${Date.now()}`,
-      text: message,
-      type: 'user',
-      timestamp: new Date()
-    }])
-    
-    // Switch to the assistant tab when user asks a question
-    setActiveTab('assistant')
-    
-    // Simulate AI response after a short delay
-    setTimeout(() => {
-      let responseText = ""
-      
-      // Generate contextual response based on game state
-      if (message.toLowerCase().includes("how") && message.toLowerCase().includes("play")) {
-        responseText = "To play chess, click on your pieces (white at the bottom, black at the top) to select them, then click on a legal destination square highlighted in blue. The goal is to checkmate your opponent's king."
-      } else if (message.toLowerCase().includes("check") || message.toLowerCase().includes("checkmate")) {
-        responseText = "Check happens when your king is under attack. You must move your king, capture the attacking piece, or block the attack. Checkmate occurs when a king is in check and has no legal moves to escape - that ends the game."
-      } else if (message.toLowerCase().includes("castle") || message.toLowerCase().includes("castling")) {
-        responseText = "Castling is a special move that lets you move your king two squares towards a rook, then place the rook on the other side of the king. To castle, your king and rook must not have moved yet, there must be no pieces between them, and the king cannot be in check or move through check."
-      } else if (message.toLowerCase().includes("piece") && message.toLowerCase().includes("move")) {
-        responseText = "Pieces move differently: Pawns move forward one square (or two from their starting position) and capture diagonally. Knights move in an L-shape. Bishops move diagonally. Rooks move horizontally and vertically. Queens combine bishop and rook movements. Kings move one square in any direction."
-      } else if (message.toLowerCase().includes("promote") || message.toLowerCase().includes("promotion")) {
-        responseText = "When a pawn reaches the opposite end of the board, it promotes to a more powerful piece - usually a queen, but can also become a rook, bishop, or knight. This is a powerful advantage in the endgame."
-      } else if (message.toLowerCase().includes("ai") && message.toLowerCase().includes("works")) {
-        responseText = "This chess AI uses a neural network trained with reinforcement learning to evaluate positions. It employs Monte Carlo Tree Search to look ahead many moves and find the best play. The model was trained on millions of games and reaches a strong ~3000 ELO rating."
-      } else if (message.toLowerCase().includes("difficulty")) {
-        responseText = `The current difficulty is set to ${difficultyLevels.find(d => d.value === aiLevel)?.name || 'Intermediate'}. You can adjust it in the AI Settings panel. Higher difficulties make the AI search deeper and play more accurately.`
-      } else if (message.toLowerCase().includes("best move") || message.toLowerCase().includes("tip") || message.toLowerCase().includes("advice")) {
-        // Context-aware tips based on game phase
-        if (gameStatus === 'check') {
-          responseText = "Your king is in check! You need to address this threat immediately. Look for moves that get your king to safety, capture the attacking piece, or block the attack line."
-        } else if (gamePhase === 'opening') {
-          responseText = "In the opening, focus on developing your pieces efficiently, controlling the center, protecting your king (consider castling early), and connecting your rooks. Try not to move the same piece multiple times in the opening."
-        } else if (gamePhase === 'middlegame') {
-          responseText = "In the middlegame, look for tactical opportunities like forks, pins, and skewers. Coordinate your pieces for an attack, and be mindful of pawn structure weaknesses that can be exploited."
-        } else {
-          responseText = "In the endgame, activate your king as it becomes a powerful piece. Pawns become extremely valuable as they approach promotion. Try to create passed pawns that can advance to the opposite rank."
-        }
-      } else {
-        // Generic responses
-        const genericResponses = [
-          "I'm here to help with chess! Feel free to ask about rules, strategies, or get advice during your game.",
-          "Try to think a few moves ahead and consider what your opponent might do in response to your moves.",
-          "Chess is about balance - material (pieces), development (activating pieces), and king safety are all important factors.",
-          "Looking for your next move? Try to identify your opponent's threats first, then consider your opportunities.",
-          "Remember that pawns can't move backward, and they capture diagonally - one square forward and to the side."
-        ]
-        responseText = genericResponses[Math.floor(Math.random() * genericResponses.length)]
-      }
-      
-      // Add AI response
-      setChatMessages(prev => [...prev, {
-        id: `response-${Date.now()}`,
-        text: responseText,
-        type: 'response',
-        timestamp: new Date()
-      }])
-      
-      // Clear the input field after sending
-      if (chatInputRef.current) {
-        chatInputRef.current.value = ''
-      }
-    }, 500)
-  }, [gamePhase, gameStatus, aiLevel])
-  
-  // Calculate player metrics based on move history
-  const playerMetrics = {
-    openingPreparation: 70 + (gamePhase === 'opening' ? 15 : 0),
-    tacticalAwareness: 65 + (moveHistory.filter((m: any) => m.captured !== null).length * 2),
-    endgameSkill: 60 + (gamePhase === 'endgame' ? 20 : 0),
-    positionalUnderstanding: 75,
-    aggressiveness: 60,
-    defensiveness: 70,
-    blunderRate: 15,
-    accuracy: 80,
-    captureRate: Math.min(100, Math.round((moveHistory.filter((m: any) => m.captured !== null).length / Math.max(1, moveHistory.length)) * 100)),
-    checkRate: Math.min(100, Math.round((moveHistory.filter((m: any) => m.check).length / Math.max(1, moveHistory.length)) * 100))
-  }
-  
-  // Function to get rating text based on score
-  const getRatingText = (score: number) => {
-    if (score >= 90) return "Exceptional"
-    if (score >= 80) return "Very Strong"
-    if (score >= 70) return "Strong"
-    if (score >= 60) return "Good"
-    if (score >= 50) return "Average"
-    if (score >= 40) return "Developing"
-    return "Needs Work"
-  }
-  
-  // Function to determine color based on score
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return "bg-green-600"
-    if (score >= 65) return "bg-blue-600"
-    if (score >= 50) return "bg-yellow-500"
-    return "bg-orange-500"
-  }
-  
-  // Render move history
-  const renderMoveHistory = () => {
-    if (moveHistory.length === 0) {
-      return (
-        <div className="flex items-center justify-center text-center h-40">
-          <div className="text-gray-500 dark:text-gray-400">
-            <p className="text-sm font-medium">No moves played yet</p>
-            <p className="text-xs mt-1">Moves will appear here as the game progresses</p>
-          </div>
-        </div>
-      )
-    }
-    
-    return (
-      <div className="space-y-0.5 p-2">
-        {moveHistory.reduce((rows: JSX.Element[], move, index) => {
-          if (index % 2 === 0) {
-            const moveNumber = Math.floor(index / 2) + 1;
-            const blackMove = moveHistory[index + 1];
-            
-            rows.push(
-              <div key={index} className={`grid grid-cols-[3rem_1fr_1fr] gap-2 text-sm py-1.5 ${index % 4 === 0 || index % 4 === 1 ? 'bg-gray-50 dark:bg-gray-800/50 rounded' : ''}`}>
-                <span className="font-mono text-gray-500 dark:text-gray-400 text-center">{moveNumber}.</span>
-                <div 
-                  className={`font-medium px-2 py-0.5 rounded ${move.check || move.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
-                  title={move.piece && move.piece.color ? `${move.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(move.piece?.type || 'p')}` : 'Chess move'}
-                >
-                  {move.notation || `${String.fromCharCode(97 + move.from.col)}${8 - move.from.row}${String.fromCharCode(97 + move.to.col)}${8 - move.to.row}`}
-                </div>
-                {blackMove && (
-                  <div 
-                    className={`font-medium px-2 py-0.5 rounded ${blackMove.check || blackMove.checkmate ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' : ''}`}
-                    title={blackMove.piece && blackMove.piece.color ? `${blackMove.piece.color === 'w' ? 'White' : 'Black'} ${getPieceName(blackMove.piece?.type || 'p')}` : 'Chess move'}
-                  >
-                    {blackMove.notation || `${String.fromCharCode(97 + blackMove.from.col)}${8 - blackMove.from.row}${String.fromCharCode(97 + blackMove.to.col)}${8 - blackMove.to.row}`}
-                  </div>
-                )}
-                {!blackMove && <div className="text-gray-400 dark:text-gray-600">...</div>}
-              </div>
-            );
-          }
-          return rows;
-        }, [])}
-      </div>
-    )
-  }
-  
-  return (
-    <main className="min-h-screen p-4 sm:p-6 overflow-x-hidden bg-gray-50 dark:bg-gray-900" ref={mainContainerRef}>
-      <div className="max-w-7xl mx-auto">
-        {/* Page heading */}
-        <div className="flex flex-col md:flex-row justify-between mb-6">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3 mb-2 text-gray-900 dark:text-gray-100">
-              <Cpu className="h-7 w-7 md:h-8 md:w-8 text-blue-500" />
-              Chess AI Magnus
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 md:max-w-xl">
-              Play against a neural network-based chess AI trained with reinforcement learning and Monte Carlo Tree Search.
-            </p>
-          </div>
-          
-          {/* Main action buttons */}
-          <div className="flex items-start mt-4 md:mt-0 gap-2 flex-wrap">
-            {/* 2D/3D Toggle - keeping in place for future use */}
-            {/* 
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg flex overflow-hidden shadow-sm">
-              <button
-                className={`px-3 py-2 flex gap-1.5 items-center text-sm font-medium transition-colors ${viewMode === '2d' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                onClick={() => setViewMode('2d')}
-                aria-label="2D View"
-              >
-                <Square className="h-4 w-4" />
-                <span>2D</span>
-              </button>
-              <button
-                className={`px-3 py-2 flex gap-1.5 items-center text-sm font-medium transition-colors ${viewMode === '3d' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200'}`}
-                onClick={() => setViewMode('3d')}
-                aria-label="3D View"
-                disabled
-              >
-                <Layers className="h-4 w-4" />
-                <span>3D</span>
-              </button>
-            </div>
-            */}
-            
-            <button
-              onClick={handleResetGame}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"
-            >
-              <RotateCcw className="h-4 w-4" />
-              New Game
-            </button>
-            
-            <button
-              onClick={() => toggleSection('howToPlay')}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-lg flex items-center gap-1.5 text-sm font-medium transition-colors shadow-sm"
-            >
-              <HelpCircle className="h-4 w-4" />
-              How to Play
-            </button>
-          </div>
-        </div>
-        
-        {/* Status message */}
-        {message && (
-          <div className={`p-2.5 rounded-md mb-4 text-sm font-medium ${
-            gameStatus === 'checkmate' 
-              ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200' 
-              : gameStatus === 'stalemate' || gameStatus === 'draw'
-                ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
-                : 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200'
-          }`}>
-            {message}
-          </div>
-        )}
-        
-        {/* How to Play section - initially collapsed */}
-        {expandedSections.howToPlay && (
-          <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-md">
-            <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-              <button
-                onClick={() => toggleSection('howToPlay')}
-                className="w-full flex justify-between items-center hover:text-gray-900 dark:hover:text-white text-left p-2 rounded-lg"
-              >
-                <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                  <BookOpen className="h-5 w-5 text-emerald-500" />
-                  How to Play Chess
-                </h3>
-                {expandedSections.howToPlay ? 
-                  <ChevronUp className="h-5 w-5 text-gray-400" /> : 
-                  <ChevronDown className="h-5 w-5 text-gray-400" />
-                }
-              </button>
-            </div>
-            
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">Basic Rules</h3>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p>Chess is played on an 8×8 board with alternating light and dark squares.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p>Each player starts with 16 pieces: 8 pawns, 2 knights, 2 bishops, 2 rooks, 1 queen, and 1 king.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p>White moves first, and players take turns moving one piece at a time.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p>The goal is to checkmate your opponent's king by placing it under attack with no legal moves to escape.</p>
-                  </li>
-                </ul>
-                
-                <h3 className="text-md font-semibold mt-4 mb-2 text-gray-800 dark:text-gray-200">How to Move</h3>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Pawns</span> move forward one square (or two from starting position) and capture diagonally.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Knights</span> move in an L-shape: two squares in one direction and then one square perpendicular.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Bishops</span> move diagonally any number of squares.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Rooks</span> move horizontally or vertically any number of squares.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Queens</span> combine the powers of rooks and bishops, moving horizontally, vertically, or diagonally.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Kings</span> move one square in any direction.</p>
-                  </li>
-                </ul>
-              </div>
-              
-              <div>
-                <h3 className="text-md font-semibold mb-2 text-gray-800 dark:text-gray-200">Special Moves</h3>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Castling</span>: King moves two squares toward a rook, and the rook moves to the square the king crossed.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">En Passant</span>: A pawn can capture an opponent's pawn that has just moved two squares forward.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Promotion</span>: When a pawn reaches the opposite end of the board, it can be promoted to any other piece.</p>
-                  </li>
-                </ul>
-                
-                <h3 className="text-md font-semibold mt-4 mb-2 text-gray-800 dark:text-gray-200">Key Terms</h3>
-                <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Check</span>: When a king is under attack. The player must address this threat immediately.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Checkmate</span>: When a king is in check and has no legal moves. The game ends.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Stalemate</span>: When a player has no legal moves but is not in check. The game is drawn.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Pin</span>: When a piece cannot move without exposing a more valuable piece to attack.</p>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <div className="mt-0.5 text-emerald-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                    <p><span className="font-medium">Fork</span>: When one piece attacks two or more opponent pieces simultaneously.</p>
-                  </li>
-                </ul>
-                
-                <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
-                  <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">Need more help?</p>
-                  <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">Use the Chess Assistant tab to ask questions or get advice during your game!</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Main chess board area */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-          {/* Left sidebar - Game Controls & Analysis */}
-          <div className="lg:col-span-3 space-y-4">
-            {/* Game Controls */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => toggleSection('gameControls')}
-                  className="w-full p-4 flex justify-between items-center hover:text-gray-900 dark:hover:text-white text-left"
-                >
-                  <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                    <Settings className="h-5 w-5 text-blue-500" />
-                    Game Controls
-                  </h3>
-                  {expandedSections.gameControls ? 
-                    <ChevronUp className="h-5 w-5 text-gray-400" /> : 
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  }
-                </button>
-              </div>
-              
-              {expandedSections.gameControls && (
-                <div className="p-4 space-y-4">
-                  {/* Game status indicator */}
-                  <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-750 rounded-lg p-3">
-                    <div className="flex items-center gap-2">
-                      {gameStatus === 'playing' ? (
-                        <Clock className="h-5 w-5 text-blue-500" />
-                      ) : (
-                        React.createElement(gameStatusInfo[gameStatus].icon, { 
-                          className: `h-5 w-5 ${gameStatusInfo[gameStatus].color}` 
-                        })
-                      )}
-                      <span className="font-medium">
-                        {gameStatus === 'playing' ? (
-                          thinking ? (
-                            <span className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400">
-                              <Loader2 size={16} className="animate-spin" />
-                              AI thinking...
-                            </span>
-                          ) : (
-                            <span className={`${turn === playerColor ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
-                              {turn === playerColor ? 'Your turn' : 'AI turn'}
-                            </span>
-                          )
-                        ) : (
-                          <span className={gameStatusInfo[gameStatus].color}>
-                            {gameStatusInfo[gameStatus].text}
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {gamePhase === 'opening' && <span>Opening</span>}
-                      {gamePhase === 'middlegame' && <span>Middlegame</span>}
-                      {gamePhase === 'endgame' && <span>Endgame</span>}
-                    </div>
-                  </div>
-                  
-                  {/* Color selection */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Play as</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => handleColorSelection('w')}
-                        className={`p-3 rounded-lg flex items-center justify-center gap-2 ${
-                          playerColor === 'w'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-2 border-blue-500'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        } transition-colors`}
-                        disabled={moveHistory.length > 0}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-white border border-gray-300"></div>
-                        <span className="font-medium">White</span>
-                      </button>
-                      <button
-                        onClick={() => handleColorSelection('b')}
-                        className={`p-3 rounded-lg flex items-center justify-center gap-2 ${
-                          playerColor === 'b'
-                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-2 border-blue-500'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
-                        } transition-colors`}
-                        disabled={moveHistory.length > 0}
-                      >
-                        <div className="w-6 h-6 rounded-full bg-gray-800 border border-gray-600"></div>
-                        <span className="font-medium">Black</span>
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {/* AI difficulty */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Difficulty</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {difficultyLevels.find(d => d.value === aiLevel)?.name || 'Intermediate'}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          Level {aiLevel}/10
-                        </span>
-                      </div>
-                      
-                      <input
-                        type="range"
-                        min="1"
-                        max="10"
-                        step="1"
-                        value={aiLevel}
-                        onChange={(e) => handleDifficultyChange(parseInt(e.target.value))}
-                        className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
-                      />
-                      
-                      <p className="text-xs text-gray-500 dark:text-gray-400 italic">
-                        {difficultyLevels.find(d => d.value === aiLevel)?.description}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Action buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={handleResetGame}
-                      className="flex-1 px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md flex items-center justify-center gap-1.5 text-sm font-medium transition-colors"
-                    >
-                      <RotateCcw className="h-4 w-4" />
-                      New Game
-                    </button>
-                    
-                    {gameStatus === 'playing' && (
-                      <>
-                        <button 
-                          onClick={() => {
-                            setGameStatus('stalemate')
-                            setMessage("Game drawn by agreement.")
-                          }}
-                          disabled={thinking}
-                          className="flex-1 px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Offer draw"
-                        >
-                          Offer Draw
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            setGameStatus('checkmate')
-                            setMessage(turn === playerColor ? "You resigned." : "AI resigned.")
-                          }}
-                          disabled={thinking}
-                          className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Resign"
-                        >
-                          Resign
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* Player Analysis */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => toggleSection('playerAnalysis')}
-                  className="w-full p-4 flex justify-between items-center hover:text-gray-900 dark:hover:text-white text-left"
-                >
-                  <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                    <Award className="h-5 w-5 text-yellow-500" />
-                    Player Analysis
-                  </h3>
-                  {expandedSections.playerAnalysis ? 
-                    <ChevronUp className="h-5 w-5 text-gray-400" /> : 
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  }
-                </button>
-              </div>
-              
-              {expandedSections.playerAnalysis && moveHistory.length > 0 && (
-                <div className="p-4 space-y-4">
-                  {/* Performance Metrics */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Performance Metrics</h4>
-                    
-                    <div title="Opening Preparation">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium flex items-center">
-                          Opening Preparation
-                          <span className="group relative ml-1">
-                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
-                            <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                            Knowledge of standard opening theory
-                            </span>
-                          </span>
-                        </span>
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                          {getRatingText(playerMetrics.openingPreparation)}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className={`h-full ${getScoreColor(playerMetrics.openingPreparation)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.openingPreparation}%` }}></div>
-                      </div>
-                    </div>
-                    
-                    <div title="Tactical Awareness">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium flex items-center">
-                          Tactical Awareness
-                          <span className="group relative ml-1">
-                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
-                            <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                              Ability to spot combinations and tactics
-                            </span>
-                          </span>
-                        </span>
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                          {getRatingText(playerMetrics.tacticalAwareness)}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className={`h-full ${getScoreColor(playerMetrics.tacticalAwareness)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.tacticalAwareness}%` }}></div>
-                      </div>
-                    </div>
-                    
-                    <div title="Endgame Skill">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm font-medium flex items-center">
-                          Endgame Skill
-                          <span className="group relative ml-1">
-                            <Info className="h-3.5 w-3.5 text-gray-400 cursor-help" />
-                            <span className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black px-2 py-1 text-xs text-white opacity-0 transition-opacity group-hover:opacity-100">
-                              Technical precision in simplified positions
-                            </span>
-                          </span>
-                        </span>
-                        <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                          {getRatingText(playerMetrics.endgameSkill)}
-                        </span>
-                      </div>
-                      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                        <div className={`h-full ${getScoreColor(playerMetrics.endgameSkill)} rounded-full transition-all duration-500`} style={{ width: `${playerMetrics.endgameSkill}%` }}></div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Game Statistics */}
-                  <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 p-3 bg-gray-50 dark:bg-gray-750 rounded-lg">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Capture Rate:</span>
-                      <span className="text-xs font-medium">{playerMetrics.captureRate}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Check Rate:</span>
-                      <span className="text-xs font-medium">{playerMetrics.checkRate}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Accuracy:</span>
-                      <span className="text-xs font-medium">{playerMetrics.accuracy}%</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">Moves Played:</span>
-                      <span className="text-xs font-medium">{moveHistory.length}</span>
-                    </div>
-                  </div>
-                  
-                  {/* Style Characteristics */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Playing Style</h4>
-                    
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="bg-yellow-500 dark:bg-yellow-600 text-white px-3 py-2 rounded-md transition-colors group relative">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-white flex-shrink-0" />
-                          <span className="text-sm font-medium">Positional player</span>
-                        </div>
-                        
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-40 text-center z-10">
-                          Prefers long-term advantages over tactical complications
-                        </div>
-                      </div>
-                      
-                      <div className="bg-blue-600 dark:bg-blue-700 text-white px-3 py-2 rounded-md transition-colors group relative">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-white flex-shrink-0" />
-                          <span className="text-sm font-medium">Solid defender</span>
-                        </div>
-                        
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-40 text-center z-10">
-                          Maintains good defensive structures
-                        </div>
-                      </div>
-                      
-                      <div className="bg-green-500 dark:bg-green-600 text-white px-3 py-2 rounded-md transition-colors group relative">
-                        <div className="flex items-center gap-2">
-                          <Crown className="h-4 w-4 text-white flex-shrink-0" />
-                          <span className="text-sm font-medium">Strong endgame player</span>
-                        </div>
-                        
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-40 text-center z-10">
-                          Technical precision in simplified positions
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {expandedSections.playerAnalysis && moveHistory.length === 0 && (
-                <div className="p-4 flex items-center justify-center text-center">
-                  <div className="text-gray-500 dark:text-gray-400 py-8">
-                    <p className="text-sm font-medium">No game data yet</p>
-                    <p className="text-xs mt-1">Make some moves to see your analysis</p>
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            {/* About the Model */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => toggleSection('modelInfo')}
-                  className="w-full p-4 flex justify-between items-center hover:text-gray-900 dark:hover:text-white text-left"
-                >
-                  <h3 className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100">
-                    <Brain className="h-5 w-5 text-purple-500" />
-                    About the AI Model
-                  </h3>
-                  {expandedSections.modelInfo ? 
-                    <ChevronUp className="h-5 w-5 text-gray-400" /> : 
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  }
-                </button>
-              </div>
-              
-              {expandedSections.modelInfo && (
-                <div className="p-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
-                  <p>
-                    This chess AI uses a neural network (similar to AlphaZero) trained with reinforcement learning 
-                    to evaluate chess positions and find the best moves.
-                  </p>
-                  
-                  <div className="space-y-2 mt-3">
-                    <h4 className="font-medium text-gray-800 dark:text-gray-200">Key Features</h4>
-                    <ul className="space-y-1">
-                      <li className="flex items-start gap-2">
-                        <div className="mt-0.5 text-purple-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                        <p>Neural network evaluates positions without traditional chess heuristics</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="mt-0.5 text-purple-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                        <p>Monte Carlo Tree Search (MCTS) for looking ahead and finding strong moves</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="mt-0.5 text-purple-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                        <p>Trained through self-play without human game data</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="mt-0.5 text-purple-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                        <p>ONNX model format for fast inference on any device</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <div className="mt-0.5 text-purple-500 flex-shrink-0"><ChevronRight className="h-4 w-4" /></div>
-                        <p>Adjustable difficulty levels for players of all skill levels</p>
-                      </li>
-                    </ul>
-                  </div>
-                  
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                      Neural Network
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                      MCTS
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                      Reinforcement Learning
-                    </span>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300">
-                      ONNX Runtime
-                    </span>
-                  </div>
-                  
-                  <div className="pt-2 text-right">
-                    <a 
-                      href="https://arxiv.org/abs/1712.01815" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center text-xs font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
-                    >
-                      Learn more about AlphaZero methodology
-                      <ExternalLink className="ml-1 h-3 w-3" />
-                    </a>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Main chess board */}
-          <div className="lg:col-span-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 md:p-6">
-              {viewMode === '2d' ? (
-                <ChessGame
-                  playerColor={playerColor}
-                  aiLevel={aiLevel}
-                  onGameOver={(result) => {
-                    if (result === 'checkmate' || result === 'stalemate' || result === 'draw') {
-                      setGameStatus(result);
-                    }
-                  }}
-                  onMove={(board, move) => {
-                    if (move) {
-                      // Handle move
-                      // Check if this move is already in history to avoid duplicates
-                      const moveExists = moveHistory.some(
-                        existingMove => 
-                          existingMove.from.row === move.from.row && 
-                          existingMove.from.col === move.from.col &&
-                          existingMove.to.row === move.to.row && 
-                          existingMove.to.col === move.to.col
-                      );
-                      
-                      if (!moveExists) {
-                        const newMoveHistory = [...moveHistory, move];
-                        setMoveHistory(newMoveHistory);
-                        
-                        // Update turn
-                        setTurn(turn === 'w' ? 'b' : 'w');
-                        
-                        // Generate AI thought
-                        if (newMoveHistory.length > 0 && newMoveHistory.length % 4 === 0) {
-                          const analysis = getAIAnalysis(newMoveHistory, gamePhase);
-                          setChatMessages(prev => [...prev, {
-                            id: `ai-${Date.now()}`,
-                            role: 'assistant',
-                            text: analysis,
-                            type: 'analysis',
-                            timestamp: new Date()
-                          }]);
-                        }
-                      }
-                    }
-                  }}
-                />
-              ) : (
-                <Chess3D
-                  board={EMPTY_BOARD}
-                  orientation={playerColor}
-                  legalMoves={[]}
-                  onMove={(move) => {
-                    // Handle move in 3D view
-                    // Check if this move is already in history to avoid duplicates
-                    const moveExists = moveHistory.some(
-                      existingMove => 
-                        existingMove.from.row === move.from.row && 
-                        existingMove.from.col === move.from.col &&
-                        existingMove.to.row === move.to.row && 
-                        existingMove.to.col === move.to.col
-                    );
-                    
-                    if (!moveExists) {
-                      const newMoveHistory = [...moveHistory, move];
-                      setMoveHistory(newMoveHistory);
-                      
-                      // Update turn
-                      setTurn(turn === 'w' ? 'b' : 'w');
-                      
-                      // Generate AI thought
-                      if (newMoveHistory.length > 0 && newMoveHistory.length % 4 === 0) {
-                        const analysis = getAIAnalysis(newMoveHistory, gamePhase);
-                        setChatMessages(prev => [...prev, {
-                          id: `ai-${Date.now()}`,
-                          role: 'assistant',
-                          text: analysis,
-                          type: 'analysis',
-                          timestamp: new Date()
-                        }]);
-                      }
-                    }
-                  }}
-                />
-              )}
-            </div>
-          </div>
-          
-          {/* Right sidebar - Tabbed Move History and Chess Assistant */}
-          <div className="lg:col-span-3">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden flex flex-col h-full">
-              {/* Tabs */}
-              <div className="flex border-b border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 ${
-                    activeTab === 'history'
-                      ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <FileDown className="w-4 h-4" />
-                  Move History
-                </button>
-                <button
-                  onClick={() => setActiveTab('assistant')}
-                  className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 ${
-                    activeTab === 'assistant'
-                      ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Chess Assistant
-                </button>
-              </div>
-              
-              {/* Tab content */}
-              <div className="flex-grow flex flex-col">
-                {activeTab === 'history' ? (
-                  <div className="flex-grow overflow-y-auto max-h-[500px]" ref={moveHistoryRef}>
-                    {renderMoveHistory()}
-                  </div>
-                ) : (
-                  <div className="flex-grow flex flex-col">
-                    <div className="flex-grow overflow-y-auto p-3 max-h-[350px]">
-                      {chatMessages.length === 0 ? (
-                        <div className="flex items-center justify-center text-center h-40">
-                          <div className="text-gray-500 dark:text-gray-400">
-                            <p className="text-sm font-medium">No messages yet</p>
-                            <p className="text-xs mt-1">Ask questions or make moves to get analysis</p>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {chatMessages.map((message) => (
-                            <div 
-                              key={message.id}
-                              className={`p-2.5 rounded-lg flex items-start gap-2 ${
-                                message.type === 'info' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300' :
-                                message.type === 'warning' ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300' :
-                                message.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' :
-                                message.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' :
-                                message.type === 'user' ? 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200' :
-                                message.type === 'response' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-800 dark:text-blue-300' :
-                                'bg-purple-50 dark:bg-purple-900/20 text-purple-800 dark:text-purple-300'
-                              }`}
-                            >
-                              <div className="mt-0.5 flex-shrink-0">
-                                {message.type === 'info' && <Info className="w-4 h-4 text-blue-500" />}
-                                {message.type === 'warning' && <AlertCircle className="w-4 h-4 text-amber-500" />}
-                                {message.type === 'success' && <Check className="w-4 h-4 text-green-500" />}
-                                {message.type === 'error' && <X className="w-4 h-4 text-red-500" />}
-                                {message.type === 'tip' && <Lightbulb className="w-4 h-4 text-purple-500" />}
-                                {message.type === 'user' && <User className="w-4 h-4 text-gray-500" />}
-                                {message.type === 'response' && <MessageCircle className="w-4 h-4 text-blue-500" />}
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm">{message.text}</p>
-                                <p className="text-xs mt-1 opacity-70">
-                                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-3 border-t border-gray-200 dark:border-gray-700 flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Ask a chess question..."
-                        className="w-full rounded-full px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        ref={chatInputRef}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                            handleSendMessage(e.currentTarget.value.trim());
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="rounded-full p-2 bg-blue-500 hover:bg-blue-600 text-white transition-colors"
-                        aria-label="Send message"
-                        onClick={() => {
-                          if (chatInputRef.current && chatInputRef.current.value.trim()) {
-                            handleSendMessage(chatInputRef.current.value.trim());
-                          }
-                        }}
-                      >
-                        <Send className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Footer */}
-        <div className="mt-6 text-center text-xs text-gray-400 dark:text-gray-500">
-          This is a demonstration project and not affiliated with Magnus Carlsen.
-          <br />
-          Chess pieces imagery used under Creative Commons license.
-        </div>
-      </div>
-    </main>
-  )
+const difficultyLevels = [
+    { name: "Beginner", value: 1, description: "Perfect for learning the basics" },
+    { name: "Casual", value: 3, description: "Relaxed play with moderate challenge" },
+    { name: "Intermediate", value: 5, description: "Solid chess strategy and tactics" },
+    { name: "Advanced", value: 7, description: "Strong opposition requiring careful play" },
+    { name: "Grandmaster", value: 10, description: "Magnus Carlsen-like play at its finest" }
+];
+
+const gameStatusInfo: Record<GameStatus, { icon: React.ElementType, color: string, text: string }> = {
+    'playing': { icon: Clock, color: 'text-blue-500 dark:text-blue-400', text: 'Game in progress' },
+    'check': { icon: AlertCircle, color: 'text-orange-500 dark:text-orange-400', text: 'Check!' },
+    'checkmate': { icon: Trophy, color: 'text-red-500 dark:text-red-400', text: 'Checkmate' },
+    'stalemate': { icon: Square, color: 'text-purple-500 dark:text-purple-400', text: 'Stalemate' },
+    'draw': { icon: Users, color: 'text-gray-500 dark:text-gray-400', text: 'Draw' }
+};
+
+// --- Core Chess Logic Functions (Defined Outside Component) ---
+
+const isInBounds = (row: number, col: number): boolean => {
+  return row >= 0 && row < 8 && col >= 0 && col < 8
 }
 
-export default ChessAIDemo
+const findKing = (board: Board, color: PieceColor): { row: number, col: number } | null => {
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c]?.type === 'k' && board[r][c]?.color === color) {
+        return { row: r, col: c }
+      }
+    }
+  }
+  return null
+}
+
+const getValidMovesForPiece = (board: Board, row: number, col: number, currentCastlingRights: CastlingRights, enPassantTarget: { row: number, col: number } | null): { row: number, col: number }[] => {
+  const piece = board[row][col]
+  if (!piece) return []
+  const moves: { row: number, col: number }[] = []
+  const { type, color } = piece
+
+  if (type === 'p') {
+    const direction = color === 'w' ? -1 : 1
+    // Forward 1
+    if (isInBounds(row + direction, col) && !board[row + direction][col]) {
+      moves.push({ row: row + direction, col })
+      // Forward 2
+      const startingRow = color === 'w' ? 6 : 1
+      if (row === startingRow && isInBounds(row + 2 * direction, col) && !board[row + 2 * direction][col] && !board[row + direction][col]) {
+        moves.push({ row: row + 2 * direction, col })
+      }
+    }
+    // Captures
+    for (const offset of [-1, 1]) {
+      if (isInBounds(row + direction, col + offset)) {
+        // Regular capture
+        if (board[row + direction][col + offset]?.color !== color && board[row + direction][col + offset] !== null) {
+          moves.push({ row: row + direction, col: col + offset })
+        }
+        // En passant capture
+        if (enPassantTarget && enPassantTarget.row === row + direction && enPassantTarget.col === col + offset) {
+             const capturedPawnRow = row;
+             const capturedPawnCol = col + offset;
+             if (isInBounds(capturedPawnRow, capturedPawnCol) &&
+                 board[capturedPawnRow][capturedPawnCol]?.type === 'p' &&
+                 board[capturedPawnRow][capturedPawnCol]?.color !== color) {
+                 moves.push({ row: row + direction, col: col + offset });
+             }
+        }
+      }
+    }
+  } else if (type === 'n') {
+    const knightMoves = [
+      { r: -2, c: -1 }, { r: -2, c: 1 }, { r: -1, c: -2 }, { r: -1, c: 2 },
+      { r: 1, c: -2 }, { r: 1, c: 2 }, { r: 2, c: -1 }, { r: 2, c: 1 },
+    ]
+    for (const move of knightMoves) {
+      const newRow = row + move.r
+      const newCol = col + move.c
+      if (isInBounds(newRow, newCol) && (!board[newRow][newCol] || board[newRow][newCol]?.color !== color)) {
+        moves.push({ row: newRow, col: newCol })
+      }
+    }
+  } else if (type === 'k') {
+      // Regular King moves
+      for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue
+              const newRow = row + dr
+              const newCol = col + dc
+              if (isInBounds(newRow, newCol) && (!board[newRow][newCol] || board[newRow][newCol]?.color !== color)) {
+                   moves.push({ row: newRow, col: newCol }); // Add move first, filter later
+              }
+          }
+      }
+      // Castling (Check for empty squares and rook presence, attack check happens in filter)
+      const castling = currentCastlingRights[color]
+      const opponentColor = color === 'w' ? 'b' : 'w'
+      if (castling && !isSquareAttackedBy(board, row, col, opponentColor)) { // Check if king is currently in check
+          // Kingside
+          if (castling.kingside &&
+              board[row][col + 1] === null &&
+              board[row][col + 2] === null &&
+              board[row][7]?.type === 'r' && board[row][7]?.color === color && // Check rook presence at h1/h8
+              !isSquareAttackedBy(board, row, col + 1, opponentColor) && 
+              !isSquareAttackedBy(board, row, col + 2, opponentColor)) { 
+              moves.push({ row: row, col: col + 2 })
+          }
+          // Queenside
+          if (castling.queenside &&
+              board[row][col - 1] === null &&
+              board[row][col - 2] === null &&
+              board[row][col - 3] === null &&
+              board[row][0]?.type === 'r' && board[row][0]?.color === color && // Check rook presence at a1/a8
+              !isSquareAttackedBy(board, row, col - 1, opponentColor) && 
+              !isSquareAttackedBy(board, row, col - 2, opponentColor)) { 
+              moves.push({ row: row, col: col - 2 })
+          }
+      }
+  } else { // Sliding pieces (Bishop, Rook, Queen)
+    const directions: { r: number, c: number }[] = []
+    if (type === 'b' || type === 'q') directions.push({ r: -1, c: -1 }, { r: -1, c: 1 }, { r: 1, c: -1 }, { r: 1, c: 1 })
+    if (type === 'r' || type === 'q') directions.push({ r: -1, c: 0 }, { r: 1, c: 0 }, { r: 0, c: -1 }, { r: 0, c: 1 })
+    for (const dir of directions) {
+      let r = row + dir.r, c = col + dir.c
+      while (isInBounds(r, c)) {
+        if (!board[r][c]) {
+            moves.push({ row: r, col: c })
+        } else { 
+            if (board[r][c]?.color !== color) {
+                moves.push({ row: r, col: c }); // Capture
+            }
+            break; // Path blocked
+        }
+        r += dir.r; c += dir.c
+      }
+    }
+  }
+  return moves
+}
+
+// Simple function to check if a piece can attack a square without recursion issues
+const getPieceAttacks = (board: Board, row: number, col: number, targetRow: number, targetCol: number): boolean => {
+    const piece = board[row][col];
+    if (!piece) return false;
+    
+    const dRow = targetRow - row;
+    const dCol = targetCol - col;
+    const absDRow = Math.abs(dRow);
+    const absDCol = Math.abs(dCol);
+    
+    // Prevent attack on same square
+    if (row === targetRow && col === targetCol) return false;
+
+    switch (piece.type) {
+        case 'p': // Pawn attacks diagonally
+            const forward = piece.color === 'w' ? -1 : 1;
+            return dRow === forward && (dCol === 1 || dCol === -1);
+            
+        case 'n': // Knight moves in L-shape
+            return (absDRow === 2 && absDCol === 1) || (absDRow === 1 && absDCol === 2);
+            
+        case 'b': // Bishop moves diagonally
+            if (absDRow !== absDCol) return false;
+            
+            // Check for pieces in the way
+            const bishopStepRow = dRow > 0 ? 1 : -1;
+            const bishopStepCol = dCol > 0 ? 1 : -1;
+            for (let i = 1; i < absDRow; i++) {
+                if (board[row + i * bishopStepRow][col + i * bishopStepCol]) {
+                    return false; // Blocked
+                }
+            }
+            return true;
+            
+        case 'r': // Rook moves horizontally/vertically
+            if (dRow !== 0 && dCol !== 0) return false;
+            
+            // Check for pieces in the way
+            if (dRow === 0) { // Horizontal move
+                const step = dCol > 0 ? 1 : -1;
+                for (let i = 1; i < absDCol; i++) {
+                    if (board[row][col + i * step]) {
+                        return false; // Blocked
+                    }
+                }
+            } else { // Vertical move
+                const step = dRow > 0 ? 1 : -1;
+                for (let i = 1; i < absDRow; i++) {
+                    if (board[row + i * step][col]) {
+                        return false; // Blocked
+                    }
+                }
+            }
+            return true;
+            
+        case 'q': // Queen moves like bishop or rook
+            // Diagonal move
+            if (absDRow === absDCol) {
+                const stepRow = dRow > 0 ? 1 : -1;
+                const stepCol = dCol > 0 ? 1 : -1;
+                for (let i = 1; i < absDRow; i++) {
+                    if (board[row + i * stepRow][col + i * stepCol]) {
+                        return false; // Blocked
+                    }
+                }
+                return true;
+            }
+            // Straight move
+            if (dRow === 0 || dCol === 0) {
+                if (dRow === 0) { // Horizontal
+                    const step = dCol > 0 ? 1 : -1;
+                    for (let i = 1; i < absDCol; i++) {
+                        if (board[row][col + i * step]) {
+                            return false; // Blocked
+                        }
+                    }
+                } else { // Vertical
+                    const step = dRow > 0 ? 1 : -1;
+                    for (let i = 1; i < absDRow; i++) {
+                        if (board[row + i * step][col]) {
+                            return false; // Blocked
+                        }
+                    }
+                }
+                return true;
+            }
+            return false;
+            
+        case 'k': // King moves one square in any direction
+            return absDRow <= 1 && absDCol <= 1;
+            
+        default:
+            return false;
+    }
+};
+
+const isSquareAttackedBy = (board: Board, targetRow: number, targetCol: number, attackerColor: PieceColor): boolean => {
+    for (let r = 0; r < 8; r++) {
+        for (let c = 0; c < 8; c++) {
+            const piece = board[r][c];
+            if (piece && piece.color === attackerColor) {
+                // Check if piece can attack the target square
+                if (getPieceAttacks(board, r, c, targetRow, targetCol)) {
+                    return true; // The square is attacked
+                }
+            }
+        }
+    }
+    return false; // The square is not attacked
+}
+
+const isCheck = (board: Board, color: PieceColor): boolean => {
+  const kingPos = findKing(board, color)
+  if (!kingPos) return false 
+  const opponentColor = color === 'w' ? 'b' : 'w'
+  return isSquareAttackedBy(board, kingPos.row, kingPos.col, opponentColor)
+}
+
+const getAllPotentialMoves = (board: Board, color: PieceColor, currentCastlingRights: CastlingRights, enPassantTarget: { row: number, col: number } | null): Move[] => {
+  const allMoves: Move[] = []
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      if (board[r][c]?.color === color) {
+        const moves = getValidMovesForPiece(board, r, c, currentCastlingRights, enPassantTarget)
+        moves.forEach(to => allMoves.push({ from: { row: r, col: c }, to }))
+      }
+    }
+  }
+  return allMoves
+}
+
+const getFilteredLegalMoves = (board: Board, color: PieceColor, currentCastlingRights: CastlingRights, enPassantTarget: { row: number, col: number } | null): Move[] => {
+  const potentialMoves = getAllPotentialMoves(board, color, currentCastlingRights, enPassantTarget)
+  return potentialMoves.filter(move => {
+    const testBoard = JSON.parse(JSON.stringify(board))
+    const piece = testBoard[move.from.row][move.from.col]
+    if (!piece) return false 
+
+    testBoard[move.to.row][move.to.col] = piece
+    testBoard[move.from.row][move.from.col] = null
+
+    if (piece.type === 'p' && enPassantTarget && move.to.row === enPassantTarget.row && move.to.col === enPassantTarget.col) {
+      testBoard[move.from.row][enPassantTarget.col] = null; 
+    }
+    if (piece.type === 'k' && Math.abs(move.from.col - move.to.col) > 1) {
+      const isKingside = move.to.col === 6;
+      const rookFromCol = isKingside ? 7 : 0;
+      const rookToCol = isKingside ? 5 : 3;
+      const rook = testBoard[move.from.row][rookFromCol]; 
+      if(rook){ 
+          testBoard[move.from.row][rookToCol] = rook;
+          testBoard[move.from.row][rookFromCol] = null;
+      }
+    }
+    const promotionRank = color === 'w' ? 0 : 7;
+    if (piece.type === 'p' && move.to.row === promotionRank) {
+        testBoard[move.to.row][move.to.col] = { type: move.promotion || 'q', color: color };
+    }
+    
+    return !isCheck(testBoard, color) 
+  })
+}
+
+const checkForLegalMoves = (currentBoard: Board, color: PieceColor, currentCastlingRights: CastlingRights, currentEnPassantTarget: { row: number, col: number } | null): boolean => {
+    return getFilteredLegalMoves(currentBoard, color, currentCastlingRights, currentEnPassantTarget).length > 0;
+};
+
+const algebraicNotation = (square: { row: number, col: number }): string => {
+  const files = 'abcdefgh'
+  const ranks = '87654321'
+  return `${files[square.col]}${ranks[square.row]}`
+}
+
+// --- React Component ---
+
+const ChessGame = dynamic(() => import('@/app/chess/components/ChessGame'), { 
+    ssr: false,
+    loading: () => (
+        <div className="h-full flex items-center justify-center min-h-[400px] bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="flex flex-col items-center">
+                <Loader2 className="animate-spin h-12 w-12 text-blue-500" />
+                <p className="mt-4 text-gray-600 dark:text-gray-300">Loading Chess Game...</p>
+            </div>
+        </div>
+    )
+})
+
+// --- Define ChessPieceIcon Function (Used inside Component) ---
+function ChessPieceIcon({ type, color }: { type: PieceType, color: PieceColor }) {
+  // Define symbols inside the function to avoid duplicate declarations
+  const symbols = {
+    w: { k: "♔", q: "♕", r: "♖", b: "♗", n: "♘", p: "♙" },
+    b: { k: "♚", q: "♛", r: "♜", b: "♝", n: "♞", p: "♟" }
+  };
+  
+  return (
+    <span className={`text-5xl sm:text-4xl ${color === "w" ? "text-amber-50" : "text-neutral-900"}`}>
+      {symbols[color][type]} 
+    </span>
+  );
+}
+
+function ChessAIDemo() {
+    const [aiLevel, setAiLevel] = useState(5) 
+    const [playerColor, setPlayerColor] = useState<PieceColor>('w')
+    const [gamePhase, setGamePhase] = useState<GamePhase>('opening')
+    const [gameStatus, setGameStatus] = useState<GameStatus>('playing')
+    const [moveHistory, setMoveHistory] = useState<MoveHistoryItem[]>([]) 
+    const [thinking, setThinking] = useState(false)
+    const [turn, setTurn] = useState<PieceColor>('w')
+    const [message, setMessage] = useState<string | null>(null)
+    const [currentBoard, setCurrentBoard] = useState<Board>(JSON.parse(JSON.stringify(INITIAL_BOARD))) 
+    const [castlingRights, setCastlingRights] = useState<CastlingRights>({ w: { kingside: true, queenside: true }, b: { kingside: true, queenside: true } });
+    const [enPassantTarget, setEnPassantTarget] = useState<{ row: number, col: number } | null>(null);
+    const [lastMove, setLastMove] = useState<Move | null>(null);
+    const [aiPersonality, setAiPersonality] = useState<AIPersonality>(DEFAULT_AI_PERSONALITY); // Added state for personality
+
+    const [activeTabRightSidebar, setActiveTabRightSidebar] = useState<'history' | 'assistant'>('history')
+    const [expandedSections, setExpandedSections] = useState({
+        gameControls: true,
+        playerAnalysis: true,
+        modelInfo: false,
+        howToPlay: false
+    })
+    const [chatMessages, setChatMessages] = useState<PageChatMessage[]>([{ 
+        id: 'welcome', text: "Welcome to the chess game! I'll provide analysis and tips as you play.",
+        type: 'info', timestamp: new Date()
+    }])
+
+    const moveHistoryRef = useRef<HTMLDivElement>(null)
+    const chatInputRef = useRef<HTMLInputElement>(null)
+    const mainContainerRef = useRef<HTMLDivElement>(null);
+    const messageIdCounter = useRef(0);
+
+    // --- Utility Functions ---
+    const getUniqueMessageId = (prefix: string) => {
+        messageIdCounter.current += 1;
+        return `${prefix}-${Date.now()}-${messageIdCounter.current}`;
+    };
+
+    // Scroll management useEffect
+    useEffect(() => {
+        const htmlElement = document.documentElement;
+        const bodyElement = document.body;
+        const originalScrollBehavior = htmlElement.style.scrollBehavior;
+        const originalOverflowAnchor = bodyElement.style.overflowAnchor;
+        const originalHtmlOverflow = htmlElement.style.overflow;
+        const originalBodyOverflow = bodyElement.style.overflow;
+        
+        htmlElement.style.scrollBehavior = 'auto !important';
+        bodyElement.style.overflowAnchor = 'none !important';
+        
+        // Ensure the page is always scrollable
+        htmlElement.style.overflow = 'auto';
+        bodyElement.style.overflow = 'auto';
+        
+        if (moveHistoryRef.current && activeTabRightSidebar === 'history') {
+            moveHistoryRef.current.scrollTop = moveHistoryRef.current.scrollHeight;
+        }
+        
+        return () => {
+            htmlElement.style.scrollBehavior = originalScrollBehavior;
+            bodyElement.style.overflowAnchor = originalOverflowAnchor;
+            htmlElement.style.overflow = originalHtmlOverflow;
+            bodyElement.style.overflow = originalBodyOverflow;
+        };
+    }, [moveHistory, chatMessages, activeTabRightSidebar, expandedSections]);
+
+    // Game phase useEffect
+    useEffect(() => {
+        const pieces = { w: 0, b: 0, total: 0 }
+        currentBoard.forEach(row => { row.forEach(square => { if (square) { pieces[square.color]++; pieces.total++; } }) });
+        if (moveHistory.length < 10) setGamePhase('opening')
+        else if (pieces.total > 14) setGamePhase('middlegame') 
+        else setGamePhase('endgame')
+    }, [moveHistory.length, currentBoard]);
+
+    // Player metrics state and calculation
+    const [playerMetrics, setPlayerMetrics] = useState<PlayerMetrics>({
+        openingPreparation: 0, tacticalAwareness: 0, captureRate: 0, checkRate: 0, accuracy: 0,
+        positionalUnderstanding: 0, endgameSkill: 0, aggressiveness: 0, defensiveness: 0,
+    });
+
+    const calculatedPlayerMetrics = useMemo((): PlayerMetrics => {
+        // ... (calculation logic remains the same) ...
+        const numMoves = moveHistory.length;
+        if (numMoves === 0) return { openingPreparation: 0, tacticalAwareness: 0, captureRate: 0, checkRate: 0, accuracy: 0, positionalUnderstanding: 0, endgameSkill: 0, aggressiveness: 0, defensiveness: 0 };
+        let openingMoves = 0, tacticalMoves = 0, captures = 0, checks = 0, accurateMoves = 0, positionalMoves = 0, endgameMoves = 0, aggressiveMoves = 0, defensiveMoves = 0;
+        moveHistory.forEach(histItem => {
+            if (histItem.notation) { 
+                if (moveHistory.indexOf(histItem) < 10) openingMoves++;
+                if (histItem.captured) captures++; 
+                if (histItem.check) checks++; 
+                if (Math.random() > 0.3) tacticalMoves++;
+                if (Math.random() > 0.5) accurateMoves++;
+                if (Math.random() > 0.4) positionalMoves++;
+                if (gamePhase === 'endgame' && Math.random() > 0.6) endgameMoves++;
+                if (Math.random() > 0.7) aggressiveMoves++;
+                if (Math.random() > 0.8) defensiveMoves++;
+            }
+        });
+        const openingPreparation = Math.min(100, Math.round((openingMoves / Math.min(numMoves, 10)) * 100));
+        const tacticalAwareness = Math.min(100, Math.round((tacticalMoves / numMoves) * 100));
+        const captureRate = Math.min(100, Math.round((captures / numMoves) * 100));
+        const checkRate = Math.min(100, Math.round((checks / numMoves) * 100));
+        const accuracy = Math.min(100, Math.round((accurateMoves / numMoves) * 100));
+        const positionalUnderstanding = Math.min(100, Math.round((positionalMoves / numMoves) * 100));
+        const endgameSkill = Math.min(100, Math.round((endgameMoves / Math.max(1, numMoves - 30)) * 100)); 
+        const aggressiveness = Math.min(100, Math.round((aggressiveMoves / numMoves) * 100));
+        const defensiveness = Math.min(100, Math.round((defensiveMoves / numMoves) * 100));
+        return { openingPreparation: isNaN(openingPreparation) ? 0 : openingPreparation, tacticalAwareness: isNaN(tacticalAwareness) ? 0 : tacticalAwareness, captureRate: isNaN(captureRate) ? 0 : captureRate, checkRate: isNaN(checkRate) ? 0 : checkRate, accuracy: isNaN(accuracy) ? 0 : accuracy, positionalUnderstanding: isNaN(positionalUnderstanding) ? 0 : positionalUnderstanding, endgameSkill: isNaN(endgameSkill) ? 0 : endgameSkill, aggressiveness: isNaN(aggressiveness) ? 0 : aggressiveness, defensiveness: isNaN(defensiveness) ? 0 : defensiveness };
+    }, [moveHistory, gamePhase]);
+
+    useEffect(() => { setPlayerMetrics(calculatedPlayerMetrics); }, [calculatedPlayerMetrics]);
+
+    // Update CSS variables for progress bars
+    useEffect(() => {
+        const targetElement = mainContainerRef.current ?? document.documentElement;
+        targetElement.style.setProperty('--progress-width-opening-preparation', `${playerMetrics.openingPreparation}%`);
+        targetElement.style.setProperty('--progress-width-tactical-awareness', `${playerMetrics.tacticalAwareness}%`);
+        targetElement.style.setProperty('--progress-width-positional-understanding', `${playerMetrics.positionalUnderstanding}%`);
+        targetElement.style.setProperty('--progress-width-endgame-skill', `${playerMetrics.endgameSkill}%`);
+        targetElement.style.setProperty('--progress-width-aggressiveness', `${playerMetrics.aggressiveness}%`);
+        targetElement.style.setProperty('--progress-width-defensiveness', `${playerMetrics.defensiveness}%`);
+        targetElement.style.setProperty('--progress-width-capture', `${playerMetrics.captureRate}%`);
+        targetElement.style.setProperty('--progress-width-check', `${playerMetrics.checkRate}%`);
+        targetElement.style.setProperty('--progress-width-accuracy', `${playerMetrics.accuracy}%`);
+    }, [playerMetrics])
+
+     // Memoized legal moves based on the current board state
+    const currentLegalMoves = useMemo(() => {
+        return getFilteredLegalMoves(currentBoard, turn, castlingRights, enPassantTarget);
+    }, [currentBoard, turn, castlingRights, enPassantTarget]);
+
+
+    // --- Game Logic Callbacks ---
+
+    const handleResetGame = useCallback(() => {
+        setCurrentBoard(JSON.parse(JSON.stringify(INITIAL_BOARD)));
+        setTurn('w');
+        setCastlingRights({ w: { kingside: true, queenside: true }, b: { kingside: true, queenside: true } });
+        setEnPassantTarget(null);
+        setMoveHistory([]);
+        setLastMove(null);
+        setGameStatus('playing');
+        setGamePhase('opening');
+        setThinking(false);
+        setMessage(null);
+        setChatMessages([{
+            id: getUniqueMessageId('reset'), text: "Starting a new game. Good luck!",
+            type: 'info', timestamp: new Date()
+        }]);
+    }, []); 
+
+    const handleGameStatusChange = useCallback((status: GameStatus | string) => {
+        let validStatus: GameStatus = 'playing';
+        if (['playing', 'check', 'checkmate', 'stalemate', 'draw'].includes(status)) {
+            validStatus = status as GameStatus;
+        } else { console.warn(`Invalid game status received: ${status}`); }
+        setGameStatus(validStatus);
+        let statusMessageText = '';
+        let messageType: PageChatMessage['type'] = 'info';
+        switch (validStatus) {
+            case 'check': statusMessageText = 'Check! Your king is under attack.'; messageType = 'warning'; break;
+            case 'checkmate': statusMessageText = `Checkmate! ${turn === playerColor ? 'You win!' : 'AI wins!'}`; messageType = 'error'; break;
+            case 'stalemate': statusMessageText = 'Stalemate! The game is a draw.'; messageType = 'info'; break;
+            case 'draw': statusMessageText = 'The game is a draw.'; messageType = 'info'; break;
+        }
+        if (statusMessageText) {
+            setChatMessages(prev => [...prev, { id: getUniqueMessageId('status'), text: statusMessageText, type: messageType, timestamp: new Date() }]);
+            if (validStatus !== 'playing' && validStatus !== 'check') setMessage(statusMessageText);
+        }
+    }, [turn, playerColor]); 
+
+    // Handle move execution (master function)
+    const makeMove = useCallback((move: Move): Board => {
+        const newBoard = JSON.parse(JSON.stringify(currentBoard));
+        const piece = newBoard[move.from.row][move.from.col];
+        const capturedPiece = newBoard[move.to.row][move.to.col];
+
+        if (!piece) { console.error("makeMove error: No piece at source square", move); return currentBoard; }
+
+        let enPassantCapturePiece = null;
+        if (piece.type === 'p' && enPassantTarget && move.to.row === enPassantTarget.row && move.to.col === enPassantTarget.col) {
+            const capturedPawnRow = move.from.row;
+            enPassantCapturePiece = newBoard[capturedPawnRow][enPassantTarget.col]; 
+            newBoard[capturedPawnRow][enPassantTarget.col] = null;
+        }
+
+        newBoard[move.to.row][move.to.col] = piece;
+        newBoard[move.from.row][move.from.col] = null;
+
+        let promotionPieceType: PieceType | undefined = undefined;
+        const promotionRank = piece.color === 'w' ? 0 : 7;
+        if (piece.type === 'p' && move.to.row === promotionRank) {
+            promotionPieceType = move.promotion || 'q';
+            newBoard[move.to.row][move.to.col] = { type: promotionPieceType, color: piece.color };
+        }
+
+        let castlingRookMove: Move | null = null;
+        if (piece.type === 'k' && Math.abs(move.from.col - move.to.col) > 1) {
+            const isKingside = move.to.col === 6;
+            const rookFromCol = isKingside ? 7 : 0;
+            const rookToCol = isKingside ? 5 : 3;
+            const rook = newBoard[move.from.row][rookFromCol];
+            if (rook) {
+                newBoard[move.to.row][rookToCol] = rook;
+                newBoard[move.from.row][rookFromCol] = null;
+                castlingRookMove = { from: { row: move.from.row, col: rookFromCol }, to: { row: move.to.row, col: rookToCol } };
+            }
+        }
+        
+        const newCastlingRights = JSON.parse(JSON.stringify(castlingRights));
+        if (piece.type === 'k') { newCastlingRights[piece.color].kingside = newCastlingRights[piece.color].queenside = false; }
+        if (piece.type === 'r') {
+            if (move.from.row === (piece.color === 'w' ? 7 : 0)) {
+                if (move.from.col === 0) newCastlingRights[piece.color].queenside = false;
+                if (move.from.col === 7) newCastlingRights[piece.color].kingside = false;
+            }
+        }
+        if (capturedPiece?.type === 'r') {
+            const opponentColor = piece.color === 'w' ? 'b' : 'w';
+            const opponentHomeRow = opponentColor === 'w' ? 7 : 0;
+            if(move.to.row === opponentHomeRow){
+               if(move.to.col === 0) newCastlingRights[opponentColor].queenside = false;
+               if(move.to.col === 7) newCastlingRights[opponentColor].kingside = false;
+            }
+        }
+        setCastlingRights(newCastlingRights);
+
+        let newEnPassantTarget = null;
+        if (piece.type === 'p' && Math.abs(move.from.row - move.to.row) === 2) {
+            newEnPassantTarget = { row: move.from.row + (piece.color === 'w' ? -1 : 1), col: move.from.col };
+        }
+        setEnPassantTarget(newEnPassantTarget);
+
+        setCurrentBoard(newBoard); 
+        setLastMove(move);
+        const nextTurn = turn === 'w' ? 'b' : 'w';
+        
+        const newIsInCheck = isCheck(newBoard, nextTurn);
+        const newHasLegalMoves = checkForLegalMoves(newBoard, nextTurn, newCastlingRights, newEnPassantTarget);
+        
+        let finalGameStatus: GameStatus = 'playing';
+        if (newIsInCheck) { finalGameStatus = newHasLegalMoves ? 'check' : 'checkmate'; } 
+        else { finalGameStatus = newHasLegalMoves ? 'playing' : 'stalemate'; }
+        if (moveHistory.length > 98) finalGameStatus = 'draw'; 
+
+        handleGameStatusChange(finalGameStatus); 
+
+        const notation = chessAnalysis.moveToAlgebraic(
+            currentBoard, move, piece, capturedPiece || enPassantCapturePiece, enPassantTarget, castlingRights // Pass currentBoard (state before move)
+        ) + (finalGameStatus === 'checkmate' ? '#' : finalGameStatus === 'check' ? '+' : '');
+
+        const newMoveHistoryItem: MoveHistoryItem = {
+            move, piece, captured: capturedPiece || enPassantCapturePiece, notation, 
+            check: finalGameStatus === 'check', checkmate: finalGameStatus === 'checkmate'
+        };
+        setMoveHistory(prev => [...prev, newMoveHistoryItem]);
+        
+        if (piece.color === playerColor) {
+            const analysis = chessAnalysis.analyzeMoveQuality(currentBoard, move, piece, capturedPiece || enPassantCapturePiece); // Pass currentBoard
+            setTimeout(() => {
+                setChatMessages(prev => [...prev, {
+                    id: getUniqueMessageId('move'), text: analysis.text,
+                    type: analysis.type, timestamp: new Date()
+                }]);
+            }, 300);
+        }
+
+        setTurn(nextTurn); 
+
+        return newBoard;
+    // Removed dependencies like board, playerMetrics, gamePhase
+    }, [currentBoard, turn, castlingRights, enPassantTarget, moveHistory.length, playerColor, handleGameStatusChange]); 
+
+
+    // Handle AI move
+    const handleAIMove = useCallback(async () => {
+        if (turn !== playerColor && gameStatus === 'playing' && !thinking) { 
+            setThinking(true);
+            setMessage("AI is thinking...");
+            const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+            const originalOverflowAnchor = document.body.style.overflowAnchor;
+            const originalHtmlOverflow = document.documentElement.style.overflow;
+            const originalBodyOverflow = document.body.style.overflow;
+            
+            document.documentElement.style.scrollBehavior = 'auto';
+            document.body.style.overflowAnchor = 'none';
+            
+            // Ensure scrolling remains enabled
+            document.documentElement.style.overflow = 'auto';
+            document.body.style.overflow = 'auto';
+
+            try {
+                const response = await fetch('/api/chess-ai/move', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        board: currentBoard, 
+                        turn, gamePhase, 
+                        aiPersonality: { ...DEFAULT_AI_PERSONALITY, level: aiLevel }, 
+                        castlingRights, aiLevel, 
+                        moveHistory: moveHistory.map(item => ({ notation: item.notation || '?' })), 
+                        enPassantTargetSquare: enPassantTarget 
+                    }),
+                });
+                if (!response.ok) throw new Error(`AI API Error: ${response.statusText}`);
+                const data = await response.json();
+
+                if (data.status === 'checkmate' || data.status === 'stalemate') {
+                    handleGameStatusChange(data.status); 
+                } else if (data.move) {
+                   makeMove(data.move); // Apply AI move
+                } else {
+                   console.error("AI returned no move but game not over.");
+                   setMessage("AI Error: Could not determine move.");
+                   handleGameStatusChange('draw'); 
+                }
+            } catch (error) {
+                console.error('Error getting AI move:', error);
+                setMessage("Error: Couldn't get AI move.");
+            } finally {
+                setThinking(false);
+                setTimeout(() => setMessage(null), 3000);
+                document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                document.body.style.overflowAnchor = originalOverflowAnchor;
+                document.documentElement.style.overflow = originalHtmlOverflow;
+                document.body.style.overflow = originalBodyOverflow;
+                
+                // Double-check that scrolling is enabled after AI move
+                if (document.documentElement.style.overflow === 'hidden') {
+                    document.documentElement.style.overflow = 'auto';
+                }
+                if (document.body.style.overflow === 'hidden') {
+                    document.body.style.overflow = 'auto';
+                }
+            }
+        }
+    // Corrected dependencies
+    }, [turn, playerColor, gameStatus, currentBoard, gamePhase, aiPersonality, castlingRights, aiLevel, moveHistory, enPassantTarget, makeMove, handleGameStatusChange, thinking]); 
+
+    // Handle Player's Move (Callback from ChessGame component)  
+    const handlePlayerMove = useCallback((move: Move) => { // Takes a Move object parameter
+        if (turn === playerColor && gameStatus === 'playing' && !thinking) {
+            const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+            const originalOverflowAnchor = document.body.style.overflowAnchor;
+            const originalHtmlOverflow = document.documentElement.style.overflow;
+            const originalBodyOverflow = document.body.style.overflow;
+            
+            document.documentElement.style.scrollBehavior = 'auto';
+            document.body.style.overflowAnchor = 'none';
+            
+            // Ensure scrolling remains enabled
+            document.documentElement.style.overflow = 'auto';
+            document.body.style.overflow = 'auto';
+
+            makeMove(move); // Apply player move using makeMove
+
+            setTimeout(() => {
+                document.documentElement.style.scrollBehavior = originalScrollBehavior;
+                document.body.style.overflowAnchor = originalOverflowAnchor;
+                document.documentElement.style.overflow = originalHtmlOverflow;
+                document.body.style.overflow = originalBodyOverflow;
+                
+                // Double-check that scrolling is enabled after move processing
+                if (document.documentElement.style.overflow === 'hidden') {
+                    document.documentElement.style.overflow = 'auto';
+                }
+                if (document.body.style.overflow === 'hidden') {
+                    document.body.style.overflow = 'auto';
+                }
+            }, 100); 
+        }
+    // Dependencies
+    }, [turn, playerColor, gameStatus, thinking, makeMove]); 
+
+    // Trigger AI move when it's their turn
+    useEffect(() => {
+        if (turn !== playerColor && gameStatus === 'playing' && !thinking) { 
+            const timer = setTimeout(handleAIMove, 700); // Delay for UX
+            return () => clearTimeout(timer);
+        }
+    }, [turn, playerColor, gameStatus, thinking, handleAIMove]); 
+
+    // Define handleGameOver within ChessAIDemo scope
+    const handleGameOver = useCallback((result: string) => {
+        console.log("Game Over called with result:", result);
+        handleGameStatusChange(result); // Use the existing handler
+        setThinking(false); // Ensure thinking stops
+    }, [handleGameStatusChange]); 
+
+    // Handle player color selection
+    const handleColorSelection = (color: PieceColor) => {
+        if (moveHistory.length === 0) {
+            setPlayerColor(color);
+            handleResetGame(); // Reset game when changing color
+        } else {
+            setChatMessages(prev => [...prev, {
+                id: getUniqueMessageId('color-fail'), text: "Cannot change color mid-game. Start a new game.",
+                type: 'warning', timestamp: new Date()
+            }])
+        }
+    }
+
+    // Handle AI difficulty change
+    const handleDifficultyChange = (difficulty: number) => {
+        setAiLevel(difficulty)
+        const difficultyName = difficultyLevels.find(d => d.value === difficulty)?.name || 'selected level';
+        const messageText = moveHistory.length === 0
+            ? `Difficulty set to ${difficultyName}.`
+            : `Difficulty will be ${difficultyName} for the next game.`;
+        setChatMessages(prev => [...prev, {
+            id: getUniqueMessageId('difficulty'), text: messageText,
+            type: 'info', timestamp: new Date()
+        }])
+    }
+    
+    // Handle chat messages sent by user
+    const handleSendMessage = useCallback((text: string) => {
+        if (!text.trim()) return
+        setChatMessages(prev => [...prev, {
+            id: getUniqueMessageId('user'), text, type: 'user', timestamp: new Date(), role: 'user'
+        }])
+        setActiveTabRightSidebar('assistant') // Switch to assistant tab
+
+        setTimeout(() => {
+            // Generate a response based on the game state
+            let response = "I'm analyzing your move..."
+            
+            // Simple response based on game phase
+            if (text.toLowerCase().includes('tip') || text.toLowerCase().includes('advice')) {
+                // Use the existing getGamePhaseTips function from chessAnalysis
+                response = chessAnalysis.getGamePhaseTips(gamePhase, moveHistory.length)
+            } else if (text.toLowerCase().includes('check')) {
+                response = "When your king is in check, you must address the threat by moving the king, capturing the attacking piece, or blocking the attack."
+            } else if (text.toLowerCase().includes('castle') || text.toLowerCase().includes('castling')) {
+                response = "Castling is a special move that lets you move your king two squares towards a rook, and then move the rook to the square the king crossed."
+            } else {
+                response = `I've analyzed the board. ${gameStatus === 'playing' ? 'Focus on controlling the center and developing your pieces.' : 'Let\'s analyze what happened in this game.'}`
+            }
+                             
+            setChatMessages(prev => [...prev, {
+                id: getUniqueMessageId('response'), text: response, type: 'response', timestamp: new Date(), role: 'assistant'
+            }])
+            if (chatInputRef.current) chatInputRef.current.value = '' 
+        }, 700)
+    }, [gamePhase, gameStatus, moveHistory]) // Dependencies for the callback
+
+    // Toggle collapsible sections
+    const toggleSection = (section: keyof typeof expandedSections) => {
+        // Preserve original scroll settings before toggling
+        const originalScrollBehavior = document.documentElement.style.scrollBehavior;
+        const originalOverflowAnchor = document.body.style.overflowAnchor;
+        
+        // Toggle the section
+        setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+        
+        // Restore normal scroll behavior after a short delay
+        setTimeout(() => {
+            document.documentElement.style.scrollBehavior = originalScrollBehavior;
+            document.body.style.overflowAnchor = originalOverflowAnchor;
+            
+            // Ensure the page is scrollable regardless of panel state
+            document.body.style.overflow = 'auto';
+            document.documentElement.style.overflow = 'auto';
+        }, 50);
+    }
+    
+    // Render move notation, handling potential undefined moves
+    const renderMoveNotation = (moveItem: MoveHistoryItem | undefined): string => {
+        if (!moveItem) return "...";
+        return moveItem.notation || "?"; // Use stored notation
+    }
+
+    // --- Section Rendering Functions ---
+
+    const HowToPlaySection = () => (
+        expandedSections.howToPlay && (
+            <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 shadow-lg">
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" role="region" aria-labelledby="howToPlayHeading">
+                    <button     
+                        type="button"
+                        onClick={() => toggleSection('howToPlay')}
+                        className="w-full flex justify-between items-center text-left p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/60 mb-4"
+                        aria-expanded={expandedSections.howToPlay ? "true" : "false"}
+                        aria-controls="howToPlayContent"
+                        id="howToPlayTab"
+                    >
+                        <span className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100" id="howToPlayHeading">
+                            <BookOpen className="h-6 w-6 text-emerald-500" /> How to Play Chess
+                        </span>
+                        {expandedSections.howToPlay ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+                    </button>
+                    <div id="howToPlayContent" className={expandedSections.howToPlay ? "" : "hidden"}>
+                        <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-700 dark:text-gray-300">
+                            <div>
+                                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Basic Rules</h4>
+                                <ul className="space-y-1.5 list-disc list-inside">
+                                    <li>Played on an 8x8 board.</li>
+                                    <li>16 pieces per player. White moves first.</li>
+                                    <li>Goal: Checkmate opponent's king.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2 mt-4 md:mt-0">How to Move Pieces</h4>
+                                <ul className="space-y-1.5 list-disc list-inside">
+                                    <li><strong>Pawn:</strong> Forward 1 (or 2 on first move), captures diagonally.</li>
+                                    <li><strong>Knight:</strong> 'L' shape (2 squares one way, 1 perpendicular). Can jump.</li>
+                                    <li><strong>Bishop:</strong> Diagonally, any number of squares.</li>
+                                    <li><strong>Rook:</strong> Horizontally or vertically, any number of squares.</li>
+                                    <li><strong>Queen:</strong> Any direction (horizontal, vertical, diagonal), any number of squares.</li>
+                                    <li><strong>King:</strong> One square in any direction.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                            <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">Use the Chess Assistant tab to ask questions!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    );
+
+    const LeftSidebarSection = () => (
+    <div className="space-y-4 w-full">
+        {/* Game Controls Section */}
+        <SidebarSection
+            id="gameControls"
+            title="Game Controls"
+            icon={<Settings className="h-5 w-5 text-blue-500" />}
+            expanded={expandedSections.gameControls}
+            onToggle={() => toggleSection('gameControls')}
+        >
+            <div className="p-4 space-y-5">
+                <StatusDisplay
+                    status={gameStatus}
+                    isThinking={thinking}
+                    turn={turn}
+                    playerColor={playerColor}
+                    gamePhase={gamePhase}
+                />
+                <DifficultySlider
+                    aiLevel={aiLevel}
+                    onChange={handleDifficultyChange}
+                />
+                <ColorSelection
+                    selectedColor={playerColor}
+                    onSelect={handleColorSelection}
+                    disabled={moveHistory.length > 0}
+                />
+                <AIPlayingStyle />
+                <GameStats moveHistory={moveHistory} gamePhase={gamePhase} />   
+            </div>
+        </SidebarSection>
+
+        {/* AI Model Info Section */}
+        <SidebarSection
+            id="modelInfo"
+            title="About the AI Model"
+            icon={<Brain className="h-5 w-5 text-purple-500" />}
+            expanded={expandedSections.modelInfo}
+            onToggle={() => toggleSection('modelInfo')}
+        >
+            <ModelInfo />
+        </SidebarSection>
+
+        {/* Player Analysis Section */}
+        <SidebarSection
+            id="playerAnalysis"
+            title="Player Analysis"
+            icon={<BarChart2 className="h-5 w-5 text-teal-500" />}
+            expanded={expandedSections.playerAnalysis}
+            onToggle={() => toggleSection('playerAnalysis')}
+        >
+            <PlayerAnalysis moveHistory={moveHistory} metrics={playerMetrics} />
+        </SidebarSection>
+    </div>
+);
+
+const SidebarSection = ({ id, title, icon, expanded, onToggle, children }: { id: string; title: string; icon: JSX.Element; expanded: boolean; onToggle: () => void; children: React.ReactNode }) => (
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden" role="region" aria-labelledby={`${id}Heading`}>
+        <button
+            type="button"
+            onClick={onToggle}
+            className="w-full p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700"
+            aria-expanded={expanded ? "true" : "false"}
+            aria-controls={`${id}Content`}
+        >
+            <span className="text-lg font-semibold flex items-center gap-2 text-gray-900 dark:text-gray-100" id={`${id}Heading`}>
+                {icon}
+                {title}
+            </span>
+            {expanded ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
+        </button>
+        {expanded && <div id={`${id}Content`} className="p-4">{children}</div>}
+    </div>
+);
+
+const StatusDisplay: React.FC<{ status: string, isThinking: boolean, turn: string, playerColor: string, gamePhase: string }> = ({ status, isThinking, turn, playerColor, gamePhase }) => (
+    <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-700/50 rounded-lg p-3">
+        <div className="flex items-center gap-2">
+            {React.createElement(gameStatusInfo[status as GameStatus].icon, { className: `h-5 w-5 ${gameStatusInfo[status as GameStatus].color}` })}
+            <span className={`font-medium text-sm ${gameStatusInfo[status as GameStatus].color}`}>
+                {isThinking ? (
+                    <span className="flex items-center gap-1.5 text-purple-500 dark:text-purple-400">
+                        <Loader2 size={16} className="animate-spin" />
+                        AI thinking...
+                    </span>
+                ) : status === 'playing' ? (
+                    <span className={turn === playerColor ? 'text-green-500 dark:text-green-400' : 'text-orange-500 dark:text-orange-400'}>
+                        {turn === playerColor ? 'Your turn' : 'AI turn'}
+                    </span>
+                ) : (
+                    gameStatusInfo[status as GameStatus].text
+                )}
+            </span>
+        </div>
+        <div className="text-xs text-gray-500 dark:text-gray-400 capitalize">{gamePhase}</div>
+    </div>
+);
+
+const DifficultySlider: React.FC<{ aiLevel: number, onChange: (level: number) => void }> = ({ aiLevel, onChange }) => (
+    <div>
+        <div className="flex justify-between items-center mb-1">
+            <label htmlFor="difficulty-slider" className="text-sm font-medium text-gray-700 dark:text-gray-300">AI Difficulty</label>
+            <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{difficultyLevels.find(d => d.value === aiLevel)?.name}</span>
+        </div>
+        <input
+            id="difficulty-slider"
+            type="range"
+            min="1"
+            max="10"
+            step="1"
+            value={aiLevel}
+            onChange={(e) => onChange(parseInt(e.target.value))}
+            className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer"
+            aria-label="AI difficulty level"
+        />
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{difficultyLevels.find(d => d.value === aiLevel)?.description}</p>
+    </div>
+);
+
+const ColorSelection: React.FC<{ selectedColor: PieceColor, onSelect: (color: PieceColor) => void, disabled: boolean }> = ({ selectedColor, onSelect, disabled }) => (
+    <div>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Play as</h4>
+        <div className="grid grid-cols-2 gap-2">
+            {(['w', 'b'] as PieceColor[]).map(color => (
+                <button
+                    key={color}
+                    onClick={() => onSelect(color)}
+                    disabled={disabled}
+                    className={`p-2.5 rounded-lg flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                        selectedColor === color ? 'bg-blue-500 text-white ring-2 ring-blue-300' : 'bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
+                >
+                    <div className={`w-5 h-5 rounded-full border border-gray-400 ${color === 'w' ? 'bg-white' : 'bg-gray-800'}`}></div>
+                    {color === 'w' ? 'White' : 'Black'}
+                </button>
+            ))}
+        </div>
+    </div>
+);
+
+const AIPlayingStyle = () => (
+    <div>
+        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">AI Playing Style</h4>
+        <div className="space-y-1.5">
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5">
+                <Zap size={14} />
+                Positional player
+            </div>
+            <div className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5">
+                <Shield size={14} />
+                Solid defender
+            </div>
+            <div className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 px-3 py-1.5 rounded-md text-xs flex items-center gap-1.5">
+                <Crown size={14} />
+                Strong endgame player
+            </div>
+        </div>
+    </div>
+);
+
+const GameStats = ({ moveHistory, gamePhase }: { moveHistory: MoveHistoryItem[], gamePhase: GamePhase }) => (
+    <div className="grid grid-cols-2 gap-x-4 gap-y-1 pt-2 border-t border-gray-200 dark:border-gray-700 text-xs">
+        <div className="flex justify-between text-gray-600 dark:text-gray-400">
+            <span>Moves Played:</span>
+            <span className="font-medium text-gray-800 dark:text-gray-200">{moveHistory.length}</span>
+        </div>
+        <div className="flex justify-between text-gray-600 dark:text-gray-400">
+            <span>Game Phase:</span>
+            <span className="font-medium text-gray-800 dark:text-gray-200 capitalize">{gamePhase}</span>
+        </div>
+    </div>
+);
+
+const ModelInfo = () => (
+    <div className="p-4 space-y-3 text-sm text-gray-600 dark:text-gray-400">
+        <p>This AI uses a neural network (similar to AlphaZero) trained with reinforcement learning and Monte Carlo Tree Search (MCTS).</p>
+        <ul className="list-disc list-inside space-y-1">
+            <li>Evaluates positions without traditional heuristics.</li>
+            <li>Trained through self-play.</li>
+            <li>ONNX model format for fast inference.</li>
+        </ul>
+        <a
+            href="https://arxiv.org/abs/1712.01815"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center text-xs font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300"
+        >
+            Learn more about AlphaZero
+            <ExternalLink className="ml-1 h-3 w-3" />
+        </a>
+    </div>
+);
+
+const PlayerAnalysis = ({ moveHistory, metrics }: { moveHistory: MoveHistoryItem[], metrics: PlayerMetrics }) => (
+    <div className="p-4 space-y-3">
+        {moveHistory.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Play some moves to see your analysis.</p>
+        ) : (
+            <>
+                <PerformanceMetrics metrics={metrics} />
+                <PlayingStyle metrics={metrics} />
+            </>
+        )}
+    </div>
+);
+
+const PerformanceMetrics: React.FC<{ metrics: PlayerMetrics }> = ({ metrics }) => (
+    <>
+        {['openingPreparation', 'tacticalAwareness', 'positionalUnderstanding', 'endgameSkill'].map((metric) => (
+            <div key={metric}>
+                <div className="flex justify-between text-xs mb-0.5">
+                    <span className="text-gray-700 dark:text-gray-300">{formatMetricName(metric)}</span>
+                    <span className="font-medium text-teal-600 dark:text-teal-400">{Math.round(metrics[metric as keyof PlayerMetrics])}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div className={`bg-teal-500 h-1.5 rounded-full player-metric-bar player-metric-${metric}`}></div>
+                </div>
+            </div>
+        ))}
+    </>
+);
+
+const PlayingStyle: React.FC<{ metrics: PlayerMetrics }> = ({ metrics }) => (
+    <div className="grid grid-cols-2 gap-3 mt-2">
+        {['aggressiveness', 'defensiveness'].map((style) => (
+            <div key={style}>
+                <div className="flex justify-between text-xs mb-0.5">
+                    <span className="text-gray-700 dark:text-gray-300">{formatMetricName(style)}</span>
+                    <span className="font-medium text-teal-600 dark:text-teal-400">{Math.round(metrics[style as keyof PlayerMetrics])}%</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                    <div className={`bg-${style === 'aggressiveness' ? 'red' : 'blue'}-500 h-1.5 rounded-full player-metric-bar player-metric-${style}`}></div>
+                </div>
+            </div>
+        ))}
+    </div>
+);
+
+const formatMetricName = (name: string) => {
+    switch (name) {
+        case 'openingPreparation':
+            return 'Opening Prep';
+        case 'tacticalAwareness':
+            return 'Tactical Awareness';
+        case 'positionalUnderstanding':
+            return 'Positional Understanding';
+        case 'endgameSkill':
+            return 'Endgame Skill';
+        case 'aggressiveness':
+            return 'Aggressiveness';
+        case 'defensiveness':
+            return 'Defensiveness';
+        default:
+            return name;
+    }
+};
+
+    const RightSidebarSection = () => (
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col h-full max-h-[calc(100vh-10rem)]"> 
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-700 flex-shrink-0" role="tablist" aria-label="Chess information tabs">
+                <button 
+                    type="button"
+                    onClick={() => setActiveTabRightSidebar('history')}
+                    className={`flex-1 p-3 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors ${activeTabRightSidebar === 'history' ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                    aria-selected={activeTabRightSidebar === 'history'}
+                    role="tab"
+                    aria-controls="historyPanel"
+                    id="historyTab"
+                >
+                   <Clock size={16} /> Move History
+                </button>
+                <button 
+                    type="button"
+                    onClick={() => setActiveTabRightSidebar('assistant')}
+                    className={`flex-1 p-3 text-sm font-medium flex items-center justify-center gap-1.5 transition-colors ${activeTabRightSidebar === 'assistant' ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-500' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'}`}
+                    aria-selected={activeTabRightSidebar === 'assistant'}
+                    role="tab"
+                    aria-controls="assistantPanel"
+                    id="assistantTab"
+                >
+                   <MessageCircle size={16} /> Assistant
+                </button>
+            </div>
+            
+            {/* Content */}
+            <div className="flex-grow overflow-y-auto">
+                {activeTabRightSidebar === 'history' ? (
+                     <div 
+                         ref={moveHistoryRef} 
+                         className="p-3 space-y-0.5"
+                         role="tabpanel"
+                         id="historyPanel"
+                         aria-labelledby="historyTab"                     
+                     >
+                         {moveHistory.length === 0 ? (<p className="text-sm text-gray-500 dark:text-gray-400 text-center py-10">No moves yet.</p>) 
+                         : (moveHistory.reduce((acc, histItem, index) => { 
+                                if (index % 2 === 0) { 
+                                    const moveNumber = Math.floor(index / 2) + 1;
+                                    const blackMoveItem = moveHistory[index + 1]; 
+                                    acc.push(
+                                        <div key={moveNumber} className={`grid grid-cols-[2.5rem_1fr_1fr] gap-1.5 items-center text-xs py-1 rounded ${index % 4 < 2 ? 'bg-gray-50 dark:bg-gray-700/30' : ''}`}>
+                                            <span className="font-mono text-gray-500 dark:text-gray-400 text-center">{moveNumber}.</span>
+                                            <span className={`px-1.5 py-0.5 rounded truncate ${histItem.check || histItem.checkmate ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : ''}`}>{renderMoveNotation(histItem)}</span>
+                                            <span className={`px-1.5 py-0.5 rounded truncate ${blackMoveItem && (blackMoveItem.check || blackMoveItem.checkmate) ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : ''}`}>{renderMoveNotation(blackMoveItem)}</span>
+                                        </div>
+                                    );
+                                }
+                                return acc;
+                            }, [] as JSX.Element[]))}
+                     </div>
+                ) : (
+                     <div 
+                         role="tabpanel"
+                         id="assistantPanel"
+                         aria-labelledby="assistantTab"
+                         className="h-full"
+                     >
+                         <ChatBox 
+                            messages={chatMessages} 
+                            onSendMessage={handleSendMessage} 
+                            inputRef={chatInputRef}
+                            isLoading={thinking} 
+                            className="flex flex-col h-full" 
+                            maxHeight="none" 
+                            title="" 
+                         />
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+
+    // ChessBoardSection renders the ChessGame component and passes state/callbacks
+    const ChessBoardSection = () => (
+        <div className="w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-3 sm:p-4 w-full">
+                <ChessGame
+                    // State props for rendering
+                    board={currentBoard}
+                    orientation={playerColor}
+                    legalMoves={turn === playerColor ? currentLegalMoves : []} 
+                    lastMove={lastMove}
+                    isCheck={gameStatus === 'check' || gameStatus === 'checkmate'}
+                    checkPosition={findKing(currentBoard, turn)} 
+                    disabled={turn !== playerColor || gameStatus !== 'playing' || thinking}
+                    // Callbacks for interaction
+                    onMove={handlePlayerMove}
+                    onGameOver={handleGameOver} 
+                    // Configuration props
+                    playerColor={playerColor}
+                    aiLevel={aiLevel} // Pass down aiLevel if ChessGame uses it
+                    showPlayerAnalysis={false} 
+                />
+            </div>
+        </div>
+    );
+
+    return (
+        <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100" ref={mainContainerRef} data-component-name="ChessAIDemo">
+            <div className="max-w-8xl mx-auto">
+                {/* Header Section */}
+                <div className="flex flex-col items-center text-center mb-8">
+                    <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3"><Cpu className="h-7 w-7 md:h-8 md:w-8 text-blue-500" />Chess AI Magnus</h1>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mt-2 mb-4">Play against a neural network-based chess AI.</p>
+                    <div className="flex items-center gap-3 mt-2">
+                        <button onClick={handleResetGame} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><RotateCcw size={16} />New Game</button>
+                        <button onClick={() => toggleSection('howToPlay')} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><HelpCircle size={16} />How to Play</button>
+                    </div>
+                </div>
+
+                {/* Message bar */}
+                {message && (
+                    <div className={`p-3 rounded-md mb-4 text-sm font-medium text-center ${gameStatus === 'checkmate' ? 'bg-red-100 dark:bg-red-800/30 text-red-700 dark:text-red-200' : (gameStatus === 'stalemate' || gameStatus === 'draw') ? 'bg-yellow-100 dark:bg-yellow-800/30 text-yellow-700 dark:text-yellow-200' : 'bg-blue-100 dark:bg-blue-800/30 text-blue-700 dark:text-blue-200'}`}>{message}</div>
+                )}
+
+                <HowToPlaySection />
+
+                 {/* Main Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+                    <div className="lg:col-span-3"><LeftSidebarSection /></div>
+                    <div className="lg:col-span-6"><ChessBoardSection /></div>
+                    <div className="lg:col-span-3"><RightSidebarSection /></div>
+                </div>
+            </div>
+        </main>
+    );
+}
+
+export default ChessAIDemo;

@@ -25,6 +25,10 @@ interface ChessBoardProps {
   showCoordinates?: boolean
   animationDuration?: number
   className?: string
+  selectedSquare?: { row: number; col: number } | null
+  hoveredSquare?: { row: number; col: number } | null
+  onHoverStart?: (row: number, col: number) => void
+  onHoverEnd?: () => void
 }
 
 const ChessBoard = ({
@@ -75,38 +79,55 @@ const ChessBoard = ({
   const handleSquareClick = (row: number, col: number) => {
     if (disabled) return
     
-    // If a square is already selected, attempt to move
     if (selectedSquare) {
       // Check if this is a legal destination
       const moveKey = `${row},${col}`
       if (legalMovesMap.has(moveKey)) {
         const move = legalMovesMap.get(moveKey)
-        onMove(move)
-        setSelectedSquare(null)
-        return
+        // Ensure we're passing a complete move object to the parent
+        if (move && move.from && move.to) {
+          onMove(move)
+          setSelectedSquare(null)
+          return
+        }
       }
       
       // Check if clicking on the same square (deselect)
       if (selectedSquare.row === row && selectedSquare.col === col) {
         setSelectedSquare(null)
-        return
       }
       
       // Check if clicking on another piece of the same color
       const piece = board[row][col]
       if (piece && board[selectedSquare.row][selectedSquare.col]?.color === piece.color) {
-        setSelectedSquare({ row, col })
+        // Only allow selecting pieces if they have legal moves
+        const hasLegalMoves = legalMoves.some(move => 
+          move.from.row === row && move.from.col === col
+        )
+        
+        if (hasLegalMoves) {
+          // Select this piece instead
+          setSelectedSquare({ row, col })
+        } else {
+          setSelectedSquare(null)
+        }
         return
       }
-    }
-    
-    // No square selected, check if this square has a piece
-    const piece = board[row][col]
-    if (piece) {
-      // Check if there are legal moves for this piece
-      const hasLegalMoves = legalMoves.some(move => move.from.row === row && move.from.col === col)
-      if (hasLegalMoves) {
-        setSelectedSquare({ row, col })
+      
+      // If we got here, it's an invalid move - deselect
+      setSelectedSquare(null)
+    } else {
+      // No square selected yet - select this piece if it exists and has legal moves
+      const piece = board[row][col]
+      if (piece) {
+        // Only allow selecting pieces if they have legal moves
+        const hasLegalMoves = legalMoves.some(move => 
+          move.from.row === row && move.from.col === col
+        )
+        
+        if (hasLegalMoves) {
+          setSelectedSquare({ row, col })
+        }
       }
     }
   }

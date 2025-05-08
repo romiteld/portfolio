@@ -18,11 +18,7 @@ export default function FinancialAssistantLayout({
 }) {
   return (
     <div 
-      className="financial-assistant-layout w-full overflow-x-hidden"
-      style={{
-        scrollBehavior: 'auto',
-        overflowAnchor: 'none'
-      }}
+      className="financial-assistant-layout w-full overflow-x-hidden scroll-behavior-auto overflow-anchor-none"
     >
       {/* Script to prevent all automatic scrolling */}
       <script dangerouslySetInnerHTML={{

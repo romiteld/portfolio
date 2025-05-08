@@ -505,11 +505,30 @@ function getPieceName(type: string): string {
   }
 }
 
-function algebraicNotation(square: { row: number, col: number }): string {
-  const files = 'abcdefgh'
-  const ranks = '87654321'
-  return `${files[square.col]}${ranks[square.row]}`
+export function algebraicNotation(square: { row: number, col: number }): string {
+  const files = 'abcdefgh';
+  const ranks = '87654321';
+  return `${files[square.col]}${ranks[square.row]}`;
 }
+
+// Placeholder for a more complete algebraic notation function
+export const moveToAlgebraic = (
+  board: Board, 
+  move: Move, 
+  piece: Piece | null, // piece that moved
+  capturedPiece: Piece | null, 
+  enPassantTarget: { row: number, col: number } | null, 
+  castlingRights: any // Replace 'any' with actual CastlingRights type if available
+): string => {
+  // Basic placeholder - e.g., e2-e4. Needs full implementation.
+  if (!piece) return "";
+  const from = algebraicNotation(move.from);
+  const to = algebraicNotation(move.to);
+  let notation = `${piece.type.toUpperCase()}${from}-${to}`;
+  // This is a very simplified placeholder. Real algebraic notation is much more complex.
+  // It needs to handle captures, checks, checkmates, pawn moves, castling, promotions, disambiguation etc.
+  return notation;
+};
 
 // Tips for development phases
 export const getGamePhaseTips = (

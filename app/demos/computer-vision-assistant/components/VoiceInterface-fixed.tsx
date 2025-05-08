@@ -623,11 +623,9 @@ export default function VoiceInterface() {
           </p>
           <div className="flex justify-end">
             <button
+              type="button"
               onClick={requestMicrophonePermission}
-              style={{
-                transition: "all 0.15s ease",
-              }}
-              className="mt-3 px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm"
+              className="mt-3 px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm transition-all duration-150 ease-in-out"
               data-component-name="VoiceInterface"
             >
               Try Again

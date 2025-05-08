@@ -199,8 +199,9 @@ export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps
         <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden">
           {isLoading ? (
             <div className="absolute inset-0 flex items-center justify-center">
-              <LoadingSpinner size="large" />
-              <span className="ml-3 text-gray-400">Initializing camera...</span>
+              <ul className="grid grid-cols-2 gap-2 mt-4">
+                <li className="col-span-2 text-sm text-gray-400 mb-1">No objects detected. Try adjusting the camera.</li>
+              </ul>
             </div>
           ) : error ? (
             <div className="absolute inset-0 flex items-center justify-center text-center p-6">
@@ -353,22 +354,20 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
           transition={{ duration: 0.3 }}
         >
           <h4 className="font-medium text-blue-400 mb-2">Objects Detected</h4>
-          <ul className="grid grid-cols-2 gap-2">
+          <ul role="list" className="grid grid-cols-2 gap-2">
             {results.objects.map((object, i) => (
               <motion.li
-                key={i}
+                key={i} role="listitem"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
                 className="bg-gray-800 px-3 py-2 rounded-md text-sm flex items-center justify-between"
               >
-                <span className="flex items-center">
+                <li className="flex items-center">
                   <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
                   {object.name}
-                </span>
-                <span className="text-xs bg-gray-700 px-2 py-1 rounded">
-                  {Math.round(object.confidence * 100)}%
-                </span>
+                </li>
+                <li className="text-xs opacity-70">{Math.round(object.confidence * 100)}%</li>
               </motion.li>
             ))}
           </ul>
@@ -382,10 +381,11 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
           transition={{ duration: 0.3 }}
         >
           <h4 className="font-medium text-blue-400 mb-2">Things I See</h4>
-          <ul className="grid grid-cols-2 gap-2">
+          <ul role="list" className="grid grid-cols-2 gap-2">
             {results.labels.map((label, i) => (
               <motion.li
                 key={i}
+                role="listitem"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.05 }}
@@ -434,7 +434,7 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
           <h4 className="font-medium text-blue-400 mb-2">Face Analysis</h4>
           <div className="space-y-2">
             {results.faces.map((face, i) => (
-              <motion.div
+              <motion.li
                 key={i}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
@@ -447,7 +447,7 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
                   {face.headwear && <li>Headwear: {face.headwear}</li>}
                   {face.glasses && <li>Glasses: Yes</li>}
                 </ul>
-              </motion.div>
+              </motion.li>
             ))}
           </div>
         </motion.div>
@@ -460,7 +460,7 @@ function AnalysisResults({ results }: AnalysisResultsProps) {
           transition={{ duration: 0.3, delay: 0.4 }}
         >
           <h4 className="font-medium text-blue-400 mb-2">Landmarks</h4>
-          <ul className="space-y-1">
+          <ul role="list" className="space-y-1">
             {results.landmarks.map((landmark, i) => (
               <motion.li
                 key={i}

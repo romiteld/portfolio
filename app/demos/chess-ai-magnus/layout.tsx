@@ -13,69 +13,37 @@ export default function ChessAILayout({
   return (
     <div 
       className="chess-ai-layout w-full overflow-x-hidden"
-      style={{ 
-        scrollBehavior: 'auto',
-        overflowAnchor: 'none'
-      }}
     >
-      {/* Script to completely disable automatic scrolling */}
+      {/* Script to only prevent unwanted focus jumps while allowing normal scrolling */}
       <script dangerouslySetInnerHTML={{
         __html: `
           (function() {
-            // Store current scroll position and restore it after any operation
-            let lastScrollPosition = 0;
-            let scrollLocked = false;
-
-            // Function to save current scroll position
-            function saveScrollPosition() {
-              lastScrollPosition = window.scrollY;
-            }
-
-            // Function to restore saved scroll position
-            function restoreScrollPosition() {
-              if (scrollLocked) return;
-              scrollLocked = true;
-              window.scrollTo(0, lastScrollPosition);
-              setTimeout(() => { scrollLocked = false; }, 50);
-            }
-
-            // Save position on load
-            window.addEventListener('load', saveScrollPosition);
-
-            // Hook into various events that might cause scrolling
-            document.addEventListener('click', saveScrollPosition);
-            document.addEventListener('touchstart', saveScrollPosition);
-            document.addEventListener('focusin', function(e) {
-              saveScrollPosition();
-              setTimeout(restoreScrollPosition, 10);
+            // Only prevent unwanted focus jumps while allowing normal scrolling
+            document.addEventListener('click', function(e) {
+              // Find if the click happened on or within a chess component
+              let target = e.target;
+              let isChessComponent = false;
+              
+              while (target && target !== document.body) {
+                if (target.getAttribute && target.getAttribute('data-component-name') === 'ChessAIDemo') {
+                  isChessComponent = true;
+                  break;
+                }
+                target = target.parentNode;
+              }
+              
+              // Only apply minimal focus protection to chess component interactions
+              if (isChessComponent) {
+                // Allow normal scrolling but prevent focus-induced unwanted jumps
+                setTimeout(() => {
+                  // Get all focusable elements and add a protection
+                  const focusables = document.querySelectorAll('button, input, select, textarea');
+                  focusables.forEach(el => {
+                    el.setAttribute('scroll-margin', '0');
+                  });
+                }, 10);
+              }
             });
-
-            // Aggressive scroll position maintenance
-            const scrollHandler = function() {
-              if (Math.abs(window.scrollY - lastScrollPosition) > 5 && !scrollLocked) {
-                restoreScrollPosition();
-              }
-            };
-            
-            // We'll run this at a high frequency to catch any scroll changes
-            setInterval(scrollHandler, 100);
-
-            // Override any programmatic scrolling
-            const originalScrollTo = window.scrollTo;
-            window.scrollTo = function(...args) {
-              if (args[0] === 0 && args[1] === 0) {
-                // Allow scroll to top only if explicitly requested
-                originalScrollTo.apply(window, args);
-                setTimeout(() => { lastScrollPosition = 0; }, 50);
-              } else if (args[0] && typeof args[0] === 'object' && args[0].top === 0) {
-                // Handle the object version of scrollTo
-                originalScrollTo.apply(window, args);
-                setTimeout(() => { lastScrollPosition = 0; }, 50);
-              } else {
-                // Block other scroll attempts
-                console.log('Prevented automatic scroll');
-              }
-            };
           })();
         `
       }} />

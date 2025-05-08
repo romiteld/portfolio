@@ -758,9 +758,9 @@ export default function FinancialAssistantPage() {
                           >
                             {message.isLoading ? (
                               <div className="flex items-center space-x-2">
-                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-0"></div>
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-150"></div>
+                                <div className="w-2 h-2 bg-current rounded-full animate-bounce delay-300"></div>
                               </div>
                             ) : (
                               <>
