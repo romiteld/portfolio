@@ -4,7 +4,6 @@
  */
 
 import type { Board, Move, PieceColor, AIPersonality } from './types';
-import { selectMoveWithModel as clientSelectMove } from './utils/clientNeuralNet';
 
 // Timestamp tracking to avoid duplicated API calls
 let lastApiCallTimestamp = 0;
@@ -73,9 +72,10 @@ async function selectMoveClientSide(board: Board, legalMoves: Move[], turn: Piec
     // First try the neural network for higher AI levels
     if (aiLevel >= 6) {
       // Try to use the client-side neural network model
-      const move = await clientSelectMove(board, legalMoves, turn, aiLevel);
+      const { selectMoveWithModel } = await import("./utils/clientNeuralNet");
+      const move = await selectMoveWithModel(board, legalMoves, turn, aiLevel);
       if (move) {
-        console.log('Client-side neural network used for move selection');
+        console.log("Client-side neural network used for move selection");
         return move;
       }
     }

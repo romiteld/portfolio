@@ -3,9 +3,7 @@
  * This allows the model to run in the browser using ONNX Runtime Web
  */
 
-import { useEffect, useState } from 'react';
 import * as ort from 'onnxruntime-web';
-import type { Board, PieceColor, Move } from '../types';
 
 // Model URL from environment variables
 const PUBLIC_MODEL_URL = process.env.NEXT_PUBLIC_CHESS_MODEL_URL || '/models/chess-model.onnx';
@@ -227,50 +225,3 @@ export async function selectMoveWithModel(
   }
 }
 
-/**
- * Custom hook to use the neural network model in React components
- */
-export function useChessAI() {
-  const [modelReady, setModelReady] = useState(!!session);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(modelLoadError);
-  
-  useEffect(() => {
-    let mounted = true;
-    
-    async function loadModel() {
-      if (session || isModelLoading) return;
-      
-      setLoading(true);
-      try {
-        const loadedSession = await initializeModel();
-        if (mounted) {
-          setModelReady(!!loadedSession);
-          setError(modelLoadError);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
-      }
-    }
-    
-    loadModel();
-    
-    return () => {
-      mounted = false;
-    };
-  }, []);
-  
-  return {
-    selectMove: selectMoveWithModel,
-    evaluate: evaluatePositionWithModel,
-    modelReady,
-    loading,
-    error
-  };
-}
