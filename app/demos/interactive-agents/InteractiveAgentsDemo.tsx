@@ -31,26 +31,42 @@ export default function InteractiveAgentsDemo() {
     }
   }, [])
 
-  const startSimulation = () => {
+  const startSimulation = async () => {
     if (!goal.trim()) return
     setRunning(true)
     setCurrentStep(0)
     setMessages([{ sender: 'user', name: 'You', text: goal }])
 
-    const steps = [
-      { name: 'Research Agent', text: `I'll gather key facts about ${goal}.` },
-      { name: 'Planning Agent', text: `Here is a short plan to accomplish ${goal}.` },
-      { name: 'Writing Agent', text: `Based on the research and plan, here is a brief summary.` },
-    ]
+    try {
+      const res = await fetch('/api/interactive-agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ goal })
+      })
 
-    steps.forEach((step, idx) => {
-      const timer = setTimeout(() => {
-        setMessages((prev) => [...prev, { sender: 'agent', ...step }])
-        setCurrentStep(idx + 1)
-        if (idx === steps.length - 1) setRunning(false)
-      }, 1000 * (idx + 1))
-      timeouts.current.push(timer)
-    })
+      if (!res.ok) {
+        throw new Error('API request failed')
+      }
+
+      const data = await res.json()
+      const steps = (data.steps || []) as { name: string; text: string }[]
+
+      steps.forEach((step, idx) => {
+        const timer = setTimeout(() => {
+          setMessages((prev) => [...prev, { sender: 'agent', ...step }])
+          setCurrentStep(idx + 1)
+          if (idx === steps.length - 1) setRunning(false)
+        }, 1000 * (idx + 1))
+        timeouts.current.push(timer)
+      })
+    } catch (err) {
+      console.error('Simulation error:', err)
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'agent', name: 'System', text: 'Failed to run simulation.' }
+      ])
+      setRunning(false)
+    }
   }
 
   const reset = () => {
@@ -129,7 +145,8 @@ export default function InteractiveAgentsDemo() {
       )}
 
       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-        <strong>About this demo:</strong> This simulates a simple multi-agent collaboration inspired by CrewAI. The responses are pre-defined for demonstration purposes.
+        <strong>About this demo:</strong> This uses a Vercel Edge Function to generate
+        CrewAI-style agent responses with OpenAI.
       </p>
     </div>
   )

@@ -1,6 +1,6 @@
 # Interactive Agents Demo
 
-This demo shows a simple simulation of multiple AI agents working together on a user-provided goal. It uses React state and timed steps to mimic a CrewAI-style collaboration.
+This demo uses a Vercel Edge Function to generate agent responses for a user-provided goal. It simulates a CrewAI-style collaboration by calling the OpenAI API and streaming the results to the UI.
 
 ## Usage
 1. Navigate to `/demos/interactive-agents` in the portfolio.
