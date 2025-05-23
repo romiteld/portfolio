@@ -14,7 +14,8 @@
     "cleanup-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/cleanup-photos.ts",
     "convert-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-webp.ts",
     "enhance-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/enhance-photos.ts",
-    "convert-to-jpeg": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-jpeg.ts"
+    "convert-to-jpeg": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-jpeg.ts",
+    "schedule-updates": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/schedule-updates.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
