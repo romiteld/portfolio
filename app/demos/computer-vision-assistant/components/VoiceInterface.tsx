@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 
 interface VoiceInterfaceProps {
-  onImageAnalysisRequest?: () => void;
+  onImageAnalysisRequest?: (query: string) => void;
   imageAnalysisResult?: any;
 }
 
@@ -107,7 +107,7 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
     );
     
     if (isImageAnalysisRequest && onImageAnalysisRequest) {
-      onImageAnalysisRequest();
+      onImageAnalysisRequest(transcript);
       return;
     }
     

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
 import { motion } from "framer-motion";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-interface AnalysisResult {
+export interface AnalysisResult {
   labels?: string[];
   description?: string;
   text?: string[];
@@ -21,11 +21,14 @@ interface AnalysisResult {
   }[];
 }
 
-interface CameraCaptureProps {
+export interface CameraCaptureProps {
   onAnalysisComplete?: (result: AnalysisResult) => void;
 }
+export interface CameraCaptureHandle {
+  analyzeNow: () => Promise<AnalysisResult | null>;
+}
 
-export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps) {
+const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(function CameraCapture({ onAnalysisComplete }, ref) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -133,8 +136,8 @@ export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps
     return imageData;
   };
 
-  const analyzeFrame = async () => {
-    if (!isCameraActive || isAnalyzing) return;
+  const analyzeFrame = async (): Promise<AnalysisResult | null> => {
+    if (!isCameraActive || isAnalyzing) return null;
     
     const imageData = captureFrame();
     if (!imageData) return;
@@ -168,13 +171,19 @@ export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps
           analyzeFrame();
         }, 3000); // Analyze every 3 seconds
       }
+      return data;
     } catch (error) {
       console.error('Error analyzing image:', error);
       setError('Failed to analyze image. Please try again.');
+      return null;
     } finally {
       setIsAnalyzing(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({
+    analyzeNow: analyzeFrame,
+  }));
 
   // Trigger auto-analysis when enabled
   useEffect(() => {
@@ -324,7 +333,9 @@ export default function CameraCapture({ onAnalysisComplete }: CameraCaptureProps
       </div>
     </div>
   );
-}
+});
+
+export default CameraCapture;
 
 interface AnalysisResultsProps {
   results: AnalysisResult;
