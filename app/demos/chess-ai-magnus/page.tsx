@@ -553,7 +553,32 @@ function ChessAIDemo() {
             id: getUniqueMessageId('reset'), text: "Starting a new game. Good luck!",
             type: 'info', timestamp: new Date()
         }]);
-    }, []); 
+    }, []);
+
+    const generatePGN = useCallback((history: MoveHistoryItem[]): string => {
+        let pgn = '';
+        for (let i = 0; i < history.length; i += 2) {
+            const moveNo = Math.floor(i / 2) + 1;
+            const whiteMove = history[i]?.notation || '';
+            const blackMove = history[i + 1]?.notation || '';
+            pgn += `${moveNo}. ${whiteMove}${blackMove ? ' ' + blackMove : ''} `;
+        }
+        return pgn.trim();
+    }, []);
+
+    const handleExportPGN = useCallback(() => {
+        if (moveHistory.length === 0) return;
+        const pgn = generatePGN(moveHistory);
+        const blob = new Blob([pgn], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'game.pgn';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }, [generatePGN, moveHistory]);
 
     const handleGameStatusChange = useCallback((status: GameStatus | string) => {
         let validStatus: GameStatus = 'playing';
@@ -1318,8 +1343,25 @@ const formatMetricName = (name: string) => {
                     </h1>
                     <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xl mt-2 mb-4">Play against a neural network-based chess AI with both client-side and server-side intelligence.</p>
                     <div className="flex items-center gap-3 mt-2">
-                        <button onClick={handleResetGame} className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><RotateCcw size={16} />New Game</button>
-                        <button onClick={() => toggleSection('howToPlay')} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"><HelpCircle size={16} />How to Play</button>
+                        <button
+                            onClick={handleResetGame}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"
+                        >
+                            <RotateCcw size={16} />New Game
+                        </button>
+                        <button
+                            onClick={handleExportPGN}
+                            disabled={moveHistory.length === 0}
+                            className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <FileDown size={16} />Export PGN
+                        </button>
+                        <button
+                            onClick={() => toggleSection('howToPlay')}
+                            className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg flex items-center gap-1.5 text-sm font-medium shadow-sm"
+                        >
+                            <HelpCircle size={16} />How to Play
+                        </button>
                     </div>
                 </div>
 
