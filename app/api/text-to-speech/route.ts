@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Generate speech using Eleven Labs API
-    const audioData = await generateSpeechWithElevenLabs(text);
+    // Generate speech using Gemini's text-to-speech API
+    const audioData = await generateSpeechWithGemini(text);
     
     // Return audio data as a blob
     return new NextResponse(audioData, {
@@ -33,40 +33,31 @@ export async function POST(req: NextRequest) {
   }
 }
 
-async function generateSpeechWithElevenLabs(text: string) {
-  const ELEVEN_LABS_API_KEY = process.env.ELEVEN_LABS_API_KEY;
-  const VOICE_ID = process.env.ELEVEN_LABS_VOICE_ID || 'pNInz6obpgDQGcFmaJgB'; // Adam voice as default
-  
-  if (!ELEVEN_LABS_API_KEY) {
-    throw new Error("ELEVEN_LABS_API_KEY environment variable is not set");
+async function generateSpeechWithGemini(text: string) {
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+  if (!GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY environment variable is not set");
   }
-  
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`;
-  
+
+  // Gemini live streaming API endpoint for text-to-speech
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateSpeech?key=${GEMINI_API_KEY}`;
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
-      'Accept': 'audio/mpeg',
-      'Content-Type': 'application/json',
-      'xi-api-key': ELEVEN_LABS_API_KEY
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
-      text,
-      model_id: 'eleven_multilingual_v2',
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.75,
-        style: 0.0,
-        use_speaker_boost: true
-      }
+      text
     })
   });
-  
+
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Eleven Labs API error: ${response.status} - ${errorText}`);
+    throw new Error(`Gemini TTS API error: ${response.status} - ${errorText}`);
   }
-  
+
   // Return the audio data
   const audioData = await response.arrayBuffer();
   return audioData;

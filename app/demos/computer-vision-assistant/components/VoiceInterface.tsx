@@ -133,7 +133,7 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
       const data = await response.json();
       setResponse(data.text);
       
-      // Generate speech using Eleven Labs
+      // Generate speech using Gemini TTS
       await generateSpeech(data.text);
     } catch (error) {
       console.error("Error processing voice input:", error);
@@ -143,7 +143,7 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
     }
   };
 
-  // Generate speech using Eleven Labs API
+  // Generate speech using Gemini text-to-speech API
   const generateSpeech = async (text: string) => {
     try {
       const response = await fetch("/api/text-to-speech", {
