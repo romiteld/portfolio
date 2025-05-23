@@ -14,6 +14,44 @@ import UserPreferences, { UserPreferencesData } from './components/UserPreferenc
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
 
+// Minimal markdown to HTML converter for chat messages
+function simpleMarkdownToHtml(text: string): string {
+  const escape = (s: string) =>
+    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const formatInline = (s: string) =>
+    escape(s)
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  const lines = text.split(/\r?\n/);
+  let html = '';
+  let inList = false;
+
+  for (const line of lines) {
+    const listMatch = line.match(/^[-*]\s+(.*)/);
+    if (listMatch) {
+      if (!inList) {
+        html += '<ul>';
+        inList = true;
+      }
+      html += `<li>${formatInline(listMatch[1])}</li>`;
+      continue;
+    }
+    if (inList) {
+      html += '</ul>';
+      inList = false;
+    }
+    if (line.trim() === '') {
+      html += '<br>';
+    } else {
+      html += `<p>${formatInline(line)}</p>`;
+    }
+  }
+
+  if (inList) html += '</ul>';
+  return html;
+}
+
 // Create an inline ClientOnly component to avoid import issues
 function ClientOnly({ children, fallback = null }: { children: ReactNode, fallback?: ReactNode }) {
   const [mounted, setMounted] = useState(false)
@@ -765,8 +803,10 @@ export default function FinancialAssistantPage() {
                             ) : (
                               <>
                                 {/* Enhanced prose settings for markdown, tables, etc. */}
-                                <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:my-2 prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-table:text-xs prose-thead:bg-gray-100 dark:prose-thead:bg-gray-700 prose-td:px-2 prose-td:py-1 prose-th:px-2 prose-th:py-1 chat-message-content">
-                                  {message.content}</div>
+                                <div
+                                  className="prose prose-sm dark:prose-invert max-w-none prose-headings:my-2 prose-p:my-1 prose-ul:my-1 prose-li:my-0.5 prose-table:text-xs prose-thead:bg-gray-100 dark:prose-thead:bg-gray-700 prose-td:px-2 prose-td:py-1 prose-th:px-2 prose-th:py-1 chat-message-content"
+                                  dangerouslySetInnerHTML={{ __html: simpleMarkdownToHtml(message.content) }}
+                                />
                                 <div className="text-xs mt-1 opacity-80">
                                   {formatTime(message.timestamp)}
                                 </div>
