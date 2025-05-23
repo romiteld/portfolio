@@ -9,12 +9,14 @@ This demo showcases an interactive Data Analyst Assistant built with React, Next
 - Multiple chart types: Table, Bar, Line, Pie, Scatter, Correlation Matrix
 - Chart configuration (aggregation, filtering, color by column)
 - Copy data to clipboard
+- Export selected data to CSV
+- Built-in sample dataset for quick demo
 - Responsive design with dark/light mode support
 - Uses Tailwind CSS for styling
 
 ## Usage
 1. Navigate to `/demos/data-analyst-assistant` in the portfolio app.
-2. Upload your data file (CSV, Excel, or JSON).
+2. Upload your data file (CSV, Excel, or JSON) or click **Use Sample Data**.
 3. Explore, visualize, and analyze your data using the provided tools.
 
 ## Technical Details
