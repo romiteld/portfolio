@@ -146,7 +146,7 @@ export default function InteractiveAgentsDemo() {
 
       <p className="text-xs text-neutral-500 dark:text-neutral-400">
         <strong>About this demo:</strong> This uses a Vercel Edge Function to generate
-        CrewAI-style agent responses with OpenAI.
+        OpenAI agent responses.
       </p>
     </div>
   )

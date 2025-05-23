@@ -75,17 +75,17 @@ const demos = [
   },
   {
     slug: "ai-sales-agent",
-    title: "AI Sales Agent (CrewAI-Powered)",
+    title: "AI Sales Agent (OpenAI-Powered)",
     description:
-      "Experience an AI-driven sales conversation powered by CrewAI.",
+      "Experience an AI-driven sales conversation powered by OpenAI agents.",
     gradient: "from-red-500 to-orange-500",
     icon: <MessagesSquareIcon strokeWidth={1.5} className="w-10 h-10" />,
   },
   {
     slug: "interactive-agents",
-    title: "Interactive AI Agents (CrewAI Task Collaboration)",
+    title: "Interactive AI Agents (OpenAI Agent Collaboration)",
     description:
-      "See multiple AI agents collaborate on complex tasks using CrewAI.",
+      "See multiple AI agents collaborate on complex tasks using OpenAI agents.",
     gradient: "from-lime-500 to-green-500",
     icon: <Group strokeWidth={1.5} className="w-10 h-10" />,
   },
