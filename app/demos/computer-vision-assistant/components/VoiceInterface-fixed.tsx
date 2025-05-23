@@ -20,7 +20,7 @@ export default function VoiceInterface() {
   const listeningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const retryCountRef = useRef(0);
 
-  // Main speech function using ElevenLabs for premium voice quality
+  // Main speech function using Gemini text-to-speech for premium voice quality
   const speak = async (text: string) => {
     // Split the text into sentences so we can add pauses
     const sentences = text.split(/(?<=[.!?])\s+/);
@@ -43,9 +43,9 @@ export default function VoiceInterface() {
       // Set a visual indicator that the system is speaking
       document.body.classList.add('ai-is-speaking');
       
-      console.log('Generating ElevenLabs premium voice...');
-      
-      // Call our API endpoint that interfaces with ElevenLabs
+      console.log('Generating Gemini TTS premium voice...');
+
+      // Call our API endpoint that interfaces with Gemini TTS
       const response = await fetch('/api/text-to-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +54,7 @@ export default function VoiceInterface() {
       
       if (!response.ok) {
         const error = await response.text();
-        console.error('ElevenLabs API error:', error);
+        console.error('Gemini TTS API error:', error);
         throw new Error(`Speech generation failed: ${error}`);
       }
       
@@ -109,14 +109,14 @@ export default function VoiceInterface() {
         });
       }
     } catch (error) {
-      console.error('Error with ElevenLabs voice synthesis:', error);
+      console.error('Error with Gemini voice synthesis:', error);
       setIsPremiumVoice(false);
-      // Fall back to browser speech if ElevenLabs fails
+      // Fall back to browser speech if Gemini TTS fails
       fallbackSpeak(text);
     }
   };
   
-  // Fallback to browser speech synthesis if ElevenLabs fails
+  // Fallback to browser speech synthesis if Gemini TTS fails
   const fallbackSpeak = (text: string) => {
     console.log('Falling back to browser speech synthesis');
     
