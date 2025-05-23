@@ -33,13 +33,13 @@ const demos = [
   },
   {
     slug: "ai-sales-agent",
-    title: "AI Sales Agent (CrewAI-Powered)",
-    description: "Experience an AI-driven sales conversation powered by CrewAI.",
+    title: "AI Sales Agent (OpenAI-Powered)",
+    description: "Experience an AI-driven sales conversation powered by OpenAI agents.",
   },
   {
     slug: "interactive-agents",
-    title: "Interactive AI Agents (CrewAI Task Collaboration)",
-    description: "See multiple AI agents collaborate on complex tasks using CrewAI.",
+    title: "Interactive AI Agents (OpenAI Agent Collaboration)",
+    description: "See multiple AI agents collaborate on complex tasks using OpenAI agents.",
   },
   {
     slug: "youtube-summarizer",
