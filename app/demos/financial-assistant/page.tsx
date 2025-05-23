@@ -305,6 +305,7 @@ export default function FinancialAssistantPage() {
   const [selectedNewsItem, setSelectedNewsItem] = useState<NewsItem | null>(null);
   const [newsArticles, setNewsArticles] = useState<NewsItem[]>(sampleNewsData);
   const [isLoadingNews, setIsLoadingNews] = useState<boolean>(false);
+  const [isScrolledUp, setIsScrolledUp] = useState(false);
 
   // Load initial messages and data
   useEffect(() => {
@@ -334,12 +335,12 @@ export default function FinancialAssistantPage() {
   const handleScroll = () => {
     const container = chatContainerRef.current
     if (!container) return
-    
-    // Get the scroll position and check if user has scrolled up
+
     const { scrollTop, scrollHeight, clientHeight } = container
     const isScrolledToBottom = scrollTop + clientHeight >= scrollHeight - 10
-    
-    // Only auto-scroll if user is already at the bottom
+
+    setIsScrolledUp(!isScrolledToBottom)
+
     if (isScrolledToBottom) {
       scrollToBottom()
     }
@@ -444,6 +445,7 @@ export default function FinancialAssistantPage() {
           window.scrollTo(0, pageScrollY);
         }
       }, 100)
+      setIsScrolledUp(false)
     }
   }
   
@@ -756,8 +758,8 @@ export default function FinancialAssistantPage() {
             <div className="flex flex-col lg:flex-row gap-8 min-h-[650px]">
               {/* Chat Interface (widened) */}
               <div className="flex-1 bg-white/95 dark:bg-[#1e293b]/80 rounded-xl overflow-hidden backdrop-blur-lg shadow-xl border border-gray-300 dark:border-gray-800 flex flex-col min-h-0 md:h-[600px] md:max-h-[600px]">
-                <div 
-                  className="flex-1 overflow-y-auto p-6" 
+                <div
+                  className="flex-1 overflow-y-auto p-6 relative"
                   ref={chatContainerRef}
                   onScroll={handleScroll}
                 >
@@ -818,6 +820,31 @@ export default function FinancialAssistantPage() {
                     </div>
                   )}
                   <div ref={messagesEndRef} />
+                  {isScrolledUp && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        scrollToBottom()
+                      }}
+                      className="absolute bottom-4 right-4 z-10 p-2 bg-primary-500 text-white rounded-full shadow-lg hover:bg-primary-600 transition-colors"
+                      aria-label="Scroll to bottom"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <polyline points="19 12 12 19 5 12"></polyline>
+                      </svg>
+                    </button>
+                  )}
                 </div>
                 
                 {/* Input form */}
