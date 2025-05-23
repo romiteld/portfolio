@@ -70,6 +70,15 @@ interface InsightType {
   data?: StatisticsType | MissingValueData[] | CategoryData[] | TimeSeriesData[] | CorrelationData[] | any;
 }
 
+// Small sample dataset so the demo works without uploading a file
+const sampleData: DataItem[] = [
+  { Year: 2019, Sales: 150, Profit: 25 },
+  { Year: 2020, Sales: 200, Profit: 35 },
+  { Year: 2021, Sales: 250, Profit: 50 },
+  { Year: 2022, Sales: 300, Profit: 60 },
+  { Year: 2023, Sales: 350, Profit: 70 }
+];
+
 // ClientOnly wrapper component to prevent SSR issues
 const ClientOnly: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -162,6 +171,28 @@ const DataAnalystAssistant: React.FC = () => {
       console.error("Error processing file:", error);
       setErrorMessage(`Error processing file: ${error instanceof Error ? error.message : String(error)}`);
     }
+  };
+
+  // Load the built-in sample data
+  const loadSampleData = () => {
+    const cols = Object.keys(sampleData[0]);
+    setFileName('sample-data.csv');
+    setData(sampleData);
+    setColumns(cols);
+    setSelectedColumns(cols.slice(0, Math.min(2, cols.length)));
+    setDataPreview(sampleData.slice(0, 5));
+    setChartConfiguration({
+      ...chartConfiguration,
+      xAxis: cols[0],
+      yAxis: cols[1],
+      color: cols[2] || ''
+    });
+    setInsights([]);
+    setStatistics({});
+    setCorrelationMatrix([]);
+    setSelectedInsight(null);
+
+    analyzeData(sampleData, cols);
   };
   
   // Read file content based on its type
@@ -1202,8 +1233,8 @@ const DataAnalystAssistant: React.FC = () => {
                   onChange={handleFileUpload}
                   data-component-name="DataAnalystAssistant"
                 />
-                <label 
-                  htmlFor="fileInput" 
+                <label
+                  htmlFor="fileInput"
                   className="cursor-pointer"
                   data-component-name="DataAnalystAssistant"
                 >
@@ -1211,6 +1242,14 @@ const DataAnalystAssistant: React.FC = () => {
                   <p className="mb-2 text-lg font-medium text-indigo-700 dark:text-indigo-300">Click to upload or drag and drop</p>
                   <p className="text-sm text-indigo-500 dark:text-indigo-400">CSV, Excel, or JSON files</p>
                 </label>
+              </div>
+              <div className="mt-4 text-center">
+                <button
+                  className="px-4 py-2 bg-green-600 text-white rounded-md"
+                  onClick={loadSampleData}
+                >
+                  Use Sample Data
+                </button>
               </div>
               
               {fileName && (
@@ -1322,25 +1361,53 @@ const DataAnalystAssistant: React.FC = () => {
                       )}
                     </button>
                     
-                    <button 
+                    <button
                       className="px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm flex items-center"
                       onClick={() => {
                         // Copy selected data to clipboard
                         if (data) {
                           const textData = data
-                            .map(row => 
+                            .map(row =>
                               selectedColumns
                                 .map(col => row[col])
                                 .join(',')
                             )
                             .join('\n');
-                          
+
                           navigator.clipboard.writeText(textData);
                         }
                       }}
                     >
                       <Clipboard className="w-4 h-4 mr-1" />
                       Copy Selected
+                    </button>
+                    <button
+                      className="ml-2 px-3 py-1 bg-gray-200 dark:bg-gray-700 rounded-md text-sm flex items-center"
+                      onClick={() => {
+                        if (data) {
+                          const rows = [selectedColumns.join(',')];
+                          data.forEach(row => {
+                            rows.push(
+                              selectedColumns
+                                .map(col => {
+                                  const val = row[col];
+                                  return val !== undefined && val !== null ? `"${String(val)}"` : '';
+                                })
+                                .join(',')
+                            );
+                          });
+                          const csvContent = rows.join('\n');
+                          const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                          const url = URL.createObjectURL(blob);
+                          const link = document.createElement('a');
+                          link.setAttribute('href', url);
+                          link.setAttribute('download', `${fileName.split('.')[0] || 'data'}.csv`);
+                          link.click();
+                        }
+                      }}
+                    >
+                      <Save className="w-4 h-4 mr-1" />
+                      Export CSV
                     </button>
                   </div>
                 </div>
