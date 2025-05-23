@@ -1279,14 +1279,14 @@ const formatMetricName = (name: string) => {
                          aria-labelledby="assistantTab"
                          className="h-full"
                      >
-                         <ChatBox 
-                            messages={chatMessages} 
-                            onSendMessage={handleSendMessage} 
+                         <ChatBox
+                            messages={chatMessages}
+                            onSendMessage={handleSendMessage}
                             inputRef={chatInputRef}
-                            isLoading={thinking} 
-                            className="flex flex-col h-full" 
-                            maxHeight="none" 
-                            title="" 
+                            isLoading={thinking}
+                            className="flex flex-col h-full"
+                            maxHeight="60vh"
+                            title=""
                          />
                     </div>
                 ) : (
@@ -1332,7 +1332,7 @@ const formatMetricName = (name: string) => {
         <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100" ref={mainContainerRef} data-component-name="ChessAIDemo">
             {/* Preload client-side neural network model */}
             <ClientSideAI />
-            <div className="max-w-8xl mx-auto">
+            <div className="max-w-screen-xl mx-auto px-4">
                 {/* Header Section */}
                 <div className="flex flex-col items-center text-center mb-8">
                     <h1 className="text-3xl md:text-4xl font-bold flex items-center gap-3">

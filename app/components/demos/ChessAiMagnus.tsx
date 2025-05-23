@@ -357,7 +357,7 @@ export default function ChessAiMagnus() {
           </div>
         </div>
       
-        <div className="aspect-square border-4 border-amber-900 rounded-md shadow-lg overflow-hidden relative">
+        <div className="aspect-square border-4 border-amber-900 rounded-md shadow-lg overflow-hidden relative max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto">
           <div className="grid grid-cols-8 grid-rows-8 h-full w-full">
             {boardCoordinates.map((row, rowIndex) =>
               row.map(({ file, rank }, colIndex) => {
