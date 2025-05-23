@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Bot, User, ArrowRight } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -14,10 +14,27 @@ export default function InteractiveAgentsDemo() {
   const [goal, setGoal] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
   const [running, setRunning] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
+
+  // Sample goal suggestions
+  const suggestions = [
+    'Build a personal website',
+    'Plan a marketing campaign',
+    'Write a short story',
+  ]
+
+  const timeouts = useRef<NodeJS.Timeout[]>([])
+
+  useEffect(() => {
+    return () => {
+      timeouts.current.forEach(clearTimeout)
+    }
+  }, [])
 
   const startSimulation = () => {
     if (!goal.trim()) return
     setRunning(true)
+    setCurrentStep(0)
     setMessages([{ sender: 'user', name: 'You', text: goal }])
 
     const steps = [
@@ -27,10 +44,12 @@ export default function InteractiveAgentsDemo() {
     ]
 
     steps.forEach((step, idx) => {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setMessages((prev) => [...prev, { sender: 'agent', ...step }])
+        setCurrentStep(idx + 1)
         if (idx === steps.length - 1) setRunning(false)
       }, 1000 * (idx + 1))
+      timeouts.current.push(timer)
     })
   }
 
@@ -38,6 +57,9 @@ export default function InteractiveAgentsDemo() {
     setGoal('')
     setMessages([])
     setRunning(false)
+    setCurrentStep(0)
+    timeouts.current.forEach(clearTimeout)
+    timeouts.current = []
   }
 
   return (
@@ -58,6 +80,33 @@ export default function InteractiveAgentsDemo() {
           Start <ArrowRight size={16} />
         </button>
       </div>
+
+      {/* Quick goal suggestions */}
+      <div className="flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            onClick={() => setGoal(s)}
+            className="text-xs bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 dark:hover:bg-neutral-600 px-3 py-1 rounded-full"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+
+      {running && (
+        <div>
+          <div className="h-2 bg-neutral-200 dark:bg-neutral-700 rounded">
+            <div
+              className="h-2 bg-primary-500 rounded transition-all"
+              style={{ width: `${(currentStep / 3) * 100}%` }}
+            />
+          </div>
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 text-right">
+            Step {currentStep} / 3
+          </p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {messages.map((msg, idx) => (
