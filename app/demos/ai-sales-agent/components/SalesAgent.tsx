@@ -21,6 +21,9 @@ export default function SalesAgent() {
   const { messages, setMessages, clearMessages } = useChatHistory([initialMessage])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [company, setCompany] = useState('')
+  const [loadingInfo, setLoadingInfo] = useState(false)
+  const [infoMessage, setInfoMessage] = useState('')
   const replyIndex = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
 
@@ -60,8 +63,51 @@ export default function SalesAgent() {
     }
   }
 
+  const fetchCompanyInfo = async () => {
+    if (!company.trim()) return
+    setLoadingInfo(true)
+    setInfoMessage('')
+    try {
+      const res = await fetch('/api/sales-agent/company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company: company.trim() }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setInfoMessage(`Loaded info for ${company.trim()} (${data.articlesCount} articles)`) 
+      } else {
+        setInfoMessage(data.error || 'Failed to fetch info')
+      }
+    } catch (err) {
+      console.error(err)
+      setInfoMessage('Error fetching info')
+    } finally {
+      setLoadingInfo(false)
+    }
+  }
+
   return (
     <div className="max-w-md mx-auto bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+      <div className="mb-4 space-y-2">
+        <div className="flex">
+          <input
+            type="text"
+            className="flex-grow border border-gray-300 dark:border-gray-600 rounded-l-md px-3 py-2 focus:outline-none"
+            value={company}
+            onChange={e => setCompany(e.target.value)}
+            placeholder="Enter company name"
+          />
+          <button
+            onClick={fetchCompanyInfo}
+            disabled={loadingInfo}
+            className="px-4 py-2 bg-green-600 text-white rounded-r-md hover:bg-green-700 transition-colors disabled:opacity-50"
+          >
+            {loadingInfo ? 'Loading...' : 'Fetch Info'}
+          </button>
+        </div>
+        {infoMessage && <p className="text-xs text-gray-600 dark:text-gray-300">{infoMessage}</p>}
+      </div>
       <div className="flex justify-end mb-2">
         <button
           onClick={clearMessages}
