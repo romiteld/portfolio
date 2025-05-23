@@ -7,6 +7,8 @@ export default function YouTubeSummarizerPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [summary, setSummary] = useState("");
+  const [insights, setInsights] = useState<string[]>([]);
+  const [info, setInfo] = useState<any>(null);
   const [error, setError] = useState("");
 
   const handleSummarize = async () => {
@@ -14,6 +16,8 @@ export default function YouTubeSummarizerPage() {
     setLoading(true);
     setError("");
     setSummary("");
+    setInsights([]);
+    setInfo(null);
     try {
       const res = await fetch("/api/youtube/summary", {
         method: "POST",
@@ -23,6 +27,8 @@ export default function YouTubeSummarizerPage() {
       const data = await res.json();
       if (res.ok) {
         setSummary(data.summary);
+        setInsights(data.insights || []);
+        setInfo(data.info || null);
       } else {
         setError(data.error || "Failed to summarize video");
       }
@@ -52,10 +58,40 @@ export default function YouTubeSummarizerPage() {
         {loading ? <LoadingSpinner size="small" /> : "Summarize"}
       </button>
       {error && <p className="text-red-500 mt-4">{error}</p>}
+      {info && (
+        <div className="flex items-start mt-6">
+          {info.thumbnail_url && (
+            <img
+              src={info.thumbnail_url}
+              alt={info.title}
+              className="w-40 h-24 object-cover mr-4 rounded"
+            />
+          )}
+          <div>
+            <h2 className="text-lg font-semibold">{info.title}</h2>
+            {info.author_name && (
+              <p className="text-sm text-gray-500">by {info.author_name}</p>
+            )}
+          </div>
+        </div>
+      )}
       {summary && (
-        <pre className="whitespace-pre-wrap mt-4 bg-gray-100 dark:bg-gray-800 p-4 rounded">
-          {summary}
-        </pre>
+        <div className="mt-4 bg-gray-100 dark:bg-gray-800 p-4 rounded">
+          <p className="whitespace-pre-wrap">{summary}</p>
+          {insights.length > 0 && (
+            <ul className="list-disc list-inside mt-4">
+              {insights.map((insight, idx) => (
+                <li key={idx}>{insight}</li>
+              ))}
+            </ul>
+          )}
+          <button
+            className="mt-2 text-sm text-blue-600 hover:underline"
+            onClick={() => navigator.clipboard.writeText(summary)}
+          >
+            Copy Summary
+          </button>
+        </div>
       )}
     </div>
   );

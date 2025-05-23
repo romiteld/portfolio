@@ -92,7 +92,7 @@ const demos = [
   {
     slug: "youtube-summarizer",
     title: "YouTube Summarizer & Insights",
-    description: "Get quick summaries and key insights from YouTube videos.",
+    description: "Get quick summaries, bullet-point insights, and video details from YouTube links.",
     gradient: "from-sky-500 to-blue-500",
     icon: <Clapperboard strokeWidth={1.5} className="w-10 h-10" />,
   },

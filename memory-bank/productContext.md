@@ -67,7 +67,7 @@ The portfolio includes several interactive AI demos showcasing technical capabil
    - AI Sales Agent: Intelligent conversational sales assistant
 
 2. Language & Knowledge:
-   - YouTube Summarizer: AI-powered video content summarization
+  - YouTube Summarizer: AI-powered video content summarization with thumbnail, title, and bullet-point insights
    - Enhanced RAG with LangChain: Advanced document retrieval and QA
    - Knowledge Graph: Interactive knowledge visualization
    - Generative AI: Creative content generation demos
