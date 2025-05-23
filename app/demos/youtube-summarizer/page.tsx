@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import DemoNavigation from "@/app/components/DemoNavigation";
 
 export default function YouTubeSummarizerPage() {
   const [videoUrl, setVideoUrl] = useState("");
@@ -57,6 +58,7 @@ export default function YouTubeSummarizerPage() {
           {summary}
         </pre>
       )}
+      <DemoNavigation />
     </div>
   );
 }

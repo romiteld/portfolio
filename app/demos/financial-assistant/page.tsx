@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import UserPreferences, { UserPreferencesData } from './components/UserPreferences';
 import { Dialog, Transition } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import DemoNavigation from '@/app/components/DemoNavigation'
 
 // Minimal markdown to HTML converter for chat messages
 function simpleMarkdownToHtml(text: string): string {
@@ -1366,6 +1367,7 @@ export default function FinancialAssistantPage() {
           </div>
         </Dialog>
       </Transition>
+      <DemoNavigation />
     </>
   );
-} 
+}
