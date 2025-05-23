@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import ClientSideAI, { useAIModelStatus } from '@/app/chess/components/ClientSideAI';
+import DemoNavigation from '@/app/components/DemoNavigation';
 import {
     Cpu, Brain, Code, ChevronRight, Star, Trophy, Zap,
     Github, Info, RotateCcw, Undo, AlertCircle, Layers,
@@ -1329,6 +1330,7 @@ const formatMetricName = (name: string) => {
     );
 
     return (
+        <>
         <main className="min-h-screen p-2 sm:p-4 md:p-6 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100" ref={mainContainerRef} data-component-name="ChessAIDemo">
             {/* Preload client-side neural network model */}
             <ClientSideAI />
@@ -1380,6 +1382,8 @@ const formatMetricName = (name: string) => {
                 </div>
             </div>
         </main>
+        <DemoNavigation />
+        </>
     );
 }
 

@@ -4,6 +4,7 @@ import React from 'react';
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import Head from 'next/head';
+import DemoNavigation from '@/app/components/DemoNavigation';
 
 // Import ClientOnly to prevent SSR issues
 import ClientOnly from '@/app/components/ClientOnly';
@@ -22,6 +23,7 @@ export default function DataAnalystAssistantPage() {
       <ClientOnly>
         <DataAnalystAssistant />
       </ClientOnly>
+      <DemoNavigation />
     </div>
   );
 }

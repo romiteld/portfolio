@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import ClientOnly from '@/app/components/ClientOnly'
+import DemoNavigation from '@/app/components/DemoNavigation'
 
 const SalesAgent = dynamic(() => import('./components/SalesAgent'), { ssr: false })
 
@@ -11,6 +12,7 @@ export default function AiSalesAgentPage() {
       <ClientOnly>
         <SalesAgent />
       </ClientOnly>
+      <DemoNavigation />
     </div>
   )
 }

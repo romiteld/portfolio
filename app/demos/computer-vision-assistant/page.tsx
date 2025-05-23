@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import type { CameraCaptureHandle, AnalysisResult } from "./components/CameraCapture";
 import dynamic from "next/dynamic";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import DemoNavigation from "@/app/components/DemoNavigation";
 import "./computerVision.css";
 
 // Define message interface
@@ -142,6 +143,7 @@ export default function ComputerVisionAssistant() {
           </div>
         )}
       </main>
+      <DemoNavigation />
     </div>
   );
 }

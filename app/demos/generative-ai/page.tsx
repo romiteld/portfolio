@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import ClientOnly from '@/app/components/ClientOnly'
+import DemoNavigation from '@/app/components/DemoNavigation'
 
 export default function GenerativeAIDemo() {
   const [prompt, setPrompt] = useState('')
@@ -115,6 +116,7 @@ export default function GenerativeAIDemo() {
           </ClientOnly>
         </div>
       )}
+      <DemoNavigation />
     </div>
   )
 }
