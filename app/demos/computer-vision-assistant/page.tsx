@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import type { CameraCaptureHandle, AnalysisResult } from "./components/CameraCapture";
 import dynamic from "next/dynamic";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import "./computerVision.css";
@@ -13,20 +14,16 @@ interface Message {
 }
 
 // Dynamically import components to avoid SSR issues
-const VideoComponent = dynamic(
-  () => import("./components/VideoComponent"),
-  { 
-    ssr: false, 
-    loading: () => <VideoLoadingPlaceholder /> 
+const CameraCapture = dynamic(
+  () => import("./components/CameraCapture"),
+  {
+    ssr: false,
+    loading: () => <VideoLoadingPlaceholder />
   }
 );
 
-// Copy the VoiceInterface-fixed to VoiceInterface
 const VoiceInterface = dynamic(
-  () => import("./components/VoiceInterface-fixed").then(mod => {
-    // Return the default export
-    return mod.default;
-  }),
+  () => import("./components/VoiceInterface"),
   {
     ssr: false,
     loading: () => <div className="h-64 bg-gray-800 rounded-lg animate-pulse"></div>
@@ -54,13 +51,9 @@ const ClientOnly = ({ children }: { children: React.ReactNode }) => {
 };
 
 export default function ComputerVisionAssistant() {
-  const [isClient, setIsClient] = useState(false);
   const [permissionsGranted, setPermissionsGranted] = useState(false);
-
-  // Initialize on client-side only
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const cameraRef = useRef<CameraCaptureHandle | null>(null);
 
   // Request permissions for camera and microphone
   const requestPermissions = async () => {
@@ -69,6 +62,37 @@ export default function ComputerVisionAssistant() {
       setPermissionsGranted(true);
     } catch (error) {
       console.error("Error requesting permissions:", error);
+    }
+  };
+
+  const handleImageAnalysisRequest = async (query: string) => {
+    if (!cameraRef.current) return;
+    const result = await cameraRef.current.analyzeNow();
+    if (result) {
+      setAnalysisResult(result);
+      try {
+        const res = await fetch('/api/voice-assistant', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, imageAnalysisResult: result })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const ttsRes = await fetch('/api/text-to-speech', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: data.text })
+          });
+          if (ttsRes.ok) {
+            const audioBlob = await ttsRes.blob();
+            const url = URL.createObjectURL(audioBlob);
+            const audio = new Audio(url);
+            audio.play();
+          }
+        }
+      } catch (err) {
+        console.error('Error generating voice response', err);
+      }
     }
   };
 
@@ -101,7 +125,7 @@ export default function ComputerVisionAssistant() {
               <h2 className="text-lg font-medium mb-3">Camera View</h2>
               <div className="flex-1 bg-gray-800 rounded-lg overflow-hidden">
                 <ClientOnly>
-                  <VideoComponent />
+                  <CameraCapture ref={cameraRef} onAnalysisComplete={setAnalysisResult} />
                 </ClientOnly>
               </div>
             </div>
@@ -111,7 +135,7 @@ export default function ComputerVisionAssistant() {
               <h2 className="text-lg font-medium mb-3">Voice Assistant</h2>
               <div className="flex-1 bg-gray-800 rounded-lg p-4">
                 <ClientOnly>
-                  <VoiceInterface />
+                  <VoiceInterface onImageAnalysisRequest={handleImageAnalysisRequest} imageAnalysisResult={analysisResult} />
                 </ClientOnly>
               </div>
             </div>
