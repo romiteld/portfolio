@@ -927,8 +927,8 @@ export default function FinancialAssistantPage() {
                 </div>
                  
                 {/* Sidebar Data Table - Make this div scrollable */}
-                <div className="flex-1 overflow-y-auto">
-                   <table className="w-full text-xs text-left table-fixed">
+                <div className="market-data-container flex-1 overflow-y-auto">
+                   <table className="market-data-table w-full text-xs text-left table-fixed">
                      <thead className="sticky top-0 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 z-10">
                         <tr>
                            {/* Symbol/Name Column */}
