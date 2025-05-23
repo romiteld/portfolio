@@ -44,7 +44,7 @@ const demos = [
   {
     slug: "youtube-summarizer",
     title: "YouTube Summarizer & Insights",
-    description: "Get quick summaries and key insights from YouTube videos.",
+    description: "Get quick summaries, bullet-point insights, and video details from YouTube links.",
   },
   {
     slug: "data-analyst-assistant",
