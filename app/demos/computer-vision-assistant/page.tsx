@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import "./computerVision.css";
 
 // Define message interface
 interface Message {
