@@ -1116,12 +1116,12 @@ const DataAnalystAssistant: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-blue-950 text-black dark:text-white data-analyst-container" data-component-name="DataAnalystAssistant">
       {/* Header */}
       <header className="bg-gradient-to-r from-indigo-600 to-blue-500 shadow-lg p-4 text-white">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
           <div className="flex items-center space-x-2">
             <BarChart3 className="h-6 w-6" />
             <h1 className="text-xl font-bold">Data Analyst Assistant</h1>
           </div>
-          <div className="text-sm opacity-80">
+          <div className="text-sm opacity-80 sm:mt-0 mt-2 text-center sm:text-right">
             {fileName ? `Working with: ${fileName}` : 'No file loaded'}
           </div>
         </div>
@@ -1131,7 +1131,7 @@ const DataAnalystAssistant: React.FC = () => {
       <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
         {/* Tabs Navigation */}
         <div className="mb-6">
-          <div className="flex flex-wrap gap-2 border-b dark:border-gray-700 pb-2">
+          <div className="flex flex-wrap gap-2 border-b dark:border-gray-700 pb-2 overflow-x-auto whitespace-nowrap">
             <button
               className={`px-4 py-2 rounded-t-lg font-medium transition-all duration-200 ${
                 activeTab === 'upload'
@@ -1422,7 +1422,7 @@ const DataAnalystAssistant: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold mb-4">Visualize Your Data</h2>
               
-              <div className="mb-6 grid grid-cols-1 md:grid-cols-6 gap-2">
+              <div className="mb-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
                 <button 
                   className={`p-2 rounded-md flex flex-col items-center ${selectedChart === 'table' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300' : 'bg-gray-100 dark:bg-gray-700'}`}
                   onClick={() => handleChartTypeSelect('table')}
