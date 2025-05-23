@@ -5,12 +5,14 @@ import { useState } from "react";
 export default function EnhancedRAGDemo() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
+  const [sources, setSources] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(false);
 
   const askQuestion = async () => {
     if (!question.trim()) return;
     setLoading(true);
     setAnswer(null);
+    setSources(null);
 
     try {
       const res = await fetch("/api/enhanced-rag-langchain/query", {
@@ -22,6 +24,7 @@ export default function EnhancedRAGDemo() {
       if (res.ok) {
         const data = await res.json();
         setAnswer(data.answer || "No answer generated.");
+        setSources(Array.isArray(data.sources) ? data.sources : null);
       } else {
         setAnswer("Error retrieving answer.");
       }
@@ -57,8 +60,18 @@ export default function EnhancedRAGDemo() {
         </button>
       </div>
       {answer && (
-        <div className="border rounded p-4 bg-neutral-50 dark:bg-neutral-800">
-          {answer}
+        <div className="border rounded p-4 bg-neutral-50 dark:bg-neutral-800 space-y-2">
+          <p>{answer}</p>
+          {sources && (
+            <div>
+              <p className="font-semibold">Retrieved Context:</p>
+              <ul className="list-disc list-inside text-sm space-y-1">
+                {sources.map((src, idx) => (
+                  <li key={idx}>{src}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>

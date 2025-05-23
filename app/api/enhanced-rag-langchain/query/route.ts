@@ -29,9 +29,13 @@ export async function POST(req: NextRequest) {
     });
 
     const chain = RetrievalQAChain.fromLLM(model, retriever);
+    const relevantDocs = await retriever.getRelevantDocuments(question);
     const response = await chain.call({ query: question });
 
-    return NextResponse.json({ answer: response.text });
+    return NextResponse.json({
+      answer: response.text,
+      sources: relevantDocs.map((d) => d.pageContent),
+    });
   } catch (err) {
     console.error('RAG demo error:', err);
     return NextResponse.json({ error: 'Failed to generate answer' }, { status: 500 });
