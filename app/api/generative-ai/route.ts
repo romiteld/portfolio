@@ -56,13 +56,19 @@ export async function POST(req: NextRequest) {
     const image = await openai.images.generate({
       model: 'dall-e-3',
       prompt: imagePrompt,
-      n: 1,
       size: imgSize
     })
 
     const imageUrl = image.data[0]?.url
     return NextResponse.json({ imageUrl })
   } catch (error) {
+    if (error instanceof OpenAI.APIError) {
+      console.error('OpenAI API error:', error)
+      return NextResponse.json(
+        { error: error.message || 'OpenAI API error', type: error.type },
+        { status: error.status || 500 }
+      )
+    }
     console.error('Error generating content:', error)
     return NextResponse.json(
       { error: 'Failed to generate content' },
