@@ -15,7 +15,8 @@
     "convert-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-webp.ts",
     "enhance-photos": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/enhance-photos.ts",
     "convert-to-jpeg": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/convert-to-jpeg.ts",
-    "schedule-updates": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/schedule-updates.ts"
+    "schedule-updates": "cross-env NODE_ENV=development ts-node -P tsconfig.json scripts/schedule-updates.ts",
+    "test:cv": "cross-env NODE_ENV=development ts-node -P tsconfig.json app/demos/computer-vision-assistant/test-cv-demo.ts"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "latest",
@@ -68,6 +69,7 @@
     "@upstash/ratelimit": "^2.0.5",
     "@vercel/analytics": "^1.5.0",
     "@vercel/kv": "^3.0.0",
+    "ai": "^3.4.33",
     "autoprefixer": "^10.4.18",
     "axios": "^1.9.0",
     "chart.js": "^4.4.9",
@@ -78,6 +80,7 @@
     "critters": "0.0.25",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "8.5.1",
+    "exceljs": "^4.4.0",
     "framer-motion": "^11.0.14",
     "gsap": "^3.12.5",
     "i": "^0.3.7",
@@ -101,7 +104,6 @@
     "react-hook-form": "^7.51.0",
     "react-intersection-observer": "^9.15.1",
     "react-markdown": "^10.1.0",
-    "react-quill": "^0.0.2",
     "react-resizable-panels": "^2.1.7",
     "recharts": "^2.15.0",
     "sonner": "^1.7.1",
@@ -112,7 +114,6 @@
     "vaul": "^0.9.6",
     "wavefile": "^11.0.0",
     "ws": "latest",
-    "xlsx": "^0.18.5",
     "yahoo-finance2": "^2.13.3",
     "zod": "^3.22.4"
   },

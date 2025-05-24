@@ -100440,3 +100440,6 @@ Error generating content: SyntaxError: Unexpected token 'i', "invalid json {" is
  POST /api/generative-ai 200 in 83ms
  ✓ Compiled /api/interactive-agents in 375ms (878 modules)
  POST /api/interactive-agents 200 in 13090ms
+ ✓ Compiled in 311ms (574 modules)
+ ✓ Compiled in 245ms (574 modules)
+ ✓ Compiled in 350ms (574 modules)
