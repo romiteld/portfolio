@@ -38,11 +38,31 @@ export async function POST(req: NextRequest) {
         }))
       : []
 
-    if (articles.length > 0) {
-      await storeCompanyInfo(company, articles)
+    let logo: string | null = null
+    if (Array.isArray(data.results) && data.results.length > 0) {
+      const firstUrl = data.results[0].url
+      try {
+        const domain = new URL(firstUrl).hostname
+        logo = `https://logo.clearbit.com/${domain}`
+      } catch {
+        // ignore URL parsing errors
+      }
     }
 
-    return NextResponse.json({ success: true, articlesCount: articles.length })
+    if (!logo) {
+      const fallbackDomain = `${company.toLowerCase().replace(/\s+/g, '')}.com`
+      logo = `https://logo.clearbit.com/${fallbackDomain}`
+    }
+
+    if (articles.length > 0) {
+      try {
+        await storeCompanyInfo(company, articles)
+      } catch (storeError) {
+        console.error('Error storing company info:', storeError)
+      }
+    }
+
+    return NextResponse.json({ success: true, articlesCount: articles.length, logo })
   } catch (error) {
     console.error('Error fetching company info:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
