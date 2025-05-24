@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import {
   Select,
@@ -115,9 +116,11 @@ export default function YouTubeSummarizerPage() {
         <div className="mt-6 flex flex-col items-start gap-4">
           <div className="flex items-start">
             {info.thumbnail_url && (
-              <img
+              <Image
                 src={info.thumbnail_url}
                 alt={info.title}
+                width={160}
+                height={96}
                 className="w-40 h-24 object-cover mr-4 rounded"
               />
             )}

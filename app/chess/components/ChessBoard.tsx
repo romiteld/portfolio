@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { ArrowLeftCircle } from 'lucide-react'
 
@@ -193,10 +194,12 @@ const ChessBoard = ({
                 }}
                 transition={{ duration: 0.2 }}
               >
-                <img 
-                  src={`/images/chess/${pieceImageName}.svg`} 
-                  alt={`${piece.color === 'w' ? 'White' : 'Black'} ${pieceTypeToName(piece.type)}`} 
-                  className="w-full h-full select-none object-contain transition-transform" 
+                <Image
+                  src={`/images/chess/${pieceImageName}.svg`}
+                  alt={`${piece.color === 'w' ? 'White' : 'Black'} ${pieceTypeToName(piece.type)}`}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 85vw"
+                  className="select-none object-contain transition-transform"
                   draggable={false}
                 />
                 {/* Subtle reflection effect */}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { useSpring, animated } from "@react-spring/web"
 import type { SpringValue } from "@react-spring/web"
 
@@ -46,12 +47,14 @@ export default function WoodworkingSlider({ images }: WoodworkingSliderProps) {
           opacity: props.opacity.to((o) => o),
           transform: props.transform.to((t) => t),
         }}
-        className="w-full h-full"
+        className="relative w-full h-full"
       >
-        <img
+        <Image
           src={images[index].src || "/placeholder.svg"}
           alt={images[index].alt}
-          className="object-cover w-full h-full rounded-lg shadow-md"
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover rounded-lg shadow-md"
         />
       </animated.div>
 
