@@ -24,13 +24,6 @@ import {
 } from '@/components/ui/card'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
-
-const agentReplies = [
-  "Hi there! I'm here to help you find the best solution for your business.",
-  'Our product scales with your needs. What goals are you hoping to achieve?',
-  "Great! I'll prepare a proposal and send it to your email shortly."
-]
-
 const initialMessage: ChatMessage = {
   id: 0,
   role: 'agent',
@@ -38,11 +31,11 @@ const initialMessage: ChatMessage = {
 }
 
 const companySuggestions = [
-  { name: 'OpenAI', logo: '/placeholder-logo.png' },
-  { name: 'Google', logo: '/placeholder-logo.png' },
-  { name: 'Microsoft', logo: '/placeholder-logo.png' },
-  { name: 'Amazon', logo: '/placeholder-logo.png' },
-  { name: 'Meta', logo: '/placeholder-logo.png' },
+  { name: 'OpenAI', logo: 'https://logo.clearbit.com/openai.com' },
+  { name: 'Google', logo: 'https://logo.clearbit.com/google.com' },
+  { name: 'Microsoft', logo: 'https://logo.clearbit.com/microsoft.com' },
+  { name: 'Amazon', logo: 'https://logo.clearbit.com/amazon.com' },
+  { name: 'Meta', logo: 'https://logo.clearbit.com/meta.com' },
 ]
 
 const RECENT_KEY = 'salesAgentRecentCompanies'
@@ -65,9 +58,8 @@ export default function SalesAgent() {
   })
   const [showUndo, setShowUndo] = useState(false)
   const [lastMessages, setLastMessages] = useState<ChatMessage[]>([])
-  const [companyInfo, setCompanyInfo] = useState<{name:string;articles:number}|null>(null)
+  const [companyInfo, setCompanyInfo] = useState<{name:string;articles:number;logo?:string}|null>(null)
   const [suggestions, setSuggestions] = useState<typeof companySuggestions>([])
-  const replyIndex = useRef(0)
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -85,7 +77,7 @@ export default function SalesAgent() {
     setSuggestions(filtered)
   }, [company])
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim()) return
 
     const userMsg: ChatMessage = {
@@ -96,18 +88,31 @@ export default function SalesAgent() {
     setMessages(prev => [...prev, userMsg])
     setInput('')
 
-    const reply = agentReplies[replyIndex.current % agentReplies.length]
-    replyIndex.current += 1
     setIsTyping(true)
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/sales-agent/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMsg.text, company: companyInfo?.name })
+      })
+      const data = await res.json()
       const agentMsg: ChatMessage = {
         id: Date.now() + 1,
         role: 'agent',
-        text: reply
+        text: data.reply || 'Sorry, something went wrong.'
       }
       setMessages(prev => [...prev, agentMsg])
+    } catch (err) {
+      console.error(err)
+      const agentMsg: ChatMessage = {
+        id: Date.now() + 1,
+        role: 'agent',
+        text: 'Error generating response.'
+      }
+      setMessages(prev => [...prev, agentMsg])
+    } finally {
       setIsTyping(false)
-    }, 500)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -130,7 +135,7 @@ export default function SalesAgent() {
       const data = await res.json()
       if (res.ok) {
         setInfoMessage(`Loaded info for ${company.trim()} (${data.articlesCount} articles)`)
-        setCompanyInfo({ name: company.trim(), articles: data.articlesCount })
+        setCompanyInfo({ name: company.trim(), articles: data.articlesCount, logo: data.logo || undefined })
         const updated = [company.trim(), ...recentSearches.filter(c => c !== company.trim())].slice(0,5)
         setRecentSearches(updated)
         localStorage.setItem(RECENT_KEY, JSON.stringify(updated))
@@ -203,7 +208,7 @@ export default function SalesAgent() {
           <Card className="mt-2 text-sm">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <img src="/placeholder-logo.png" alt="logo" className="w-6 h-6" />
+                <img src={companyInfo.logo || '/placeholder-logo.png'} alt="logo" className="w-6 h-6" />
                 <span>{companyInfo.name}</span>
               </CardTitle>
             </CardHeader>
