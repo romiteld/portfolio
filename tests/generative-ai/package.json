@@ -1,0 +1,23 @@
+{
+  "name": "generative-ai-tests",
+  "version": "1.0.0",
+  "description": "Test suite for the Generative AI demo",
+  "scripts": {
+    "test": "npx tsx run-all-tests.ts",
+    "test:text": "npx tsx test-text-generation.ts",
+    "test:image": "npx tsx test-image-generation.ts",
+    "test:errors": "npx tsx test-error-handling.ts",
+    "test:performance": "npx tsx test-performance.ts",
+    "test:ui": "npx tsx test-ui-integration.ts",
+    "test:quick": "npx tsx test-text-generation.ts && npx tsx test-error-handling.ts",
+    "test:watch": "nodemon --watch '*.ts' --exec 'npm run test:quick'"
+  },
+  "keywords": ["testing", "generative-ai", "openai"],
+  "author": "Portfolio Project",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "nodemon": "^3.0.0"
+  }
+}
