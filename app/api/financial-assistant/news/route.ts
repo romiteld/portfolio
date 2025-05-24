@@ -59,7 +59,7 @@ export async function GET() {
           }
           
           // Extract article headline patterns from the markdown
-          let scrapedArticles = extractArticlesFromMarkdown(data.markdown, newsSource.name);
+          const scrapedArticles = extractArticlesFromMarkdown(data.markdown, newsSource.name);
           
           if (scrapedArticles.length > 0) {
             console.log(`Retrieved ${scrapedArticles.length} articles from ${newsSource.name}`);
@@ -165,7 +165,7 @@ function extractArticlesFromMarkdown(markdown: string, sourceName: string): any[
     const endIndex = nextHeadline !== -1 ? nextHeadline : markdown.length;
     
     // Extract content between this headline and the next
-    let content = markdown.substring(startIndex, endIndex).trim();
+    const content = markdown.substring(startIndex, endIndex).trim();
     
     // First paragraph is summary, rest is full content
     const paragraphs = content.split('\n\n');

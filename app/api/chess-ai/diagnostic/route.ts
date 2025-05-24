@@ -42,7 +42,7 @@ export async function GET() {
 
     // Check if chess-models bucket exists
     let modelFiles: any[] = []
-    let fileUrls: any[] = []
+    const fileUrls: any[] = []
     
     if (buckets?.some(bucket => bucket.name === 'chess-models')) {
       // Get files in the bucket

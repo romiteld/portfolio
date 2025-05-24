@@ -524,7 +524,7 @@ export const moveToAlgebraic = (
   if (!piece) return "";
   const from = algebraicNotation(move.from);
   const to = algebraicNotation(move.to);
-  let notation = `${piece.type.toUpperCase()}${from}-${to}`;
+  const notation = `${piece.type.toUpperCase()}${from}-${to}`;
   // This is a very simplified placeholder. Real algebraic notation is much more complex.
   // It needs to handle captures, checks, checkmates, pawn moves, castling, promotions, disambiguation etc.
   return notation;
