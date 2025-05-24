@@ -30,7 +30,7 @@ async function fetchTranscript(videoId: string): Promise<string> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { videoUrl } = await req.json()
+    const { videoUrl, length = 'standard', style = 'paragraph' } = await req.json()
     if (!videoUrl) {
       return NextResponse.json({ error: 'videoUrl is required' }, { status: 400 })
     }
@@ -46,6 +46,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Transcript not found' }, { status: 404 })
     }
 
+    const sentenceMap: Record<string, string> = {
+      quick: '1 sentence',
+      standard: '3 sentences',
+      detailed: '5-7 sentences'
+    }
+    const styleMap: Record<string, string> = {
+      paragraph: 'Use paragraph form.',
+      bullets: 'Format the summary as bullet points.'
+    }
+
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' })
     const completion = await openai.chat.completions.create({
       model: 'gpt-4-turbo',
@@ -53,7 +63,7 @@ export async function POST(req: NextRequest) {
         {
           role: 'system',
           content:
-            'Summarize the following YouTube transcript in 3 sentences and list key insights. ' +
+            `Summarize the following YouTube transcript in ${sentenceMap[length] || sentenceMap.standard} and list key insights. ${styleMap[style] || styleMap.paragraph} ` +
             'Respond in JSON with keys "summary" and "insights" (array of strings).'
         },
         { role: 'user', content: transcript.slice(0, 12000) }
