@@ -40,7 +40,7 @@ const docs: Doc[] = [
 ];
 
 export default function DocumentLibrary() {
-  const [query, setQuery] = useState(""");
+  const [query, setQuery] = useState("");
 
   const filtered = docs.filter((d) =>
     d.name.toLowerCase().includes(query.toLowerCase()) ||
