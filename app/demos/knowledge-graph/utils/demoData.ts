@@ -8,10 +8,14 @@ export const demoNodes: DemoNode[] = [
     category: 'analysis',
     position: [-3, 2, 0],
     color: '#00D9FF',
-    icon: '📈',
+    icon: '💹',
     size: 1.2,
-    techStack: ['OpenAI', 'Supabase', 'RAG', 'Chart.js', 'Yahoo Finance API'],
-    features: ['Real-time data', 'Market analysis', 'Investment advice', 'News integration'],
+    techStack: [
+      'OpenAI GPT-4', 'Supabase PostgreSQL', 'pgvector', 'LangChain', 'Chart.js', 
+      'Yahoo Finance API', 'Alpha Vantage API', 'React', 'TypeScript', 'Next.js 15',
+      'Tailwind CSS', 'Framer Motion', 'WebSockets', 'Server-Sent Events'
+    ],
+    features: ['Real-time market data streaming', 'AI-powered market analysis', 'Investment recommendations', 'News sentiment analysis', 'Portfolio optimization', 'Risk assessment'],
     complexity: 5,
     status: 'active',
     route: '/demos/financial-assistant'
@@ -23,10 +27,14 @@ export const demoNodes: DemoNode[] = [
     category: 'vision',
     position: [3, 2, 0],
     color: '#FF00FF',
-    icon: '👁️',
+    icon: '🔬',
     size: 1.1,
-    techStack: ['Hugging Face', 'BLIP-2', 'SAM', 'LLaVA', 'Canvas API'],
-    features: ['Image captioning', 'Object detection', 'Segmentation', 'Visual chat', 'Inpainting'],
+    techStack: [
+      'Hugging Face Transformers', 'BLIP-2', 'Segment Anything Model (SAM)', 'LLaVA', 
+      'OpenCV', 'TensorFlow.js', 'Canvas API', 'WebGL', 'Google Gemini Vision',
+      'React', 'TypeScript', 'Next.js 15', 'Tailwind CSS', 'Web Workers'
+    ],
+    features: ['Multi-modal image analysis', 'Real-time object detection', 'Semantic segmentation', 'Visual question answering', 'Image inpainting', 'OCR capabilities'],
     complexity: 5,
     status: 'active',
     route: '/demos/computer-vision-assistant'
@@ -38,25 +46,33 @@ export const demoNodes: DemoNode[] = [
     category: 'ai',
     position: [0, 4, 0],
     color: '#FFD700',
-    icon: '♟️',
+    icon: '🧠',
     size: 1.0,
-    techStack: ['ONNX', 'TensorFlow', 'Three.js', 'Chess.js', 'WebWorkers'],
-    features: ['Neural network', 'Monte Carlo search', '3D visualization', 'Opening book'],
+    techStack: [
+      'ONNX Runtime', 'TensorFlow.js', 'Three.js', 'React Three Fiber', 'Chess.js',
+      'Web Workers', 'AlphaZero Algorithm', 'Monte Carlo Tree Search', 'Neural Networks',
+      'WebAssembly', 'TypeScript', 'React', 'Next.js 15', 'Tailwind CSS'
+    ],
+    features: ['Deep neural network evaluation', 'Monte Carlo tree search', 'Real-time 3D visualization', 'Opening book database', 'Position analysis', 'Game replay system'],
     complexity: 5,
     status: 'active',
     route: '/demos/chess-ai-magnus'
   },
   {
     id: 'generative-ai',
-    name: 'Generative AI (Text & Image)',
+    name: 'Generative AI Studio',
     description: 'Create unique text and images using cutting-edge generative AI models',
     category: 'generation',
     position: [-2, -2, 2],
     color: '#FF6B6B',
-    icon: '🎨',
+    icon: '✨',
     size: 1.0,
-    techStack: ['OpenAI', 'DALL-E', 'GPT-4', 'Stable Diffusion'],
-    features: ['Text generation', 'Image creation', 'Style transfer', 'Prompt engineering'],
+    techStack: [
+      'OpenAI GPT-4', 'DALL-E 3', 'Stable Diffusion XL', 'Midjourney API',
+      'Hugging Face Diffusers', 'LangChain', 'Prompt Engineering',
+      'React', 'TypeScript', 'Next.js 15', 'Tailwind CSS', 'Framer Motion'
+    ],
+    features: ['Advanced text generation', 'High-quality image synthesis', 'Style transfer', 'Prompt optimization', 'Multi-modal content creation', 'Creative workflows'],
     complexity: 4,
     status: 'active',
     route: '/demos/generative-ai'
@@ -64,29 +80,37 @@ export const demoNodes: DemoNode[] = [
   {
     id: 'sales-agent',
     name: 'AI Sales Agent',
-    description: 'OpenAI-powered sales conversation agent',
+    description: 'Intelligent sales conversation agent with advanced NLP capabilities',
     category: 'agent',
     position: [2, -2, 2],
     color: '#4ECDC4',
-    icon: '💼',
+    icon: '🤖',
     size: 0.9,
-    techStack: ['OpenAI', 'Supabase', 'Function Calling', 'Streaming'],
-    features: ['Conversation flow', 'Product knowledge', 'Lead qualification', 'CRM integration'],
+    techStack: [
+      'OpenAI GPT-4', 'Supabase', 'Function Calling', 'Streaming APIs',
+      'Natural Language Processing', 'Sentiment Analysis', 'CRM Integration',
+      'React', 'TypeScript', 'Next.js 15', 'WebSockets', 'Tailwind CSS'
+    ],
+    features: ['Intelligent conversation flow', 'Dynamic product knowledge', 'Lead qualification scoring', 'CRM synchronization', 'Real-time analytics', 'Multi-language support'],
     complexity: 3,
     status: 'active',
     route: '/demos/ai-sales-agent'
   },
   {
     id: 'interactive-agents',
-    name: 'Interactive AI Agents',
-    description: 'Multiple AI agents collaborating on complex tasks using OpenAI agents',
+    name: 'Multi-Agent AI System',
+    description: 'Collaborative AI agents working together on complex multi-step tasks',
     category: 'agent',
     position: [0, 0, 3],
     color: '#95E1D3',
-    icon: '🤖',
+    icon: '🕰️',
     size: 1.2,
-    techStack: ['OpenAI Assistants', 'Multi-agent', 'WebSockets', 'State Management'],
-    features: ['Agent collaboration', 'Task delegation', 'Knowledge sharing', 'Goal tracking'],
+    techStack: [
+      'OpenAI Assistants API', 'Multi-Agent Architecture', 'WebSockets', 'State Management',
+      'LangChain Agents', 'Tool Calling', 'Task Orchestration', 'Vector Databases',
+      'React', 'TypeScript', 'Next.js 15', 'Supabase', 'Real-time Sync'
+    ],
+    features: ['Agent collaboration framework', 'Dynamic task delegation', 'Shared knowledge base', 'Goal-oriented planning', 'Real-time coordination', 'Performance monitoring'],
     complexity: 5,
     status: 'beta',
     route: '/demos/interactive-agents'

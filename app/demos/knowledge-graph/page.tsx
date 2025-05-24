@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { demoNodes, connections } from './utils/demoData';
 import { useKnowledgeGraphPersistence } from '@/hooks/use-knowledge-graph-persistence';
-import { Save, FolderOpen, Trash2 } from 'lucide-react';
+import { Save, FolderOpen, Trash2, Download, Upload } from 'lucide-react';
+import { GraphExportImport } from './utils/exportImport';
 
 export default function KnowledgeGraphPage() {
   const [isClient, setIsClient] = useState(false);
@@ -340,6 +341,31 @@ export default function KnowledgeGraphPage() {
                 title="Load saved state"
               >
                 <FolderOpen className="w-4 h-4" />
+              </button>
+              <div className="w-px h-8 bg-gray-600" />
+              <button
+                onClick={() => {
+                  const json = GraphExportImport.exportToJSON({
+                    selectedNode,
+                    filter: { categories: [selectedCategory], techStack: [], searchTerm },
+                    viewMode: 'default'
+                  });
+                  GraphExportImport.downloadFile(json, `knowledge-graph-${new Date().toISOString().split('T')[0]}.json`, 'json');
+                }}
+                className="p-2 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors"
+                title="Export as JSON"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => {
+                  const csv = GraphExportImport.exportToCSV();
+                  GraphExportImport.downloadFile(csv, `knowledge-graph-${new Date().toISOString().split('T')[0]}.csv`, 'csv');
+                }}
+                className="p-2 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors"
+                title="Export as CSV"
+              >
+                <Download className="w-4 h-4" />
               </button>
             </div>
           )}
