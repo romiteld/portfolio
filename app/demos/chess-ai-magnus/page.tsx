@@ -18,7 +18,7 @@ import {
     MoveHistoryItem, GamePhase, GameStatus, PlayerMetrics, AIPersonality,
     ChatMessage as PageChatMessage // Use PageChatMessage alias
 } from '@/app/chess/types'; // Adjusted path and removed duplicate Piece alias
-import ChatBox, { ChatMessage as ChatBoxChatMessage } from "@/app/chess/components/ChatBox";
+import ChatBox from "@/app/chess/components/ChatBox";
 import * as chessAnalysis from '@/app/chess/utils/chessAnalysis'; // Ensure this path is correct
 
 

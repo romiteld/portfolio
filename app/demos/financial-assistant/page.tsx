@@ -1,6 +1,5 @@
 "use client"
 
-import { Metadata } from "next"
 import { useRef, useEffect, useState, RefObject, useMemo, useCallback, Fragment, ReactNode } from "react"
 import FinancialChatWidget from "@/app/components/demos/FinancialChatWidget"
 import { motion, useAnimation, AnimatePresence } from "framer-motion"
