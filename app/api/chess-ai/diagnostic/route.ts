@@ -41,8 +41,9 @@ export async function GET() {
       .listBuckets()
 
     // Check if chess-models bucket exists
-    let modelFiles: any[] = []
-    let fileUrls: any[] = []
+    interface StorageFile { name: string }
+    let modelFiles: StorageFile[] = []
+    let fileUrls: { name: string; url: string }[] = []
     
     if (buckets?.some(bucket => bucket.name === 'chess-models')) {
       // Get files in the bucket

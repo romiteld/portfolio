@@ -4,6 +4,56 @@ import yahooFinance from 'yahoo-finance2'; // Import the library
 import { OpenAI } from 'openai'; // Import OpenAI client
 import { generateFinancialAdviceWithRAG } from '@/lib/supOAIHelper';
 import { loadInitialFinancialKnowledge } from '@/lib/supabaseFinancialStorage';
+
+// --- Types ---
+interface YahooFinanceData {
+  symbol: string;
+  name: string;
+  price: number | null;
+  previousClose: number | null;
+  change: number | null;
+  changePercent: number | null;
+  currency: string | null;
+  exchange: string | null;
+  timestamp: string;
+}
+
+interface QuoteData {
+  symbol: string;
+  regularMarketPrice?: number;
+  regularMarketChange?: number;
+  regularMarketChangePercent?: number;
+  regularMarketPreviousClose?: number;
+  shortName?: string;
+  longName?: string;
+  currency?: string;
+  fullExchangeName?: string;
+  exchange?: string;
+  quoteType?: string;
+  marketCap?: number;
+  regularMarketVolume?: number;
+  trailingPE?: number;
+  fiftyTwoWeekLow?: number;
+  fiftyTwoWeekHigh?: number;
+  [key: string]: unknown;
+}
+
+interface UserPreferences {
+  investmentStyle?: string;
+  portfolioFocus?: string[];
+  riskTolerance?: string;
+  timeHorizon?: string;
+  favoriteSymbols?: string[];
+}
+
+type FinancialResponse =
+  | { type: 'lookup'; data: QuoteData; summary: string; key_metrics: Record<string, string> }
+  | { type: 'summary'; summary: string; key_metrics: Record<string, string> }
+  | { type: 'comparison'; summary: string; comparison_table: string }
+  | { type: 'analysis'; summary: string; key_metrics: Record<string, string> }
+  | { type: 'general_advice'; summary: string; key_metrics: Record<string, string> }
+  | { type: 'error'; summary: string; error?: string; key_metrics?: Record<string, string> }
+  | { type: 'help'; summary: string; key_metrics: Record<string, string> };
 // Uncomment the following line in production to use Supabase
 // import { supabase } from '@/lib/supabaseClient'
 
@@ -58,7 +108,7 @@ async function getMarketStatus(): Promise<{ isOpen: boolean; message: string }> 
 // --- End Simulated Market Status Check ---
 
 // Function to fetch data directly from Yahoo Finance
-async function fetchYahooFinanceData(symbol: string): Promise<any> {
+async function fetchYahooFinanceData(symbol: string): Promise<YahooFinanceData> {
   try {
     // Clean up symbol
     const cleanSymbol = symbol.trim().toUpperCase();
@@ -115,7 +165,7 @@ async function fetchYahooFinanceData(symbol: string): Promise<any> {
 }
 
 // Function to search for general financial information
-async function searchFinancialInfo(query: string): Promise<any> {
+async function searchFinancialInfo(query: string): Promise<{ type: 'stock'; data: YahooFinanceData; summary: string; key_metrics: Record<string, string> } | { type: 'general'; data: { query: string }; summary: string; key_metrics: Record<string, string>; recent_news_summary: string }> {
   try {
     // Try to get stock info first
     const potentialSymbol = query.trim().toUpperCase();
@@ -158,7 +208,7 @@ async function searchFinancialInfo(query: string): Promise<any> {
 
 // --- Yahoo Finance Data Fetching (using yahoo-finance2) ---
 // Fetches data for one or more symbols using the quote endpoint
-async function fetchYahooQuoteData(symbols: string[]): Promise<any[]> {
+async function fetchYahooQuoteData(symbols: string[]): Promise<QuoteData[]> {
   if (!symbols || symbols.length === 0) return [];
   const uniqueSymbols = Array.from(new Set(symbols.map(s => s.trim().toUpperCase()).filter(s => s)));
   if (uniqueSymbols.length === 0) return [];
@@ -180,7 +230,7 @@ async function fetchYahooQuoteData(symbols: string[]): Promise<any[]> {
 // --- Intent Handlers (Modified to use library results) ---
 
 // 1. Handle Single Symbol Lookup
-async function handleLookup(symbol: string): Promise<any> {
+async function handleLookup(symbol: string): Promise<FinancialResponse> {
   const results = await fetchYahooQuoteData([symbol]);
   if (!results || results.length === 0) {
     return { type: 'error', summary: `Could not find data for symbol "${symbol}". Please check the symbol.` };
@@ -228,7 +278,7 @@ async function handleLookup(symbol: string): Promise<any> {
 }
 
 // 2. Handle Market Summary
-async function handleMarketSummary(): Promise<any> {
+async function handleMarketSummary(): Promise<FinancialResponse> {
   const keyIndices = ['^GSPC', '^IXIC', '^DJI', '^FTSE', '^N225', 'BTC-USD'];
   const results = await fetchYahooQuoteData(keyIndices);
 
@@ -239,7 +289,7 @@ async function handleMarketSummary(): Promise<any> {
   let summary = "**Current Market Snapshot:**\n";
   const metrics: Record<string, string> = {};
 
-  results.forEach((quote: any) => {
+  results.forEach((quote: QuoteData) => {
     const name = quote.shortName || quote.longName || quote.symbol;
     const value = quote.regularMarketPrice ?? 0;
     const changePercent = quote.regularMarketChangePercent ?? 0;
@@ -252,17 +302,17 @@ async function handleMarketSummary(): Promise<any> {
 }
 
 // 3. Handle Comparison
-async function handleComparison(symbol1: string, symbol2: string): Promise<any> {
+async function handleComparison(symbol1: string, symbol2: string): Promise<FinancialResponse> {
   const symbols = [symbol1, symbol2];
   const results = await fetchYahooQuoteData(symbols);
 
   if (!results || results.length < 2) {
-    const foundSymbols = results.map((r: any) => r?.symbol).filter(Boolean).join(', ') || 'none';
+    const foundSymbols = results.map((r: QuoteData) => r?.symbol).filter(Boolean).join(', ') || 'none';
     return { type: 'error', summary: `Could not find data for both symbols to compare. Found: ${foundSymbols}` };
   }
 
-  const quote1 = results.find((q: any) => q?.symbol?.toUpperCase() === symbol1.toUpperCase());
-  const quote2 = results.find((q: any) => q?.symbol?.toUpperCase() === symbol2.toUpperCase());
+  const quote1 = results.find((q: QuoteData) => q?.symbol?.toUpperCase() === symbol1.toUpperCase());
+  const quote2 = results.find((q: QuoteData) => q?.symbol?.toUpperCase() === symbol2.toUpperCase());
 
   if (!quote1 || !quote2) {
      return { type: 'error', summary: `Could not retrieve full data for comparison. Make sure both symbols are valid.` };
@@ -270,16 +320,16 @@ async function handleComparison(symbol1: string, symbol2: string): Promise<any> 
 
   // Select comparable metrics (using library field names)
   const metricsToCompare = [
-    { key: 'regularMarketPrice', label: 'Price', format: (val: any, q: any) => `${formatNumber(val)} ${q.currency || 'USD'}` },
-    { key: 'regularMarketChangePercent', label: 'Change %', format: (val: any) => `${getSign(val)}${formatNumber(val * 100)}%` }, // Library often gives this as decimal
-    { key: 'regularMarketChange', label: 'Change', format: (val: any, q: any) => `${getSign(val)}${formatNumber(val)} ${q.currency || 'USD'}` },
+    { key: 'regularMarketPrice', label: 'Price', format: (val: number | null | undefined, q: QuoteData) => `${formatNumber(val)} ${q.currency || 'USD'}` },
+    { key: 'regularMarketChangePercent', label: 'Change %', format: (val: number | null | undefined) => `${getSign(val)}${formatNumber((val ?? 0) * 100)}%` }, // Library often gives this as decimal
+    { key: 'regularMarketChange', label: 'Change', format: (val: number | null | undefined, q: QuoteData) => `${getSign(val)}${formatNumber(val)} ${q.currency || 'USD'}` },
     { key: 'marketCap', label: 'Market Cap', format: formatLargeNumber },
     { key: 'regularMarketVolume', label: 'Volume', format: formatLargeNumber },
-    { key: 'trailingPE', label: 'P/E Ratio', format: (val: any) => formatNumber(val) },
-    { key: 'fiftyTwoWeekHigh', label: '52W High', format: (val: any, q: any) => `${formatNumber(val)} ${q.currency || 'USD'}` },
-    { key: 'fiftyTwoWeekLow', label: '52W Low', format: (val: any, q: any) => `${formatNumber(val)} ${q.currency || 'USD'}` },
-    { key: 'quoteType', label: 'Type', format: (val: any) => val || 'N/A' },
-    { key: 'exchange', label: 'Exchange', format: (val: any) => val || 'N/A' },
+    { key: 'trailingPE', label: 'P/E Ratio', format: (val: number | null | undefined) => formatNumber(val) },
+    { key: 'fiftyTwoWeekHigh', label: '52W High', format: (val: number | null | undefined, q: QuoteData) => `${formatNumber(val)} ${q.currency || 'USD'}` },
+    { key: 'fiftyTwoWeekLow', label: '52W Low', format: (val: number | null | undefined, q: QuoteData) => `${formatNumber(val)} ${q.currency || 'USD'}` },
+    { key: 'quoteType', label: 'Type', format: (val: unknown) => (val as string) || 'N/A' },
+    { key: 'exchange', label: 'Exchange', format: (val: unknown) => (val as string) || 'N/A' },
   ];
 
   // Format table carefully for markdown
@@ -304,7 +354,7 @@ async function handleComparison(symbol1: string, symbol2: string): Promise<any> 
 }
 
 // 4. Handle Basic Analysis / Advice Query
-async function handleAnalysis(symbol: string): Promise<any> {
+async function handleAnalysis(symbol: string): Promise<FinancialResponse> {
    const lookupResult = await handleLookup(symbol);
    if(lookupResult.type === 'error') return lookupResult;
 
@@ -345,7 +395,7 @@ async function handleAnalysis(symbol: string): Promise<any> {
 }
 
 // 5. Handle General Advice Queries
-async function handleGeneralAdvice(query: string, userPreferences: any): Promise<any> {
+async function handleGeneralAdvice(query: string, userPreferences: UserPreferences | undefined): Promise<FinancialResponse> {
   console.log("Handling general advice query:", query);
   try {
     // Get market summary for context
@@ -383,7 +433,7 @@ User investment profile:
           const realtimeData = await realtimeResponse.json();
           if (realtimeData.results && realtimeData.results.length > 0) {
             realtimeContext = "\n\n**Recent Financial Information:**\n\n";
-            realtimeData.results.forEach((item: any, index: number) => {
+            realtimeData.results.forEach((item: { content?: string; title?: string }, index: number) => {
               if (item.content && item.content.trim()) {
                 // Limit each content to a reasonable summary length
                 const contentSummary = item.content.substring(0, 300) + (item.content.length > 300 ? '...' : '');
@@ -696,7 +746,7 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
 // --- Main POST Handler --- (Updated switch statement)
 export async function POST(req: NextRequest) {
   let marketStatusMessage = "";
-  let responseData: any;
+  let responseData: FinancialResponse | undefined;
 
   try {
     // Initialize RAG data when needed, not at module load time

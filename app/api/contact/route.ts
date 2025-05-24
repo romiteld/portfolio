@@ -101,17 +101,19 @@ This email was sent from your portfolio website contact form.
       const info = await transporter.sendMail(mailOptions)
       console.log('Email sent successfully:', info.messageId);
       return NextResponse.json({ message: 'Email sent successfully' })
-    } catch (emailErr: any) {
-      console.error('Email sending error:', emailErr.message);
+    } catch (emailErr: unknown) {
+      const message = emailErr instanceof Error ? emailErr.message : 'Unknown error'
+      console.error('Email sending error:', message)
       return NextResponse.json(
-        { error: `Email service error: ${emailErr.message}` },
+        { error: `Email service error: ${message}` },
         { status: 500 }
       )
     }
-  } catch (error: any) {
-    console.error('Server error in contact API:', error);
+  } catch (error: unknown) {
+    console.error('Server error in contact API:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: `Server error: ${error.message}` },
+      { error: `Server error: ${message}` },
       { status: 500 }
     )
   }
