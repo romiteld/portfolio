@@ -20,6 +20,7 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
 
 # API Keys
 OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here (for computer vision and voice demos)
 FIRECRAWL_API_KEY=your_firecrawl_api_key_here (optional)
 
 # Email Configuration

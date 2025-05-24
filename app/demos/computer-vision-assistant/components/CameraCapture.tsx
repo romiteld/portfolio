@@ -154,9 +154,10 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
       });
       
       if (!response.ok) {
-        throw new Error('Analysis failed');
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || 'Analysis failed');
       }
-      
+
       const data = await response.json();
       setAnalysisResults(data);
       
@@ -174,7 +175,8 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
       return data;
     } catch (error) {
       console.error('Error analyzing image:', error);
-      setError('Failed to analyze image. Please try again.');
+      const message = error instanceof Error ? error.message : 'Failed to analyze image. Please try again.';
+      setError(message);
       return null;
     } finally {
       setIsAnalyzing(false);
