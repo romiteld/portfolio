@@ -1,23 +1,9 @@
 "use client"
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { motion } from 'framer-motion'
 // Import types from the central types file
-import type { Board, Move, PieceColor, PieceType, ChessGameProps } from '../types'; // Adjust path if necessary
+import type { Move, ChessGameProps } from '../types';
 import ChessBoard from './ChessBoard' // Assuming ChessBoard is the visual component
-
-
-// Helper function to convert piece type to full name (can also be moved to types or utils)
-function pieceTypeToName(type: PieceType): string {
-  switch (type) {
-    case 'p': return 'Pawn'
-    case 'n': return 'Knight'
-    case 'b': return 'Bishop'
-    case 'r': return 'Rook'
-    case 'q': return 'Queen'
-    case 'k': return 'King'
-  }
-}
 
 // The ChessGame component now primarily focuses on rendering the board passed via props
 // and calling the onMove callback when a player makes a move on the UI.
@@ -34,26 +20,17 @@ const ChessGame = ({
   animationDuration = 0.2,
   className = '',
   playerColor,
-  aiLevel,
-  showControls,
-  showPlayerAnalysis,
-  onGameOver
+  aiLevel: _aiLevel,
+  showControls: _showControls,
+  showPlayerAnalysis: _showPlayerAnalysis,
+  onGameOver: _onGameOver
 }: ChessGameProps) => {
 
   const [selectedSquare, setSelectedSquare] = useState<{ row: number; col: number } | null>(null);
-  const [hoveredSquare, setHoveredSquare] = useState<{ row: number; col: number } | null>(null);
 
   useEffect(() => {
     setSelectedSquare(null);
   }, [board]);
-
-  const handleHoverStart = useCallback((row: number, col: number) => {
-    setHoveredSquare({ row, col });
-  }, []);
-
-  const handleHoverEnd = useCallback(() => {
-    setHoveredSquare(null);
-  }, []);
 
   const legalMovesMap = useMemo(() => {
     if (!selectedSquare) return new Map();
