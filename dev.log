@@ -100394,3 +100394,49 @@ Require stack:
   path: '/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/.next/server/pages/_document.js'
 }
  POST /api/financial-assistant/query 500 in 192ms
+ ○ Compiling /api/generative-ai ...
+ ✓ Compiled /api/generative-ai in 1134ms (878 modules)
+ POST /api/generative-ai 200 in 2574ms
+ POST /api/generative-ai 400 in 39ms
+ POST /api/generative-ai 400 in 40ms
+ POST /api/generative-ai 400 in 39ms
+ POST /api/generative-ai 400 in 38ms
+ POST /api/generative-ai 400 in 40ms
+ POST /api/generative-ai 400 in 40ms
+Error generating content: SyntaxError: Unexpected token 'i', "invalid json {" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at parseJSONFromBytes (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/compiled/edge-runtime/index.js:1:246133)
+    at successSteps (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/compiled/edge-runtime/index.js:1:245777)
+    at fullyReadBody (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/compiled/edge-runtime/index.js:1:224173)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async consumeBody (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/compiled/edge-runtime/index.js:1:245878)
+    at async POST (webpack-internal:///(rsc)/./app/api/generative-ai/route.ts:18:80)
+    at async AppRouteRouteModule.do (webpack-internal:///(rsc)/./node_modules/next/dist/esm/server/route-modules/app-route/module.js:384:23)
+    at async AppRouteRouteModule.handle (webpack-internal:///(rsc)/./node_modules/next/dist/esm/server/route-modules/app-route/module.js:480:26)
+    at async EdgeRouteModuleWrapper.handler (webpack-internal:///(rsc)/./node_modules/next/dist/esm/server/web/edge-route-module-wrapper.js:101:19)
+    at async adapter (webpack-internal:///(rsc)/./node_modules/next/dist/esm/server/web/adapter.js:205:16)
+    at async /mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/web/sandbox/sandbox.js:108:26
+    at async runWithTaggedErrors (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/web/sandbox/sandbox.js:105:9)
+    at async DevServer.runEdgeFunction (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/next-server.js:1300:24)
+    at async NextNodeServer.handleCatchallRenderRequest (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/next-server.js:273:41)
+    at async DevServer.handleRequestImpl (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/base-server.js:899:17)
+    at async /mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/dev/next-dev-server.js:371:20
+    at async Span.traceAsyncFn (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/trace/trace.js:157:20)
+    at async DevServer.handleRequest (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/dev/next-dev-server.js:368:24)
+    at async invokeRender (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/lib/router-server.js:237:21)
+    at async handleRequest (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/lib/router-server.js:428:24)
+    at async requestHandlerImpl (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/lib/router-server.js:452:13)
+    at async Server.requestListener (/mnt/c/Users/DanielRomitelli/Desktop/Builds/portfolio/node_modules/next/dist/server/lib/start-server.js:158:13) {
+  
+}
+ POST /api/generative-ai 500 in 41ms
+ POST /api/generative-ai 200 in 640ms
+ POST /api/generative-ai 200 in 732ms
+ POST /api/generative-ai 200 in 871ms
+ POST /api/generative-ai 200 in 1385ms
+ POST /api/generative-ai 200 in 1759ms
+ POST /api/generative-ai 200 in 709ms
+ POST /api/generative-ai 200 in 384ms
+ POST /api/generative-ai 200 in 83ms
+ ✓ Compiled /api/interactive-agents in 375ms (878 modules)
+ POST /api/interactive-agents 200 in 13090ms
