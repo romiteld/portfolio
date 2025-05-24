@@ -204,7 +204,11 @@ export default function VoiceInterface() {
 
   // Function to start speech recognition with improved error handling
   const startListening = () => {
-    if (isListening || !recognitionRef.current) return;
+    // Prevent multiple start attempts if already listening or if recognition isn't initialized
+    if (isListening || !recognitionRef.current || document.body.classList.contains('speech-recognition-starting')) return;
+    
+    // Add a temporary flag to prevent concurrent start attempts
+    document.body.classList.add('speech-recognition-starting');
     
     // Reset any ongoing speech synthesis to avoid conflicts
     if ('speechSynthesis' in window) {
@@ -227,6 +231,11 @@ export default function VoiceInterface() {
         setPermissionState('denied');
       }
       setIsListening(false);
+    } finally {
+      // Remove the temporary flag after attempt
+      setTimeout(() => {
+        document.body.classList.remove('speech-recognition-starting');
+      }, 300); // Short delay to prevent immediate restart attempts
     }
   };
   
@@ -428,12 +437,19 @@ export default function VoiceInterface() {
         setIsListening(false);
         
         // Resume listening after a short delay if auto-listen is enabled
-        // and we're not currently speaking
-        if (autoListen && !document.body.classList.contains('ai-is-speaking')) {
-          setTimeout(() => {
+        // and we're not currently speaking or already attempting to start
+        if (autoListen && 
+            !document.body.classList.contains('ai-is-speaking') && 
+            !document.body.classList.contains('speech-recognition-starting')) {
+          
+          // Store the timeout reference for cleanup
+          listeningTimeoutRef.current = setTimeout(() => {
             console.log('Auto-restarting speech recognition');
-            startListening();
-          }, 300);
+            // Check again right before starting to avoid race conditions
+            if (!isListening && autoListen) {
+              startListening();
+            }
+          }, 500);
         }
       };
       
@@ -449,17 +465,27 @@ export default function VoiceInterface() {
           
           // Don't set isListening to false for no-speech errors
           // Just restart if auto-listen is enabled
-          if (autoListen && !document.body.classList.contains('ai-is-speaking')) {
-            // Increment retry counter
+          if (autoListen && 
+              !document.body.classList.contains('ai-is-speaking') && 
+              !document.body.classList.contains('speech-recognition-starting')) {
+                
+            // Use exponential backoff for retries to avoid overwhelming the API
+            const retryDelay = Math.min(1000 * Math.pow(2, retryCountRef.current), 5000);
+            console.log(`No speech detected, will retry in ${retryDelay}ms`);
+            
             retryCountRef.current += 1;
             
-            // If we've had too many no-speech errors in a row, wait longer before retrying
-            const retryDelay = retryCountRef.current > 3 ? 1500 : 300;
+            // Clear any existing timeout first
+            if (listeningTimeoutRef.current) {
+              clearTimeout(listeningTimeoutRef.current);
+            }
             
-            setTimeout(() => {
-              if (recognitionRef.current) {
+            listeningTimeoutRef.current = setTimeout(() => {
+              // Double-check conditions haven't changed before restarting
+              if (recognitionRef.current && !isListening && autoListen &&
+                  !document.body.classList.contains('speech-recognition-starting')) {
                 try {
-                  recognitionRef.current.start();
+                  startListening(); // Use startListening instead of directly calling start()
                   console.log('Restarted recognition after no-speech error');
                 } catch (e) {
                   console.log('Error restarting after no-speech:', e);
@@ -472,8 +498,21 @@ export default function VoiceInterface() {
           // Handle network issues and aborted recognition
           console.log(`Recognition ${event.error}, will restart if auto-listen enabled`);
           
-          if (autoListen && !document.body.classList.contains('ai-is-speaking')) {
-            setTimeout(() => startListening(), 1000);
+          // Only attempt restart if not already starting and not speaking
+          if (autoListen && 
+              !document.body.classList.contains('speech-recognition-starting') && 
+              !document.body.classList.contains('ai-is-speaking')) {
+            
+            if (listeningTimeoutRef.current) {
+              clearTimeout(listeningTimeoutRef.current);
+            }
+            
+            listeningTimeoutRef.current = setTimeout(() => {
+              // Double-check conditions right before starting
+              if (!isListening && autoListen) {
+                startListening();
+              }
+            }, 1500); // Longer delay for network errors
           }
         }
         
@@ -483,25 +522,47 @@ export default function VoiceInterface() {
         }
       };
       
-      // Start listening automatically after component mounts
+      // Start listening automatically after component mounts, with proper delay
       if (autoListen) {
-        setTimeout(() => {
-          startListening();
-        }, 1000);
-      }
+        listeningTimeoutRef.current = setTimeout(() => {
+          // Double-check conditions before starting
+          if (!isListening && autoListen && recognitionRef.current) {
+            startListening();
+          }
+        }, 1500); // Longer initial delay to ensure everything is initialized
+      } 
     } else {
       setIsSupported(false);
     }
     
     return () => {
+      // Proper cleanup when component unmounts
       if (listeningTimeoutRef.current) {
         clearTimeout(listeningTimeoutRef.current);
+        listeningTimeoutRef.current = null;
       }
+      
+      // Clean up any flags we might have added
+      document.body.classList.remove('speech-recognition-starting');
+      document.body.classList.remove('ai-is-speaking');
+      
+      // Stop speech synthesis if active
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      
+      // Stop recognition if active
       if (recognitionRef.current) {
         try {
-          recognitionRef.current.stop();
+          if (isListening) {
+            recognitionRef.current.stop();
+          }
+          // Clean up event handlers
+          recognitionRef.current.onend = null;
+          recognitionRef.current.onerror = null;
+          recognitionRef.current.onresult = null;
         } catch (e) {
-          // Ignore errors when stopping
+          console.log("Error stopping recognition on cleanup:", e);
         }
       }
     };

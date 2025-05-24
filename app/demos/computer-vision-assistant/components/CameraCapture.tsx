@@ -39,6 +39,7 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
   const [autoAnalyze, setAutoAnalyze] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const autoAnalyzeTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const startAttemptRef = useRef<number>(0); // Track camera start attempts
   const [cameraFacingMode, setCameraFacingMode] = useState<'user' | 'environment'>('user');
 
   useEffect(() => {
@@ -59,30 +60,149 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
     setIsLoading(true);
     setError(null);
     
+    // Release any existing camera stream first
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+      
+      // Wait a moment after stopping previous stream to avoid conflicts
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+    
+    // Clear existing video source object
+    if (videoRef.current && videoRef.current.srcObject) {
+      videoRef.current.srcObject = null;
+    }
+    
     try {
-      if (stream) {
-        // If there's an existing stream, stop all tracks
-        stream.getTracks().forEach(track => track.stop());
-      }
-      
-      const newStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-          facingMode: cameraFacingMode
+      // First try the requested facing mode with ideal constraints
+      try {
+        console.log(`Attempting to access camera with facing mode: ${cameraFacingMode}`);
+        
+        // Try to get user media with specific constraints
+        const newStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            facingMode: cameraFacingMode
+          },
+          audio: false // Explicitly disable audio to prevent conflicts with speech recognition
+        });
+        
+        console.log('Successfully obtained camera stream with ideal constraints');
+        setStream(newStream);
+        setIsCameraActive(true);
+        
+        if (videoRef.current) {
+          videoRef.current.srcObject = newStream;
+          
+          // Return a promise that resolves when the video is ready to play
+          await new Promise((resolve, reject) => {
+            if (!videoRef.current) return reject("Video ref lost");
+            
+            // Add event listeners for success and failure
+            videoRef.current.onloadedmetadata = () => {
+              console.log('Video metadata loaded successfully');
+              if (videoRef.current) videoRef.current.play().then(resolve).catch(reject);
+            };
+            
+            videoRef.current.onerror = (e) => {
+              console.error('Video element error:', e);
+              reject(`Video error: ${videoRef.current?.error?.message || e}`);
+            };
+            
+            // Set a timeout in case the events never fire
+            setTimeout(() => {
+              // Check if videoRef.current exists and has a readyState property
+              const readyState = videoRef.current?.readyState;
+              if (videoRef.current && typeof readyState === 'number' && readyState >= 2) {
+                console.log('Video ready state acceptable after timeout');
+                resolve("Timeout but video seems ready");
+              } else {
+                console.error('Video failed to initialize properly', { 
+                  readyState: videoRef.current ? videoRef.current.readyState : 'video element lost' 
+                });
+                reject("Video load timeout");
+              }
+            }, 5000);
+          });
         }
-      });
-      
-      setStream(newStream);
-      setIsCameraActive(true);
-      
-      if (videoRef.current) {
-        videoRef.current.srcObject = newStream;
-        await videoRef.current.play();
+      } catch (err: any) {
+        // Try a second approach with simpler constraints
+        console.warn(`Failed with facing mode ${cameraFacingMode}, trying without constraints:`, err);
+        
+        // If there was a NotReadableError specifically, wait a moment before trying again
+        // This error often means the camera is still being released by another app/tab
+        if (err.name === 'NotReadableError' || err.name === 'AbortError') {
+          console.log('Detected hardware busy error, waiting before retry...');
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+        
+        try {
+          // Try with minimal constraints
+          console.log('Attempting with basic constraints');
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+          });
+          
+          console.log('Successfully obtained camera stream with basic constraints');
+          setStream(fallbackStream);
+          setIsCameraActive(true);
+          
+          if (videoRef.current) {
+            videoRef.current.srcObject = fallbackStream;
+            await videoRef.current.play();
+          }
+        } catch (fallbackErr: any) {
+          // If even the basic constraints fail, try one more time with the most minimal approach
+          console.warn('Basic constraints failed too:', fallbackErr);
+          
+          if (fallbackErr.name === 'NotReadableError') {
+            throw new Error('Your camera appears to be in use by another application. Please close any other ' +
+                           'applications that might be using your camera (like Zoom, Teams, or another browser tab), ' +
+                           'then try again.');
+          } else if (fallbackErr.name === 'NotAllowedError') {
+            throw new Error('Camera access was denied. Please check your browser permissions and ensure you have allowed ' +
+                           'camera access for this website.');
+          } else {
+            throw fallbackErr; // Let the outer catch handler deal with other errors
+          }
+        }
       }
-    } catch (err) {
+      
+      // Wait a moment to ensure video is initialized
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Camera initialization completed successfully');
+      
+    } catch (err: any) {
       console.error("Error accessing camera:", err);
-      setError("Could not access camera. Please ensure you've granted permission and no other app is using it.");
+      
+      // Provide more helpful error messages based on the error type
+      if (err.name === 'NotReadableError') {
+        setError(
+          "Cannot access camera - the camera is either already in use by another application, or there is a hardware error. " +
+          "Please close other applications that might be using your camera (like Zoom, Teams, etc.), " +
+          "then click 'Try Again.'"
+        );
+      } else if (err.name === 'NotAllowedError') {
+        setError(
+          "Camera access denied. Please ensure you've granted permission for this website to use your camera " +
+          "in your browser settings."
+        );
+      } else if (err.name === 'NotFoundError') {
+        setError(
+          "No camera detected. Please make sure your camera is properly connected to your device."
+        );
+      } else if (err.message) {
+        setError(err.message);
+      } else {
+        setError(
+          "Could not access camera. Please ensure you've granted permission and no other app is using it."
+        );
+      }
+      
+      setIsCameraActive(false);
     } finally {
       setIsLoading(false);
     }
@@ -116,35 +236,98 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
   };
 
   const captureFrame = () => {
-    if (!videoRef.current || !canvasRef.current) return null;
+    if (!videoRef.current || !canvasRef.current) {
+      console.log("Video or canvas refs not available");
+      return null;
+    }
     
     const video = videoRef.current;
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
     
-    if (!context) return null;
+    if (!context) {
+      console.log("Could not get canvas context");
+      return null;
+    }
     
-    // Set canvas size to match video dimensions
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Check if video is actually playing and has dimensions
+    if (video.videoWidth === 0 || video.videoHeight === 0 || 
+        video.readyState < 2 || // HAVE_CURRENT_DATA (2) or higher needed
+        !video.srcObject) {
+      console.log("Video not ready for capture", {
+        width: video.videoWidth,
+        height: video.videoHeight,
+        readyState: video.readyState,
+        srcObject: !!video.srcObject
+      });
+      return null;
+    }
     
-    // Draw video frame to canvas
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
-    
-    // Get image data as base64
-    const imageData = canvas.toDataURL('image/jpeg');
-    return imageData;
+    try {
+      // Set canvas size to match video dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      // Draw video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Try JPEG first
+      try {
+        const imageData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Basic validation: ensure it's a valid data URL
+        if (imageData && imageData.startsWith('data:image/jpeg') && imageData.length > 100) {
+          return imageData;
+        }
+        throw new Error("Invalid JPEG format");
+      } catch (jpegError) {
+        console.log("JPEG capture failed, trying PNG", jpegError);
+        // Fall back to PNG if JPEG fails
+        const pngData = canvas.toDataURL('image/png');
+        if (pngData && pngData.startsWith('data:image/png') && pngData.length > 100) {
+          return pngData;
+        }
+        throw new Error("Both image formats failed");
+      }
+    } catch (error) {
+      console.error("Error capturing frame:", error);
+      return null;
+    }
   };
 
   const analyzeFrame = useCallback(async (): Promise<AnalysisResult | null> => {
     if (!isCameraActive || isAnalyzing) return null;
+    setError(null); // Clear previous errors
     
-    const imageData = captureFrame();
-    if (!imageData) return;
+    // Try up to 3 times to get a valid frame
+    let imageData = null;
+    let attempts = 0;
+    const maxAttempts = 3;
+    
+    while (!imageData && attempts < maxAttempts) {
+      attempts++;
+      imageData = captureFrame();
+      
+      if (!imageData && attempts < maxAttempts) {
+        // Wait a moment before trying again
+        await new Promise(resolve => setTimeout(resolve, 300));
+        console.log(`Capture attempt ${attempts} failed, retrying...`);
+      }
+    }
+    
+    if (!imageData) {
+      setError("Could not capture a valid image from camera. Please check camera access and try again.");
+      return null;
+    }
     
     setIsAnalyzing(true);
     
     try {
+      // Validate image data before sending
+      if (!imageData.startsWith('data:image/')) {
+        throw new Error("Invalid image format");
+      }
+      
       const response = await fetch('/api/analyze-image', {
         method: 'POST',
         headers: {
@@ -196,10 +379,14 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
 
   // Start camera when component mounts
   useEffect(() => {
-    startCamera();
+    // Add a short delay before initial camera start to ensure DOM is fully ready
+    const timer = setTimeout(() => {
+      startCamera();
+    }, 500);
     
     // Clean up function
     return () => {
+      clearTimeout(timer);
       stopCamera();
     };
   }, []);
@@ -221,9 +408,21 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
                   <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                   <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
                 </svg>
-                <p className="text-red-400">{error}</p>
+                <p className="text-red-400 whitespace-pre-line">{error}</p>
+                <div className="mt-2 text-xs text-gray-400 mb-3">
+                  Troubleshooting tips:
+                  <ul className="list-disc pl-5 text-left mt-1">
+                    <li>Close other apps using your camera (Zoom, Teams, etc.)</li>
+                    <li>Check browser permissions for camera access</li>
+                    <li>Try switching cameras if available</li>
+                    <li>Reload the page</li>
+                  </ul>
+                </div>
                 <button 
-                  onClick={startCamera}
+                  onClick={() => {
+                    startAttemptRef.current += 1;
+                    startCamera();
+                  }}
                   className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-medium"
                 >
                   Try Again

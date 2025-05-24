@@ -40,8 +40,8 @@ async function processVoiceQuery(query: string, imageAnalysisResult: any) {
       throw new Error("GEMINI_API_KEY environment variable is not set");
     }
     
-    // Using the Gemini Pro model for text processing
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${GEMINI_API_KEY}`;
+    // Using the Gemini 1.5 Flash model for text processing
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
     
     // Create a system prompt that positions the assistant as a computer vision helper
     const systemContext = `You are a helpful computer vision assistant. 
