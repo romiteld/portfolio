@@ -112,7 +112,7 @@ export const demoNodes: DemoNode[] = [
     ],
     features: ['Agent collaboration framework', 'Dynamic task delegation', 'Shared knowledge base', 'Goal-oriented planning', 'Real-time coordination', 'Performance monitoring'],
     complexity: 5,
-    status: 'beta',
+    status: 'active',
     route: '/demos/interactive-agents'
   },
   {
