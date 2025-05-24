@@ -47,13 +47,14 @@ interface UserPreferences {
 }
 
 type FinancialResponse =
-  | { type: 'lookup'; data: QuoteData; summary: string; key_metrics: Record<string, string> }
+  | { type: 'lookup'; data?: QuoteData; summary: string; key_metrics: Record<string, string> }
   | { type: 'summary'; summary: string; key_metrics: Record<string, string> }
-  | { type: 'comparison'; summary: string; comparison_table: string }
+  | { type: 'comparison'; summary: string; comparison_table?: string; key_metrics?: Record<string, string> }
   | { type: 'analysis'; summary: string; key_metrics: Record<string, string> }
   | { type: 'general_advice'; summary: string; key_metrics: Record<string, string> }
   | { type: 'error'; summary: string; error?: string; key_metrics?: Record<string, string> }
-  | { type: 'help'; summary: string; key_metrics: Record<string, string> };
+  | { type: 'help'; summary: string; key_metrics: Record<string, string> }
+  | { type: 'ai_enhanced_response'; summary: string; key_metrics?: Record<string, string>; sources?: any };
 // Uncomment the following line in production to use Supabase
 // import { supabase } from '@/lib/supabaseClient'
 
@@ -177,12 +178,12 @@ async function searchFinancialInfo(query: string): Promise<{ type: 'stock'; data
         return {
           type: 'stock',
           data: stockData,
-          summary: `${stockData.name} (${stockData.symbol}) is currently trading at ${stockData.price} ${stockData.currency}, ${stockData.change >= 0 ? 'up' : 'down'} ${Math.abs(stockData.change).toFixed(2)} (${Math.abs(stockData.changePercent).toFixed(2)}%) on ${stockData.exchange}.`,
+          summary: `${stockData.name} (${stockData.symbol}) is currently trading at ${stockData.price || 'N/A'} ${stockData.currency || 'USD'}, ${(stockData.change || 0) >= 0 ? 'up' : 'down'} ${Math.abs(stockData.change || 0).toFixed(2)} (${Math.abs(stockData.changePercent || 0).toFixed(2)}%) on ${stockData.exchange || 'N/A'}.`,
           key_metrics: {
-            price: `${stockData.price} ${stockData.currency}`,
-            change: `${stockData.change >= 0 ? '+' : ''}${stockData.change.toFixed(2)} (${stockData.change >= 0 ? '+' : ''}${stockData.changePercent.toFixed(2)}%)`,
-            previous_close: `${stockData.previousClose} ${stockData.currency}`,
-            exchange: stockData.exchange
+            price: `${stockData.price || 'N/A'} ${stockData.currency || 'USD'}`,
+            change: `${(stockData.change || 0) >= 0 ? '+' : ''}${(stockData.change || 0).toFixed(2)} (${(stockData.change || 0) >= 0 ? '+' : ''}${(stockData.changePercent || 0).toFixed(2)}%)`,
+            previous_close: `${stockData.previousClose || 'N/A'} ${stockData.currency || 'USD'}`,
+            exchange: stockData.exchange || 'N/A'
           }
         };
       }
@@ -233,7 +234,7 @@ async function fetchYahooQuoteData(symbols: string[]): Promise<QuoteData[]> {
 async function handleLookup(symbol: string): Promise<FinancialResponse> {
   const results = await fetchYahooQuoteData([symbol]);
   if (!results || results.length === 0) {
-    return { type: 'error', summary: `Could not find data for symbol "${symbol}". Please check the symbol.` };
+    return { type: 'error', summary: `Could not find data for symbol "${symbol}". Please check the symbol.`, key_metrics: {} };
   }
   const quote = results[0]; // Result from yahoo-finance2
   
@@ -283,7 +284,7 @@ async function handleMarketSummary(): Promise<FinancialResponse> {
   const results = await fetchYahooQuoteData(keyIndices);
 
   if (!results || results.length === 0) {
-    return { type: 'error', summary: "Could not fetch market summary data currently." };
+    return { type: 'error', summary: "Could not fetch market summary data currently.", key_metrics: {} };
   }
 
   let summary = "**Current Market Snapshot:**\n";
@@ -308,14 +309,14 @@ async function handleComparison(symbol1: string, symbol2: string): Promise<Finan
 
   if (!results || results.length < 2) {
     const foundSymbols = results.map((r: QuoteData) => r?.symbol).filter(Boolean).join(', ') || 'none';
-    return { type: 'error', summary: `Could not find data for both symbols to compare. Found: ${foundSymbols}` };
+    return { type: 'error', summary: `Could not find data for both symbols to compare. Found: ${foundSymbols}`, key_metrics: {} };
   }
 
   const quote1 = results.find((q: QuoteData) => q?.symbol?.toUpperCase() === symbol1.toUpperCase());
   const quote2 = results.find((q: QuoteData) => q?.symbol?.toUpperCase() === symbol2.toUpperCase());
 
   if (!quote1 || !quote2) {
-     return { type: 'error', summary: `Could not retrieve full data for comparison. Make sure both symbols are valid.` };
+     return { type: 'error', summary: `Could not retrieve full data for comparison. Make sure both symbols are valid.`, key_metrics: {} };
   }
 
   // Select comparable metrics (using library field names)
@@ -341,8 +342,8 @@ async function handleComparison(symbol1: string, symbol2: string): Promise<Finan
     const val2 = quote2[metric.key];
 
     if (val1 !== undefined || val2 !== undefined) {
-      const formattedVal1 = metric.format(val1, quote1).toString(); // Ensure string
-      const formattedVal2 = metric.format(val2, quote2).toString(); // Ensure string
+      const formattedVal1 = metric.format(val1 as any, quote1).toString(); // Ensure string
+      const formattedVal2 = metric.format(val2 as any, quote2).toString(); // Ensure string
       // Pad values within the table cell for better alignment
       comparisonTable += `| ${metric.label.padEnd(16)} | ${formattedVal1.padEnd(10)} | ${formattedVal2.padEnd(10)} |\n`;
     }
@@ -357,8 +358,13 @@ async function handleComparison(symbol1: string, symbol2: string): Promise<Finan
 async function handleAnalysis(symbol: string): Promise<FinancialResponse> {
    const lookupResult = await handleLookup(symbol);
    if(lookupResult.type === 'error') return lookupResult;
+   
+   // Type guard to ensure we have lookup type with data
+   if (lookupResult.type !== 'lookup') {
+     return lookupResult; // This shouldn't happen but handles the type
+   }
 
-   let analysisSummary = `**Analysis for ${lookupResult.data.shortName || symbol}:**\n`;
+   let analysisSummary = `**Analysis for ${lookupResult.data?.shortName || symbol}:**\n`;
    analysisSummary += lookupResult.summary + `\n\n`;
 
    try {
@@ -366,7 +372,7 @@ async function handleAnalysis(symbol: string): Promise<FinancialResponse> {
       if (sp500Results && sp500Results.length > 0) {
          const sp500Quote = sp500Results[0];
          const spChange = sp500Quote.regularMarketChangePercent ?? 0;
-         const assetChange = lookupResult.data.regularMarketChangePercent ?? 0;
+         const assetChange = lookupResult.data?.regularMarketChangePercent ?? 0;
          // Note: Library provides change percent often as decimal (e.g., 0.01 for 1%), multiply by 100 for display
          analysisSummary += `Today\'s performance vs S&P 500 (${getSign(spChange)}${formatNumber(spChange * 100)}%): `;
          if (assetChange > spChange) analysisSummary += `Outperforming.`;
@@ -376,7 +382,7 @@ async function handleAnalysis(symbol: string): Promise<FinancialResponse> {
       }
    } catch (e) { console.error("Failed to fetch S&P 500 for comparison", e); }
 
-   const pe = lookupResult.data.trailingPE;
+   const pe = lookupResult.data?.trailingPE;
    if (pe) {
       analysisSummary += `P/E Ratio (${formatNumber(pe)}): `;
       if (pe > 30) analysisSummary += `Suggests higher growth expectations or potentially overvalued.`;
@@ -481,7 +487,7 @@ User investment profile:
       );
       if (openAIResponse && openAIResponse.type === 'ai_enhanced_response') {
         console.log(`Generated response using RAG for ${isConceptQuery ? 'concept' : 'advice'} query`);
-        return openAIResponse;
+        return openAIResponse as FinancialResponse;
       }
     } catch (aiError) {
       console.error("Error using OpenAI+RAG, falling back to predefined responses:", aiError);
@@ -606,10 +612,123 @@ ${marketContext}
 }
 
 // --- Intent Detection (Enhanced) ---
-function detectIntent(query: string): { intent: string; symbols: string[] } {
+function detectIntent(query: string): { intent: string; symbols: string[]; date?: Date } {
   const lowerQuery = query.toLowerCase();
   const upperQuery = query.toUpperCase();
 
+  // Check for historical price queries with dates
+  const dateRegex = /(0?[1-9]|1[0-2])[\/-](0?[1-9]|[12][0-9]|3[01])[\/-](20\d{2}|\d{2})/g;
+  const isoDateRegex = /(20\d{2})-(0?[1-9]|1[0-2])-(0?[1-9]|[12][0-9]|3[01])/g;
+  const dateWithWords = /(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})\s*,?\s*(20\d{2}|\d{4})/gi;
+  const relativeTimeRegex = /(yesterday|today|last\s+(week|month|year)|(\d+)\s+(days?|weeks?|months?|years?)\s+ago)/gi;
+  
+  // Look for date patterns
+  const dateMatches = query.match(dateRegex) || query.match(isoDateRegex) || query.match(dateWithWords);
+  const relativeMatches = query.match(relativeTimeRegex);
+  
+  // Check for historical price request keywords
+  const historicalPriceKeywords = ['close', 'price', 'at', 'on', 'was', 'traded', 'value', 'worth', 'closed', 'opened', 'high', 'low'];
+  const hasHistoricalKeywords = historicalPriceKeywords.some(kw => lowerQuery.includes(kw));
+  
+  // Check for market explanation queries
+  const marketExplanationKeywords = ['why', 'reason', 'because', 'caused', 'driving', 'behind', 'explain'];
+  const marketMovementKeywords = ['down', 'up', 'drop', 'fell', 'rise', 'rose', 'crash', 'surge', 'volatile', 'movement'];
+  const hasMarketExplanation = marketExplanationKeywords.some(kw => lowerQuery.includes(kw)) && 
+                               marketMovementKeywords.some(kw => lowerQuery.includes(kw));
+  
+  // Check for market explanation queries first (before historical)
+  if (hasMarketExplanation && (lowerQuery.includes('market') || lowerQuery.includes('stock') || lowerQuery.includes('nasdaq') || lowerQuery.includes('dow') || lowerQuery.includes('s&p'))) {
+    console.log("Detected market explanation query");
+    // Extract symbols for context
+    const symbolRegex = /\b([A-Z]{1,5}-USD|[A-Z]{1,5}(\.[A-Z])?|\^[A-Z]+)\b/g;
+    const symbolMatches = upperQuery.match(symbolRegex) || [];
+    const wordsToIgnore = ['AND', 'VS', 'VERSUS', 'OR', 'WITH', 'THE', 'FOR', 'TO', 'ON', 'IN', 'A', 'AN', 'IT', 'IS', 'USD'];
+    const symbols = symbolMatches.filter(sym => !wordsToIgnore.includes(sym));
+    return { intent: 'market_explanation', symbols: symbols.length > 0 ? symbols : ['^GSPC'] };
+  }
+  
+  if (dateMatches && hasHistoricalKeywords) {
+    // Extract date from the match
+    let dateValue: Date | null = null;
+    const dateString = dateMatches[0];
+    
+    try {
+      // Handle different date formats
+      if (dateWithWords.test(dateString)) {
+        // Convert month name to date
+        const parts = dateString.match(/(january|february|march|april|may|june|july|august|september|october|november|december)\s+(\d{1,2})\s*,?\s*(20\d{2})/i);
+        if (parts) {
+          const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
+          const monthIndex = monthNames.findIndex(m => m === parts[1].toLowerCase());
+          dateValue = new Date(parseInt(parts[3]), monthIndex, parseInt(parts[2]));
+        }
+      } else if (dateRegex.test(dateString)) {
+        // Handle MM/DD/YYYY or MM/DD/YY format
+        const parts = dateString.match(/(0?[1-9]|1[0-2])[\/-](0?[1-9]|[12][0-9]|3[01])[\/-](20\d{2}|\d{2})/);
+        if (parts) {
+          const month = parseInt(parts[1]) - 1; // JavaScript months are 0-indexed
+          const day = parseInt(parts[2]);
+          let year = parseInt(parts[3]);
+          // Handle 2-digit years
+          if (year < 100) {
+            year = year < 50 ? 2000 + year : 1900 + year;
+          }
+          dateValue = new Date(year, month, day);
+        }
+      } else {
+        dateValue = new Date(dateString);
+      }
+      
+      if (dateValue && !isNaN(dateValue.getTime())) {
+        console.log(`Detected historical price query for date: ${dateValue.toISOString()}`);
+        
+        // Extract any index/symbol mentioned
+        const symbolRegex = /\b([A-Z]{1,5}-USD|[A-Z]{1,5}(\.[A-Z])?|\^[A-Z]+)\b/g;
+        const symbolMatches = upperQuery.match(symbolRegex) || [];
+        
+        // Look for specific indices by name
+        const indicesMap: {[key: string]: string} = {
+          'S&P': '^GSPC',
+          'S&P 500': '^GSPC',
+          'S&P500': '^GSPC',
+          'SP500': '^GSPC',
+          'DOW': '^DJI',
+          'DOW JONES': '^DJI',
+          'NASDAQ': '^IXIC',
+          'RUSSELL': '^RUT',
+          'RUSSELL 2000': '^RUT'
+        };
+        
+        let symbols = symbolMatches.filter(sym => !['AND', 'VS', 'VERSUS', 'OR', 'WITH', 'THE', 'FOR', 'TO', 'ON', 'IN', 'A', 'AN', 'IT', 'IS'].includes(sym));
+        
+        // Add crypto support for historical queries
+        const CRYPTO_SYMBOLS = ['BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'DOGE', 'MATIC', 'SOL', 'DOT', 'AVAX'];
+        CRYPTO_SYMBOLS.forEach(crypto => {
+          const cryptoRegex = new RegExp(`\\b${crypto}\\b`, 'i');
+          if (cryptoRegex.test(query) && !upperQuery.includes(`${crypto}-USD`)) {
+            symbols.push(`${crypto}-USD`);
+          }
+        });
+        
+        // Check for indices mentioned by name
+        for (const [indexName, symbol] of Object.entries(indicesMap)) {
+          if (upperQuery.includes(indexName)) {
+            symbols.push(symbol);
+          }
+        }
+        
+        // If no specific symbol/index found, default to S&P 500 for general market queries
+        if (symbols.length === 0 && (lowerQuery.includes('market') || lowerQuery.includes('index'))) {
+          symbols.push('^GSPC'); // S&P 500
+        }
+        
+        return { intent: 'historical', symbols: Array.from(new Set(symbols)), date: dateValue };
+      }
+    } catch (e) {
+      console.error('Error parsing date:', e);
+    }
+  }
+  
   // 1. Check for Concept or Educational Questions FIRST
   const conceptKeywords = [
     'what is', 'how does', 'explain', 'define', 'why does', 'when should',
@@ -624,7 +743,7 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
     /how|what|why|when|which|where|can you|could you tell/i.test(lowerQuery);
   
   // If it looks like an educational question without specific stocks, route to general advice
-  if (isEducationalQuery && !/ vs | versus | compare /i.test(lowerQuery)) {
+  if (isEducationalQuery && !/ vs | versus | compare /i.test(lowerQuery) && !dateMatches) {
     console.log("Detected educational or concept-based query: ", lowerQuery);
     return { intent: 'general_advice', symbols: [] };
   }
@@ -647,12 +766,51 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
   // Or matches BTC-USD format for crypto
   // Or matches ^GSPC format for indices
   // And ensures they're surrounded by spaces, punctuation or string boundaries
-  const symbolRegex = /\b([A-Z]{1,5}(\.[A-Z])?|\b[A-Z]{1,5}-USD\b|\^[A-Z]+)\b/g;
+  const symbolRegex = /\b([A-Z]{1,5}-USD|[A-Z]{1,5}(\.[A-Z])?|\^[A-Z]+)\b/g;
   const symbolMatches = upperQuery.match(symbolRegex) || [];
   
   // Filter out common words that shouldn't be treated as symbols
-  const wordsToIgnore = ['AND', 'VS', 'VERSUS', 'OR', 'WITH', 'THE', 'FOR', 'TO', 'ON', 'IN', 'A', 'AN', 'IT', 'IS'];
-  const symbolsInQuery = symbolMatches.filter(sym => !wordsToIgnore.includes(sym));
+  const wordsToIgnore = ['AND', 'VS', 'VERSUS', 'OR', 'WITH', 'THE', 'FOR', 'TO', 'ON', 'IN', 'A', 'AN', 'IT', 'IS', 'USD'];
+  let symbolsInQuery = symbolMatches.filter(sym => !wordsToIgnore.includes(sym));
+  
+  // Enhanced crypto support
+  const CRYPTO_SYMBOLS = ['BTC', 'ETH', 'BNB', 'XRP', 'ADA', 'DOGE', 'MATIC', 'SOL', 'DOT', 'AVAX', 'LINK', 'UNI', 'ATOM', 'LTC', 'ETC', 'XLM', 'ALGO', 'VET', 'FIL', 'THETA'];
+  
+  // Check for crypto mentions and add -USD suffix
+  CRYPTO_SYMBOLS.forEach(crypto => {
+    const cryptoRegex = new RegExp(`\\b${crypto}\\b`, 'i');
+    if (cryptoRegex.test(query)) {
+      // Check if -USD is already present
+      if (!upperQuery.includes(`${crypto}-USD`)) {
+        symbolsInQuery.push(`${crypto}-USD`);
+        console.log(`Detected crypto symbol: ${crypto}, adding as ${crypto}-USD`);
+      }
+    }
+  });
+  
+  // Also handle cases where user types "bitcoin" or "ethereum"
+  const cryptoNameMap: {[key: string]: string} = {
+    'BITCOIN': 'BTC-USD',
+    'ETHEREUM': 'ETH-USD',
+    'RIPPLE': 'XRP-USD',
+    'CARDANO': 'ADA-USD',
+    'DOGECOIN': 'DOGE-USD',
+    'SOLANA': 'SOL-USD',
+    'POLKADOT': 'DOT-USD',
+    'LITECOIN': 'LTC-USD',
+    'CHAINLINK': 'LINK-USD',
+    'UNISWAP': 'UNI-USD'
+  };
+  
+  Object.entries(cryptoNameMap).forEach(([name, symbol]) => {
+    if (upperQuery.includes(name) && !symbolsInQuery.includes(symbol)) {
+      symbolsInQuery.push(symbol);
+      console.log(`Detected crypto name: ${name}, adding as ${symbol}`);
+    }
+  });
+  
+  // Remove duplicates
+  symbolsInQuery = [...new Set(symbolsInQuery)];
   
   console.log("Raw symbol matches:", symbolMatches);
   console.log("Filtered symbols after removing common words:", symbolsInQuery);
@@ -677,7 +835,8 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
   // 3. Check for market summary
   const summaryKeywords = ['market', 'overview', 'summary', 'indices', 'how is the market', 'what happened today'];
   if (summaryKeywords.some(kw => lowerQuery.includes(kw)) && 
-     !/(what is|explain|define|how does)/i.test(lowerQuery)) { // Avoid matching educational questions about markets
+     !/(what is|explain|define|how does)/i.test(lowerQuery) && 
+     !/on \d{1,2}[\/-]\d{1,2}[\/-]\d{4}|\d{4}-\d{1,2}-\d{1,2}/.test(lowerQuery)) { // Avoid matching educational questions about markets or historical queries
     console.log("Detected market summary query.");
     return { intent: 'summary', symbols: [] };
   }
@@ -691,6 +850,35 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
     } else if (symbolsInQuery && symbolsInQuery.length === 1) {
       // If only one symbol found in a comparison query, try to extract potential symbols from words
       const words = upperQuery.split(/\s+/);
+      
+      // Common company names to symbols mapping
+      const companyNameMap: {[key: string]: string} = {
+        'TESLA': 'TSLA',
+        'FORD': 'F',
+        'APPLE': 'AAPL',
+        'MICROSOFT': 'MSFT',
+        'GOOGLE': 'GOOGL',
+        'AMAZON': 'AMZN',
+        'META': 'META',
+        'FACEBOOK': 'META',
+        'NVIDIA': 'NVDA',
+        'AMD': 'AMD',
+        'INTEL': 'INTC',
+        'NETFLIX': 'NFLX',
+        'DISNEY': 'DIS',
+        'WALMART': 'WMT',
+        'TARGET': 'TGT',
+        'NIKE': 'NKE',
+        'STARBUCKS': 'SBUX'
+      };
+      
+      // Check for company names
+      Object.entries(companyNameMap).forEach(([name, symbol]) => {
+        if (upperQuery.includes(name) && !symbolsInQuery.includes(symbol)) {
+          symbolsInQuery.push(symbol);
+          console.log(`Found company name ${name}, adding symbol ${symbol}`);
+        }
+      });
       
       // Skip common words and search for additional stock symbols
       for (let i = 0; i < words.length; i++) {
@@ -721,7 +909,7 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
   }
   
   // 6. Check for single symbol lookup (lowest priority after specific intents)
-  const potentialSymbolExact = upperQuery.match(/^([A-Z]{1,5}(\.[A-Z])?|-USD|\^[A-Z]+)$/);
+  const potentialSymbolExact = upperQuery.match(/^([A-Z]{1,5}(\.[A-Z])?|[A-Z]{1,5}-USD|\^[A-Z]+)$/);
   if (potentialSymbolExact) {
      console.log("Detected exact symbol lookup.");
      return { intent: 'lookup', symbols: [potentialSymbolExact[0]] };
@@ -743,7 +931,227 @@ function detectIntent(query: string): { intent: string; symbols: string[] } {
   return { intent: 'unknown', symbols: [] };
 }
 
+// --- Handle Market Explanation Queries ---
+async function handleMarketExplanation(symbols: string[], query: string): Promise<FinancialResponse> {
+  console.log(`Handling market explanation query for symbols ${symbols.join(', ')}`);
+  
+  try {
+    // Get current market data for context
+    const symbolsToQuery = symbols.length > 0 ? symbols : ['^GSPC', '^DJI', '^IXIC'];
+    const currentData = await fetchYahooQuoteData(symbolsToQuery);
+    
+    let contextData = '';
+    if (currentData && currentData.length > 0) {
+      contextData = 'Current market status:\n';
+      currentData.forEach((quote) => {
+        const name = quote.shortName || quote.longName || quote.symbol;
+        const change = quote.regularMarketChangePercent || 0;
+        contextData += `${name}: ${change > 0 ? '+' : ''}${formatNumber(change)}%\n`;
+      });
+    }
+    
+    // Use the general advice handler with enhanced context for market explanations
+    const enhancedQuery = `${query} ${contextData}`;
+    const response = await handleGeneralAdvice(enhancedQuery, undefined);
+    
+    // Add current market metrics to the response
+    if (currentData && currentData.length > 0) {
+      const key_metrics: Record<string, string> = {};
+      currentData.forEach((quote) => {
+        const name = quote.shortName || quote.longName || quote.symbol;
+        const price = quote.regularMarketPrice || 0;
+        const change = quote.regularMarketChange || 0;
+        const changePercent = quote.regularMarketChangePercent || 0;
+        key_metrics[name] = `${formatNumber(price)} (${getSign(change)}${formatNumber(change)}, ${getSign(changePercent)}${formatNumber(changePercent)}%)`;
+      });
+      response.key_metrics = { ...key_metrics, ...response.key_metrics };
+    }
+    
+    return response;
+  } catch (error) {
+    console.error('Error in handleMarketExplanation:', error);
+    return {
+      type: 'general_advice',
+      summary: `Market movements can be influenced by various factors including economic data, geopolitical events, company earnings, and investor sentiment. For the most current analysis, I recommend checking financial news sources or consulting with a financial advisor.`,
+      key_metrics: {}
+    };
+  }
+}
+
 // --- Main POST Handler --- (Updated switch statement)
+// --- Handle Historical Data Queries ---
+async function handleHistoricalQuery(symbols: string[], date: Date): Promise<FinancialResponse> {
+  console.log(`Handling historical query for symbols ${symbols.join(', ')} on date ${date.toISOString()}`);
+  
+  try {
+    // Format date for display
+    const formattedDate = date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    // Ensure we have at least one symbol to look up
+    const symbolsToQuery = symbols.length > 0 ? symbols : ['^GSPC']; // Default to S&P 500
+    
+    // Set up parameters for historical query
+    const historicalResults: Record<string, any> = {};
+    const symbolNames: Record<string, string> = {};
+    
+    // Map for common index names
+    const indexDisplayNames: Record<string, string> = {
+      '^GSPC': 'S&P 500',
+      '^DJI': 'Dow Jones Industrial Average',
+      '^IXIC': 'NASDAQ Composite',
+      '^RUT': 'Russell 2000'
+    };
+    
+    // Handle date adjustments for weekends and holidays
+    // If the requested date is a weekend or holiday, we need to get the closest previous trading day
+    const dayOfWeek = date.getDay();
+    let adjustedDate = new Date(date);
+    let dateAdjustmentMessage = '';
+    
+    if (dayOfWeek === 0) { // Sunday
+      adjustedDate.setDate(date.getDate() - 2); // Go back to Friday
+      dateAdjustmentMessage = '(Note: Markets are closed on Sundays, showing Friday\'s closing price)';
+    } else if (dayOfWeek === 6) { // Saturday
+      adjustedDate.setDate(date.getDate() - 1); // Go back to Friday
+      dateAdjustmentMessage = '(Note: Markets are closed on Saturdays, showing Friday\'s closing price)';
+    }
+    
+    // We need to fetch data for a period around the date to ensure we get the actual trading day
+    // Yahoo Finance needs dates in YYYY-MM-DD format
+    // Set period to cover 5 days before the target date to account for holidays
+    const startDate = new Date(adjustedDate);
+    startDate.setDate(startDate.getDate() - 5);
+    
+    const endDate = new Date(adjustedDate);
+    endDate.setDate(endDate.getDate() + 1); // Add 1 day to include the target date
+    
+    for (const symbol of symbolsToQuery) {
+      try {
+        // Get the historical data for the symbol
+        const result = await yahooFinance.historical(symbol, {
+          period1: startDate.toISOString().split('T')[0],
+          period2: endDate.toISOString().split('T')[0],
+          interval: '1d',
+        });
+        
+        // Get symbol information for display
+        try {
+          const quote = await yahooFinance.quote(symbol);
+          symbolNames[symbol] = quote.shortName || quote.longName || indexDisplayNames[symbol] || symbol;
+        } catch (e) {
+          console.error(`Error fetching quote for ${symbol}:`, e);
+          symbolNames[symbol] = indexDisplayNames[symbol] || symbol;
+        }
+        
+        // Find the closest date to the requested date
+        // Sort the results by date
+        const sortedResults = result.sort((a, b) => {
+          const dateA = new Date(a.date).getTime();
+          const dateB = new Date(b.date).getTime();
+          return dateB - dateA; // Sort descending (newest first)
+        });
+        
+        // Get the closest date before or equal to the adjusted request date
+        const targetTimestamp = adjustedDate.getTime();
+        const closestResult = sortedResults.find(r => {
+          const resultDate = new Date(r.date);
+          return resultDate.getTime() <= targetTimestamp;
+        });
+        
+        if (closestResult) {
+          historicalResults[symbol] = closestResult;
+          
+          // Check if we need to add a message about using a different date
+          const resultDate = new Date(closestResult.date);
+          if (resultDate.getTime() !== adjustedDate.getTime()) {
+            const resultFormatted = resultDate.toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            });
+            dateAdjustmentMessage = `(Note: No trading data available for the requested date. Showing closest available data from ${resultFormatted})`;
+          }
+        } else {
+          throw new Error(`No historical data found for ${symbol} around ${formattedDate}`);
+        }
+      } catch (error) {
+        console.error(`Error fetching historical data for ${symbol}:`, error);
+      }
+    }
+    
+    // Build the response
+    let summary = '';
+    let key_metrics: Record<string, string> = {};
+    
+    if (Object.keys(historicalResults).length === 0) {
+      return {
+        type: 'error',
+        summary: `I couldn't find historical market data for ${formattedDate}. This could be because the markets were closed (weekend or holiday) or the data is not available in my system.`,
+        key_metrics: {}
+      };
+    }
+    
+    // Format the response based on the number of symbols
+    if (symbolsToQuery.length === 1) {
+      // Single symbol response
+      const symbol = symbolsToQuery[0];
+      const data = historicalResults[symbol];
+      const name = symbolNames[symbol];
+      
+      if (data) {
+        const { open, high, low, close, volume } = data;
+        
+        summary = `On ${formattedDate}, the ${name} closed at ${close.toFixed(2)}. ${dateAdjustmentMessage}`;
+        
+        key_metrics = {
+          'Symbol': symbol,
+          'Open': `${open.toFixed(2)}`,
+          'High': `${high.toFixed(2)}`,
+          'Low': `${low.toFixed(2)}`,
+          'Close': `${close.toFixed(2)}`,
+          'Volume': volume.toLocaleString()
+        };
+      }
+    } else {
+      // Multiple symbols response
+      summary = `Historical market data for ${formattedDate}:\n\n`;
+      
+      for (const symbol of symbolsToQuery) {
+        const data = historicalResults[symbol];
+        const name = symbolNames[symbol];
+        
+        if (data) {
+          summary += `${name} (${symbol}): Closed at ${data.close.toFixed(2)}\n`;
+          key_metrics[name] = `Open: ${data.open.toFixed(2)}, Close: ${data.close.toFixed(2)}`;
+        }
+      }
+      
+      if (dateAdjustmentMessage) {
+        summary += `\n${dateAdjustmentMessage}`;
+      }
+    }
+    
+    return {
+      type: 'lookup',
+      summary,
+      key_metrics
+    };
+  } catch (error) {
+    console.error('Error in handleHistoricalQuery:', error);
+    return {
+      type: 'error',
+      summary: `I couldn't retrieve the historical market data you requested. ${error instanceof Error ? error.message : 'An unknown error occurred.'}`,
+      key_metrics: {}
+    };
+  }
+}
+
 export async function POST(req: NextRequest) {
   let marketStatusMessage = "";
   let responseData: FinancialResponse | undefined;
@@ -772,10 +1180,23 @@ export async function POST(req: NextRequest) {
 
     console.log(`Processing query: "${query}"`);
     console.log(`User preferences:`, userPreferences ? 'Available' : 'Not provided');
-    const { intent, symbols } = detectIntent(query);
+    const intentResult = detectIntent(query);
+    const { intent, symbols } = intentResult;
     console.log(`Detected Intent: ${intent}, Symbols: ${symbols.join(', ')}`);
 
     switch (intent) {
+      case 'historical':
+        // Handle historical price query
+        if (intentResult.date) {
+          responseData = await handleHistoricalQuery(symbols, intentResult.date);
+        } else {
+          responseData = {
+            type: 'error',
+            summary: 'I detected a historical price query but couldn\'t determine the specific date. Please specify the date in a format like MM/DD/YYYY or Month Day, Year.',
+            key_metrics: {}
+          };
+        }
+        break;
       case 'lookup':
         responseData = await handleLookup(symbols[0]);
         break;
@@ -787,6 +1208,9 @@ export async function POST(req: NextRequest) {
         break;
       case 'analysis':
          responseData = await handleAnalysis(symbols[0]);
+         break;
+      case 'market_explanation':
+         responseData = await handleMarketExplanation(symbols, query);
          break;
       case 'general_advice':
          responseData = await handleGeneralAdvice(query, userPreferences);

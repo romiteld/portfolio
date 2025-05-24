@@ -8,11 +8,15 @@
 import { OpenAI } from 'openai';
 import { queryFinancialKnowledge } from './supabaseFinancialStorage';
 import { FinancialAdvice, MarketData } from './supabaseFinancialSchema';
+import { RateLimiter } from '@/app/utils/rateLimiter';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || '',
 });
+
+// Initialize rate limiter for OpenAI calls
+const openAIRateLimiter = new RateLimiter(20); // 20 requests per minute
 
 /**
  * Generate a financial advice response using OpenAI with Supabase content
@@ -27,7 +31,7 @@ export async function generateFinancialAdviceWithRAG(
   query: string,
   marketContext?: string,
   useRAG: boolean = true
-) {
+): Promise<{ type: 'ai_enhanced_response' | 'error'; summary: string; key_metrics: Record<string, string>; sources?: any }> {
   try {
     // Retrieve relevant financial knowledge if RAG is enabled
     let ragContext = '';
@@ -58,6 +62,15 @@ Important guidelines:
 5. Always include appropriate disclaimers for financial advice
 6. Format responses clearly with headings, bullet points, and tables when appropriate`;
 
+    // Check rate limit before making OpenAI call
+    const userId = 'financial-assistant'; // Could be customized per user
+    if (!openAIRateLimiter.canMakeRequest(userId)) {
+      const waitTime = openAIRateLimiter.getTimeUntilNextSlot(userId);
+      throw new Error(`OpenAI rate limit exceeded. Please wait ${waitTime} seconds before trying again.`);
+    }
+    
+    openAIRateLimiter.trackRequest(userId);
+    
     // Generate response with OpenAI
     const chatCompletion = await openai.chat.completions.create({
       model: "gpt-4-turbo",
@@ -72,8 +85,9 @@ Important guidelines:
     // Extract and return the generated response
     const response = chatCompletion.choices[0]?.message?.content || "I couldn't generate a response at this time.";
     return {
-      type: 'ai_enhanced_response',
+      type: 'ai_enhanced_response' as const,
       summary: response,
+      key_metrics: {},
       sources: {
         ragUsed: useRAG && ragContext ? true : false,
         recentInfoUsed: hasRealtimeInfo,
@@ -83,8 +97,9 @@ Important guidelines:
   } catch (error) {
     console.error("Error generating financial advice with OpenAI:", error);
     return {
-      type: 'error',
+      type: 'error' as const,
       summary: `Sorry, I encountered an error while processing your request. Please try again later. ${error instanceof Error ? error.message : ''}`,
+      key_metrics: {}
     };
   }
 }

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 import { RetrievalQAChain } from 'langchain/chains';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
-import { Document } from 'langchain/document';
+import { searchDocuments, getAllDocuments } from '@/lib/supabaseVectorStorage';
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,31 +10,52 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid question' }, { status: 400 });
     }
 
-    // Sample knowledge base
-    const docs = [
-      new Document({ pageContent: 'LangChain is a framework for building applications with language models.' }),
-      new Document({ pageContent: 'Retrieval-augmented generation (RAG) combines information retrieval with text generation.' }),
-      new Document({ pageContent: 'This demo uses an in-memory vector store with OpenAI embeddings.' })
-    ];
+    // Search for relevant documents using Supabase vector search
+    const searchResults = await searchDocuments(question, 5);
+    
+    if (searchResults.length === 0) {
+      return NextResponse.json({
+        answer: "I couldn't find any relevant information to answer your question. Please make sure documents have been uploaded to the knowledge base.",
+        sources: [],
+      });
+    }
 
-    const embeddings = new OpenAIEmbeddings({ apiKey: process.env.OPENAI_API_KEY || '' });
-    const vectorStore = await MemoryVectorStore.fromDocuments(docs, embeddings);
-    const retriever = vectorStore.asRetriever();
+    // Prepare context from search results
+    const context = searchResults
+      .map((result) => result.chunk_text)
+      .join('\n\n');
 
+    // Initialize OpenAI model
     const model = new ChatOpenAI({
       openAIApiKey: process.env.OPENAI_API_KEY || '',
       temperature: 0,
       modelName: 'gpt-3.5-turbo'
     });
 
-    const chain = RetrievalQAChain.fromLLM(model, retriever);
-    const results = await vectorStore.similaritySearchWithScore(question, 3);
-    const relevantDocs = results.map(([doc, score]) => ({ doc, score }));
-    const response = await chain.call({ query: question });
+    // Generate answer based on context
+    const prompt = `Based on the following context, please answer the question. If the answer cannot be found in the context, say so.
+
+Context:
+${context}
+
+Question: ${question}
+
+Answer:`;
+
+    const response = await model.call([
+      {
+        _getType() { return 'human' as const; },
+        content: prompt
+      }
+    ]);
 
     return NextResponse.json({
-      answer: response.text,
-      sources: relevantDocs.map((r) => ({ content: r.doc.pageContent, score: r.score })),
+      answer: response.content,
+      sources: searchResults.map((result) => ({
+        content: result.chunk_text,
+        score: result.similarity,
+        metadata: result.metadata
+      })),
     });
   } catch (err) {
     console.error('RAG demo error:', err);

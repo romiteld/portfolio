@@ -86,12 +86,19 @@ export default function EnhancedRAGDemo() {
             <div>
               <p className="font-semibold">Retrieved Context:</p>
               <ul className="space-y-2">
-                {sources.map((src, idx) => (
+                {sources.map((src: any, idx) => (
                   <li key={idx} className="border rounded p-2 text-sm">
-                    <div className="flex justify-between">
-                      <span>Score: {(src.score * 100).toFixed(1)}%</span>
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                        Similarity: {(src.score * 100).toFixed(1)}%
+                      </span>
+                      {src.metadata?.title && (
+                        <span className="text-xs text-neutral-500">
+                          From: {src.metadata.title}
+                        </span>
+                      )}
                     </div>
-                    <p>{src.content}</p>
+                    <p className="text-neutral-700 dark:text-neutral-300">{src.content}</p>
                   </li>
                 ))}
               </ul>
