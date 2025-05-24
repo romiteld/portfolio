@@ -33,7 +33,8 @@ export function PerformanceMonitor() {
   const frameCount = useRef(0);
   const lastTime = useRef(performance.now());
   const fpsHistory = useRef<number[]>([]);
-  const { gl, scene } = useThree();
+  const gl = useThree((state) => state.gl);
+  const scene = useThree((state) => state.scene);
 
   useFrame(() => {
     frameCount.current++;

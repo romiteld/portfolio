@@ -62,7 +62,7 @@
     "@react-three/cannon": "^6.6.0",
     "@react-three/drei": "^9.80.1",
     "@react-three/fiber": "8.13.7",
-    "@react-three/postprocessing": "^2.15.1",
+    "@react-three/postprocessing": "^2.19.1",
     "@sendgrid/mail": "^8.1.4",
     "@supabase/supabase-js": "^2.49.4",
     "@types/nodemailer": "^6.4.17",

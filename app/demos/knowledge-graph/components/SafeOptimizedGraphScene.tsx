@@ -1,18 +1,16 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Stars, Preload, AdaptiveDpr, AdaptiveEvents } from '@react-three/drei';
-import { Suspense, useState, useEffect, useMemo } from 'react';
-import { EffectComposer, Bloom } from '@react-three/postprocessing';
+import { OrbitControls, Stars, Preload } from '@react-three/drei';
+import { Suspense, useState, useEffect } from 'react';
 import { GraphState } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 import { UIOverlay } from './UIOverlay';
 import { SimplifiedGraph } from './SimplifiedGraph';
-import { PerformanceMonitor } from './PerformanceMonitor';
+import { SafePerformanceMonitor } from './SafePerformanceMonitor';
 import { OptimizedSceneContent } from './OptimizedSceneContent';
-// import { usePerformance } from '../hooks/usePerformance';
 
-export function OptimizedGraphScene() {
+export function SafeOptimizedGraphScene() {
   const [graphState, setGraphState] = useState<GraphState>({
     selectedNode: null,
     hoveredNode: null,
@@ -88,10 +86,6 @@ export function OptimizedGraphScene() {
         shadows={!isLowEndDevice}
         dpr={[1, 2]}
       >
-        {/* Adaptive performance */}
-        <AdaptiveDpr pixelated />
-        <AdaptiveEvents />
-
         {/* Optimized lighting */}
         <ambientLight intensity={0.3} />
         <directionalLight 
@@ -134,19 +128,6 @@ export function OptimizedGraphScene() {
           />
         </Suspense>
 
-        {/* Conditional post-processing */}
-        {enableEffects && (
-          <EffectComposer>
-            <Bloom 
-              intensity={1.2}
-              luminanceThreshold={0.3}
-              luminanceSmoothing={0.9}
-              mipmapBlur
-              radius={0.5}
-            />
-          </EffectComposer>
-        )}
-
         <Preload all />
       </Canvas>
 
@@ -171,7 +152,7 @@ export function OptimizedGraphScene() {
           onStateChange={setGraphState} 
         />
         
-        <PerformanceMonitor />
+        <SafePerformanceMonitor />
 
         {/* Performance toggle */}
         <button
