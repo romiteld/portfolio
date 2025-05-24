@@ -60,11 +60,11 @@ export function LODNode({ node, children }: LODNodeProps) {
   });
 
   return (
-    <lOD ref={lodRef}>
-      <primitive object={lods.high.object} attach="levels-0" />
-      <primitive object={lods.medium.object} attach="levels-1" />
-      <primitive object={lods.low.object} attach="levels-2" />
-      <primitive object={lods.billboard.object} attach="levels-3" />
-    </lOD>
+    <lod ref={lodRef}>
+      {lods.high.object}
+      <primitive object={lods.medium.object} />
+      <primitive object={lods.low.object} />
+      <primitive object={lods.billboard.object} />
+    </lod>
   );
 }

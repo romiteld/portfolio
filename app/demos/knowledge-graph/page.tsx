@@ -4,7 +4,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Dynamic import to avoid SSR issues with Three.js
 const GraphScene = dynamic(
-  () => import('./components/GraphScene').then(mod => ({ default: mod.GraphScene })),
+  () => import('./components/OptimizedGraphScene').then(mod => ({ default: mod.OptimizedGraphScene })),
   { 
     ssr: false,
     loading: () => (
