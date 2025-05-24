@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { demoNodes, connections } from './utils/demoData';
+import { useKnowledgeGraphPersistence } from '@/hooks/use-knowledge-graph-persistence';
+import { Save, FolderOpen, Trash2 } from 'lucide-react';
 
 export default function KnowledgeGraphPage() {
   const [isClient, setIsClient] = useState(false);
@@ -10,9 +12,31 @@ export default function KnowledgeGraphPage() {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [showLoadDialog, setShowLoadDialog] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
+
+  const {
+    savedStates,
+    isLoading,
+    saveCurrentState,
+    loadState,
+    deleteState,
+    trackNodeClick,
+    trackSearch,
+    trackFilterUsage
+  } = useKnowledgeGraphPersistence();
 
   useEffect(() => {
     setIsClient(true);
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
   if (!isClient) {
@@ -38,7 +62,7 @@ export default function KnowledgeGraphPage() {
   // Calculate positions for filtered nodes in a circle
   const nodePositions = filteredNodes.map((node, index) => {
     const angle = (index / filteredNodes.length) * 2 * Math.PI - Math.PI / 2; // Start from top
-    const radius = 30; // Percentage of viewport - reduced to fit better
+    const radius = isMobile ? 25 : 30; // Smaller radius on mobile
     const x = 50 + Math.cos(angle) * radius;
     const y = 50 + Math.sin(angle) * radius;
     return { ...node, x, y };
@@ -80,13 +104,21 @@ export default function KnowledgeGraphPage() {
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  if (e.target.value) {
+                    trackSearch(e.target.value);
+                  }
+                }}
                 className="px-3 py-1.5 bg-gray-800 text-white text-sm rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none transition-colors w-full sm:w-40 lg:w-48"
               />
               
               <select
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  trackFilterUsage(e.target.value);
+                }}
                 className="px-3 py-1.5 bg-gray-800 text-white text-sm rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none transition-colors w-full sm:w-auto"
               >
                 {categories.map(cat => (
@@ -162,12 +194,26 @@ export default function KnowledgeGraphPage() {
                     opacity: shouldHighlight ? 1 : 0.3,
                     transform: `translate(-50%, -50%) scale(${isSelected ? 1.2 : isHovered ? 1.1 : 1})`
                   }}
-                  onMouseEnter={() => setHoveredNode(node.id)}
-                  onMouseLeave={() => setHoveredNode(null)}
-                  onClick={() => setSelectedNode(selectedNode === node.id ? null : node.id)}
+                  onMouseEnter={() => !isMobile && setHoveredNode(node.id)}
+                  onMouseLeave={() => !isMobile && setHoveredNode(null)}
+                  onTouchStart={() => isMobile && setHoveredNode(node.id)}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    if (isMobile) {
+                      setSelectedNode(selectedNode === node.id ? null : node.id);
+                      trackNodeClick(node.id);
+                      setHoveredNode(null);
+                    }
+                  }}
+                  onClick={() => {
+                    if (!isMobile) {
+                      setSelectedNode(selectedNode === node.id ? null : node.id);
+                      trackNodeClick(node.id);
+                    }
+                  }}
                 >
                   <div 
-                    className="relative w-16 h-16 rounded-full flex items-center justify-center shadow-2xl cursor-pointer transition-all duration-300 border-2 border-white/20"
+                    className={`relative ${isMobile ? 'w-20 h-20' : 'w-16 h-16'} rounded-full flex items-center justify-center shadow-2xl cursor-pointer transition-all duration-300 border-2 border-white/20`}
                     style={{ 
                       backgroundColor: node.color || '#4B5563',
                       boxShadow: `0 0 20px ${node.color}40`
@@ -199,7 +245,7 @@ export default function KnowledgeGraphPage() {
 
           {/* Selected Node Info Panel */}
           {selectedNode && (
-            <div className="absolute top-4 right-4 p-4 bg-black/95 backdrop-blur-md rounded-lg w-80 shadow-2xl z-20 max-h-[calc(100vh-200px)] overflow-y-auto">
+            <div className={`absolute ${isMobile ? 'bottom-0 left-0 right-0 rounded-t-lg' : 'top-4 right-4 w-80 rounded-lg'} p-4 bg-black/95 backdrop-blur-md shadow-2xl z-20 max-h-[40vh] overflow-y-auto`}>
               {(() => {
                 const node = demoNodes.find(n => n.id === selectedNode);
                 if (!node) return null;
@@ -278,8 +324,126 @@ export default function KnowledgeGraphPage() {
             </div>
           )}
 
+          {/* Persistence Controls */}
+          {!isMobile && (
+            <div className="absolute top-4 left-4 flex gap-2">
+              <button
+                onClick={() => setShowSaveDialog(true)}
+                className="p-2 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors"
+                title="Save current state"
+              >
+                <Save className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowLoadDialog(true)}
+                className="p-2 bg-black/80 backdrop-blur-sm rounded-lg text-white hover:bg-black/90 transition-colors"
+                title="Load saved state"
+              >
+                <FolderOpen className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Save Dialog */}
+          {showSaveDialog && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-30">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-2xl">
+                <h3 className="text-white font-bold mb-4">Save Graph State</h3>
+                <input
+                  type="text"
+                  placeholder="Enter a name for this state..."
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-800 text-white rounded mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      if (saveName) {
+                        await saveCurrentState(saveName, {
+                          selectedNode,
+                          filter: { categories: [selectedCategory], techStack: [], searchTerm },
+                          viewMode: 'default'
+                        });
+                        setShowSaveDialog(false);
+                        setSaveName('');
+                      }
+                    }}
+                    disabled={!saveName || isLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowSaveDialog(false);
+                      setSaveName('');
+                    }}
+                    className="px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Load Dialog */}
+          {showLoadDialog && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-30">
+              <div className="bg-gray-900 p-6 rounded-lg shadow-2xl max-w-md w-full max-h-96 overflow-y-auto">
+                <h3 className="text-white font-bold mb-4">Load Saved State</h3>
+                {savedStates.length === 0 ? (
+                  <p className="text-gray-400 text-sm">No saved states found.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {savedStates.map(state => (
+                      <div key={state.id} className="flex items-center justify-between p-3 bg-gray-800 rounded">
+                        <div>
+                          <p className="text-white font-medium">{state.name}</p>
+                          <p className="text-gray-400 text-xs">
+                            {new Date(state.updated_at || '').toLocaleString()}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={async () => {
+                              const loadedState = await loadState(state.id!);
+                              if (loadedState) {
+                                setSelectedNode(loadedState.selectedNode);
+                                setSearchTerm(loadedState.filter.searchTerm);
+                                setSelectedCategory(loadedState.filter.categories[0] || 'all');
+                                setShowLoadDialog(false);
+                              }
+                            }}
+                            className="p-1 text-blue-400 hover:text-blue-300"
+                          >
+                            Load
+                          </button>
+                          <button
+                            onClick={() => deleteState(state.id!)}
+                            className="p-1 text-red-400 hover:text-red-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  onClick={() => setShowLoadDialog(false)}
+                  className="mt-4 w-full px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Legend and Stats */}
-          <div className="absolute bottom-4 left-4 flex gap-4">
+          <div className={`absolute ${isMobile ? 'bottom-4 left-2 flex-col gap-2' : 'bottom-4 left-4 flex gap-4'} ${selectedNode && isMobile ? 'hidden' : 'flex'}`}>
             {/* Stats */}
             <div className="p-3 bg-black/80 backdrop-blur-sm rounded-lg">
               <p className="text-white text-xs font-semibold mb-1">Stats</p>
