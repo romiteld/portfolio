@@ -518,7 +518,7 @@ export default function StockChart({
               height={height - 50}
               ref={(ref) => {
                 if (ref) {
-                  // @ts-ignore - React-ChartJS-2 typing issue
+                  // @ts-expect-error - React-ChartJS-2 typing issue
                   chartRef.current = ref;
                 }
               }}

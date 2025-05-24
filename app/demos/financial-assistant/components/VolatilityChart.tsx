@@ -735,7 +735,7 @@ export default function VolatilityChart({
                   checked={option.checked}
                   onChange={() => {
                     const newProps = toggleVolatility(option.value as any);
-                    // @ts-ignore
+                    // @ts-expect-error
                     setChartData((prev) => ({...prev})); // Force rerender
                   }}
                   className="rounded text-blue-500 focus:ring-blue-500 h-3 w-3"
@@ -754,7 +754,7 @@ export default function VolatilityChart({
               height={height - 100}
               ref={(ref) => {
                 if (ref) {
-                  // @ts-ignore - React-ChartJS-2 typing issue
+                  // @ts-expect-error - React-ChartJS-2 typing issue
                   chartRef.current = ref;
                 }
               }}
