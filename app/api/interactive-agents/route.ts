@@ -2,15 +2,25 @@ import { NextRequest, NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 
 export const runtime = 'edge'
-export const maxDuration = 15
+export const maxDuration = 30
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || '' })
+
+if (!process.env.OPENAI_API_KEY) {
+  console.warn('OPENAI_API_KEY is not configured')
+}
 
 export async function POST(req: NextRequest) {
   const { goal, agents } = await req.json()
 
   if (!goal || typeof goal !== 'string') {
     return NextResponse.json({ error: 'Goal is required' }, { status: 400 })
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    return NextResponse.json(
+      { error: 'OPENAI_API_KEY environment variable not set' },
+      { status: 500 }
+    )
   }
   const agentIds = Array.isArray(agents) && agents.length > 0 ? agents : []
 
@@ -57,7 +67,7 @@ export async function POST(req: NextRequest) {
       if (!cfg) continue
 
       const res = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-4-turbo',
         messages: [
           { role: 'system', content: cfg.system },
           { role: 'user', content: cfg.prompt(goal, context) }
