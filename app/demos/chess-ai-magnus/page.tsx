@@ -476,7 +476,7 @@ function ChessAIDemo() {
         if (moveHistory.length < 10) setGamePhase('opening')
         else if (pieces.total > 14) setGamePhase('middlegame') 
         else setGamePhase('endgame')
-    }, [moveHistory.length, currentBoard]);
+    }, [moveHistory, currentBoard]);
 
     // Player metrics state and calculation
     const [playerMetrics, setPlayerMetrics] = useState<PlayerMetrics>({

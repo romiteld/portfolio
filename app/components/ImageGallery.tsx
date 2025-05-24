@@ -67,7 +67,7 @@ export default function ImageGallery({ images }: ImageGalleryProps) {
     if (hasMore) {
       fetchImages();
     }
-  }, [currentPage]);
+  }, [currentPage, hasMore]);
 
   // Add GSAP animation for new images
   useEffect(() => {
