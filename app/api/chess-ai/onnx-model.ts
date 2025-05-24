@@ -130,10 +130,7 @@ export async function getModelFromSupabase(): Promise<ArrayBuffer | null> {
    * 
    * Note: This file now only provides model info and metadata
    * The actual neural network operations are performed client-side only
-   */
-
-  // External dependencies
-  const { createClient } = require('@supabase/supabase-js');
+ */
 
   // Model information
   const MODEL_INFO = {
