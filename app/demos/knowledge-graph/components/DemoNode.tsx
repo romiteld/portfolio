@@ -6,6 +6,7 @@ import { Html, Billboard, Sphere, Box, Octahedron, Torus, Cone } from '@react-th
 import { DemoNode as DemoNodeType } from '../types';
 import * as THREE from 'three';
 import { animated, useSpring } from '@react-spring/three';
+import { InstancedParticles } from './InstancedParticles';
 
 interface DemoNodeProps {
   node: DemoNodeType;
@@ -18,7 +19,6 @@ interface DemoNodeProps {
 export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: DemoNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
-  const [particles] = useState(() => createParticles(node.size * 50));
   const { camera } = useThree();
   const [distanceToCamera, setDistanceToCamera] = useState(0);
 
@@ -145,25 +145,14 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: Demo
         />
       </mesh>
 
-      {/* Particles - only render for close objects */}
+      {/* Instanced Particles - only render for close objects */}
       {distanceToCamera < 15 && (
-        <points>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={particles.length / 3}
-              array={particles}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <pointsMaterial
-            size={0.02}
-            color={node.color}
-            transparent
-            opacity={0.6}
-            sizeAttenuation
-          />
-        </points>
+        <InstancedParticles
+          count={Math.floor(node.size * 30)}
+          color={node.color}
+          size={0.02}
+          radius={node.size}
+        />
       )}
 
       {/* Label */}
@@ -204,18 +193,4 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: Demo
       )}
     </group>
   );
-}
-
-function createParticles(count: number): Float32Array {
-  const particles = new Float32Array(count * 3);
-  for (let i = 0; i < count * 3; i += 3) {
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.random() * Math.PI;
-    const radius = 1 + Math.random() * 0.5;
-
-    particles[i] = radius * Math.sin(phi) * Math.cos(theta);
-    particles[i + 1] = radius * Math.sin(phi) * Math.sin(theta);
-    particles[i + 2] = radius * Math.cos(phi);
-  }
-  return particles;
 }

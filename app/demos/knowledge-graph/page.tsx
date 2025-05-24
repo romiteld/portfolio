@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Dynamic import to avoid SSR issues with Three.js
 const GraphScene = dynamic(
@@ -22,8 +23,10 @@ export const metadata: Metadata = {
 
 export default function KnowledgeGraphPage() {
   return (
-    <div className="w-full h-screen bg-black overflow-hidden">
-      <GraphScene />
-    </div>
+    <ErrorBoundary>
+      <div className="w-full h-screen bg-black overflow-hidden">
+        <GraphScene />
+      </div>
+    </ErrorBoundary>
   );
 }
