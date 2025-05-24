@@ -221,7 +221,7 @@ export default function Contact() {
             )}
             {isSubmitted && (
               <div className="text-green-500 dark:text-green-400 text-sm">
-                Message sent successfully! I'll get back to you soon.
+                Message sent successfully! I&apos;ll get back to you soon.
               </div>
             )}
             <div ref={buttonRef} className="relative">

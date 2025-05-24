@@ -24,12 +24,12 @@ export default function About() {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <p className="text-lg mb-6 text-neutral-700 dark:text-neutral-300">
-          I'm an AI Engineer with a passion for creating intelligent systems that solve real-world problems. With years
-          of experience in machine learning, natural language processing, and computer vision, I've developed a range of
-          AI applications that push the boundaries of what's possible.
+          I&apos;m an AI Engineer with a passion for creating intelligent systems that solve real-world problems. With years
+          of experience in machine learning, natural language processing, and computer vision, I&apos;ve developed a range of
+          AI applications that push the boundaries of what&apos;s possible.
         </p>
         <p className="text-lg mb-6 text-neutral-700 dark:text-neutral-300">
-          When I'm not coding or training neural networks, you'll find me in my woodworking shop. Woodworking is my
+          When I&apos;m not coding or training neural networks, you&apos;ll find me in my woodworking shop. Woodworking is my
           creative outlet, allowing me to bring designs to life with my hands. The precision and patience required in
           woodworking complement my technical skills in AI, creating a perfect balance between the digital and physical
           worlds.

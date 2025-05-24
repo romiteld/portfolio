@@ -893,14 +893,14 @@ function ChessAIDemo() {
                                 <ul className="space-y-1.5 list-disc list-inside">
                                     <li>Played on an 8x8 board.</li>
                                     <li>16 pieces per player. White moves first.</li>
-                                    <li>Goal: Checkmate opponent's king.</li>
+                                    <li>Goal: Checkmate opponent&apos;s king.</li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2 mt-4 md:mt-0">How to Move Pieces</h4>
                                 <ul className="space-y-1.5 list-disc list-inside">
                                     <li><strong>Pawn:</strong> Forward 1 (or 2 on first move), captures diagonally.</li>
-                                    <li><strong>Knight:</strong> 'L' shape (2 squares one way, 1 perpendicular). Can jump.</li>
+                                    <li><strong>Knight:</strong> &apos;L&apos; shape (2 squares one way, 1 perpendicular). Can jump.</li>
                                     <li><strong>Bishop:</strong> Diagonally, any number of squares.</li>
                                     <li><strong>Rook:</strong> Horizontally or vertically, any number of squares.</li>
                                     <li><strong>Queen:</strong> Any direction (horizontal, vertical, diagonal), any number of squares.</li>
