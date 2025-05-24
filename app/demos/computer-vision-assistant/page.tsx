@@ -23,7 +23,7 @@ const CameraCapture = dynamic(
 );
 
 const VoiceInterface = dynamic(
-  () => import("./components/VoiceInterface"),
+  () => import("./components/VoiceInterface-fixed"),
   {
     ssr: false,
     loading: () => <div className="h-64 bg-gray-800 rounded-lg animate-pulse"></div>
