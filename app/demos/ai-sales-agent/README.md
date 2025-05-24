@@ -3,11 +3,13 @@
 This demo showcases a simple AI Sales Agent chat interface built with React and Next.js. It demonstrates how an automated sales assistant might interact with visitors on a website.
 
 ## Features
-- Basic chat interface with user and agent messages
-- Predefined agent responses for demo purposes
+- Company lookup with autocomplete suggestions and recent searches
+- Loading indicator shows "Analyzing company data" during fetch
+- Preview card displays fetched company info
+- Agent avatar "Alex" with typing indicator
+- Quick action buttons for common requests
+- Undo Clear option for 10 seconds after clearing chat
 - Messages persist locally between visits
-- Typing indicator shows when the agent is preparing a reply
-- Clear Chat button to reset the conversation
 - Responsive design using Tailwind CSS
 
 ## Usage
