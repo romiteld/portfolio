@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useRef, useEffect, useState } from 'react'
+import Image from 'next/image'
 import {
   Send,
   Trash2,
@@ -187,12 +188,12 @@ export default function SalesAgent() {
             <div className="absolute top-full left-0 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded shadow z-10">
               {suggestions.map(s => (
                 <button key={s.name} onClick={() => setCompany(s.name)} className="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
-                  <img src={s.logo} alt="logo" className="w-4 h-4 mr-2" /> {s.name}
+                  <Image src={s.logo} alt="logo" width={16} height={16} className="mr-2" /> {s.name}
                 </button>
               ))}
               {recentSearches.map(r => (
                 <button key={r} onClick={() => setCompany(r)} className="flex items-center w-full px-2 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm">
-                  <img src="/placeholder-logo.png" alt="recent" className="w-4 h-4 mr-2" /> {r}
+                  <Image src="/placeholder-logo.png" alt="recent" width={16} height={16} className="mr-2" /> {r}
                 </button>
               ))}
             </div>
@@ -203,7 +204,7 @@ export default function SalesAgent() {
           <Card className="mt-2 text-sm">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
-                <img src="/placeholder-logo.png" alt="logo" className="w-6 h-6" />
+                <Image src="/placeholder-logo.png" alt="logo" width={24} height={24} />
                 <span>{companyInfo.name}</span>
               </CardTitle>
             </CardHeader>
