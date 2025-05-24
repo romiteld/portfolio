@@ -10,7 +10,14 @@ const openai = new OpenAI({
 
 export async function POST(req: NextRequest) {
   try {
-    const { prompt, type, temperature, size } = await req.json()
+    const {
+      prompt,
+      type,
+      temperature,
+      size,
+      negativePrompt,
+      maxTokens
+    } = await req.json()
 
     if (!prompt || typeof prompt !== 'string') {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
@@ -31,15 +38,24 @@ export async function POST(req: NextRequest) {
       const completion = await openai.chat.completions.create({
         model: 'gpt-4',
         messages: [{ role: 'user', content: prompt }],
-        temperature: temp
+        temperature: temp,
+        max_tokens:
+          typeof maxTokens === 'number' && !Number.isNaN(maxTokens)
+            ? maxTokens
+            : undefined
       })
       const text = completion.choices[0]?.message?.content || ''
       return NextResponse.json({ text })
     }
 
+    const imagePrompt =
+      typeof negativePrompt === 'string' && negativePrompt.trim()
+        ? `${prompt}. Avoid: ${negativePrompt}`
+        : prompt
+
     const image = await openai.images.generate({
       model: 'dall-e-3',
-      prompt,
+      prompt: imagePrompt,
       n: 1,
       size: imgSize
     })
