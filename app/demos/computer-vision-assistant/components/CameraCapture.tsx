@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from "react";
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from "react";
 import { motion } from "framer-motion";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
@@ -136,7 +136,7 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
     return imageData;
   };
 
-  const analyzeFrame = async (): Promise<AnalysisResult | null> => {
+  const analyzeFrame = useCallback(async (): Promise<AnalysisResult | null> => {
     if (!isCameraActive || isAnalyzing) return null;
     
     const imageData = captureFrame();
@@ -181,7 +181,7 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [isCameraActive, isAnalyzing, autoAnalyze, onAnalysisComplete]);
 
   useImperativeHandle(ref, () => ({
     analyzeNow: analyzeFrame,
@@ -192,7 +192,7 @@ const CameraCapture = forwardRef<CameraCaptureHandle, CameraCaptureProps>(functi
     if (isCameraActive && autoAnalyze && !isAnalyzing) {
       analyzeFrame();
     }
-  }, [isCameraActive, autoAnalyze, isAnalyzing]);
+  }, [isCameraActive, autoAnalyze, isAnalyzing, analyzeFrame]);
 
   // Start camera when component mounts
   useEffect(() => {
