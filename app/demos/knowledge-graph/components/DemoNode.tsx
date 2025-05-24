@@ -7,6 +7,7 @@ import { DemoNode as DemoNodeType } from '../types';
 import * as THREE from 'three';
 import { animated, useSpring } from '@react-spring/three';
 import { InstancedParticles } from './InstancedParticles';
+import { createOptimizedNodeMaterial } from '../utils/optimizedShaders';
 
 interface DemoNodeProps {
   node: DemoNodeType;
@@ -58,48 +59,11 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick, loadDe
     }
   }, [node]);
 
-  // Custom shader material
+  // Optimized shader material
   const material = useMemo(() => {
-    return new THREE.ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: new THREE.Color(node.color) },
-        uIntensity: { value: 1 }
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        
-        void main() {
-          vUv = uv;
-          vNormal = normalize(normalMatrix * normal);
-          vPosition = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        uniform float uTime;
-        uniform vec3 uColor;
-        uniform float uIntensity;
-        
-        varying vec2 vUv;
-        varying vec3 vNormal;
-        varying vec3 vPosition;
-        
-        void main() {
-          vec3 light = normalize(vec3(1.0, 1.0, 1.0));
-          float dProd = max(0.0, dot(vNormal, light));
-          
-          vec3 color = uColor * (dProd + 0.3);
-          float pulse = sin(uTime * 2.0) * 0.1 + 0.9;
-          
-          gl_FragColor = vec4(color * pulse * uIntensity, 1.0);
-        }
-      `,
-      transparent: true
-    });
-  }, [node.color]);
+    const isSimplified = distanceToCamera > 20;
+    return createOptimizedNodeMaterial(node.color, isSimplified);
+  }, [node.color, distanceToCamera > 20]);
 
   // Animation loop
   useFrame((state) => {
@@ -113,6 +77,8 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick, loadDe
     if (material.uniforms) {
       material.uniforms.uTime.value = state.clock.elapsedTime;
       material.uniforms.uIntensity.value = intensity.get();
+      material.uniforms.uHover.value = isHovered ? 1 : 0;
+      material.uniforms.uSelected.value = isSelected ? 1 : 0;
     }
 
     // Idle rotation (reduce rotation speed for distant objects)

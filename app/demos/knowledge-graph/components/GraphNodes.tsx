@@ -10,9 +10,10 @@ import { GraphState } from '../types';
 interface GraphNodesProps {
   graphState: GraphState;
   onStateChange: (state: GraphState) => void;
+  onNodeFocus?: (position: [number, number, number]) => void;
 }
 
-export function GraphNodes({ graphState, onStateChange }: GraphNodesProps) {
+export function GraphNodes({ graphState, onStateChange, onNodeFocus }: GraphNodesProps) {
   const { camera } = useThree();
   const frustum = useRef(new Frustum());
   const matrix = useRef(new Matrix4());
@@ -45,6 +46,11 @@ export function GraphNodes({ graphState, onStateChange }: GraphNodesProps) {
   };
 
   const handleNodeClick = (nodeId: string) => {
+    const node = demoNodes.find(n => n.id === nodeId);
+    if (node && onNodeFocus && nodeId !== graphState.selectedNode) {
+      onNodeFocus(node.position);
+    }
+    
     onStateChange({
       ...graphState,
       selectedNode: nodeId === graphState.selectedNode ? null : nodeId

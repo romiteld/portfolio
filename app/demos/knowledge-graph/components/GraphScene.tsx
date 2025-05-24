@@ -4,12 +4,12 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment, Preload } from '@react-three/drei';
 import { Suspense, useState, useEffect } from 'react';
 import { EffectComposer, Bloom, ChromaticAberration, DepthOfField, Vignette } from '@react-three/postprocessing';
-import { GraphNodes } from './GraphNodes';
-import { GraphConnections } from './GraphConnections';
 import { GraphState } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 import { UIOverlay } from './UIOverlay';
 import { SimplifiedGraph } from './SimplifiedGraph';
+import { PerformanceMonitor } from './PerformanceMonitor';
+import { SceneContent } from './SceneContent';
 
 export function GraphScene() {
   const [graphState, setGraphState] = useState<GraphState>({
@@ -114,12 +114,8 @@ export function GraphScene() {
 
         {/* Main Content */}
         <Suspense fallback={<LoadingSpinner />}>
-          <GraphConnections 
-            graphState={graphState} 
-            onStateChange={setGraphState}
-          />
-          <GraphNodes 
-            graphState={graphState} 
+          <SceneContent
+            graphState={graphState}
             onStateChange={setGraphState}
           />
         </Suspense>
@@ -165,6 +161,8 @@ export function GraphScene() {
           graphState={graphState} 
           onStateChange={setGraphState} 
         />
+        
+        <PerformanceMonitor />
       </div>
     </div>
   );
