@@ -100,6 +100,7 @@ export function GraphNodes({ graphState, onStateChange }: GraphNodesProps) {
             isHovered={graphState.hoveredNode === node.id}
             onHover={handleNodeHover}
             onClick={handleNodeClick}
+            loadDelay={filteredNodes.indexOf(node) * 150}
           />
         );
       })}

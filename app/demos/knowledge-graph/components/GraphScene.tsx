@@ -2,13 +2,14 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment, Preload } from '@react-three/drei';
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { EffectComposer, Bloom, ChromaticAberration, DepthOfField, Vignette } from '@react-three/postprocessing';
 import { GraphNodes } from './GraphNodes';
 import { GraphConnections } from './GraphConnections';
 import { GraphState } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 import { UIOverlay } from './UIOverlay';
+import { SimplifiedGraph } from './SimplifiedGraph';
 
 export function GraphScene() {
   const [graphState, setGraphState] = useState<GraphState>({
@@ -22,6 +23,42 @@ export function GraphScene() {
     },
     viewMode: 'default'
   });
+  
+  const [isLowEndDevice, setIsLowEndDevice] = useState(false);
+
+  useEffect(() => {
+    // Detect device capabilities
+    const checkDeviceCapabilities = () => {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      
+      if (!gl) {
+        setIsLowEndDevice(true);
+        return;
+      }
+
+      // Check for mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // Check memory (if available)
+      const memory = (performance as any).memory;
+      const lowMemory = memory && memory.totalJSHeapSize > memory.jsHeapSizeLimit * 0.8;
+      
+      // Check GPU
+      const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+      const renderer = debugInfo ? gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : '';
+      const isLowEndGPU = /Intel|Mobile|Integrated/i.test(renderer);
+
+      setIsLowEndDevice(isMobile || lowMemory || isLowEndGPU);
+    };
+
+    checkDeviceCapabilities();
+  }, []);
+
+  // Use simplified graph for low-end devices
+  if (isLowEndDevice) {
+    return <SimplifiedGraph />;
+  }
 
   return (
     <div className="w-full h-screen bg-black relative">

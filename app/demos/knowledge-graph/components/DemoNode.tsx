@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useMemo } from 'react';
+import { useRef, useState, useMemo, useEffect } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html, Billboard, Sphere, Box, Octahedron, Torus, Cone } from '@react-three/drei';
 import { DemoNode as DemoNodeType } from '../types';
@@ -14,19 +14,29 @@ interface DemoNodeProps {
   isHovered: boolean;
   onHover: (id: string | null) => void;
   onClick: (id: string) => void;
+  loadDelay?: number;
 }
 
-export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: DemoNodeProps) {
+export function DemoNode({ node, isSelected, isHovered, onHover, onClick, loadDelay = 0 }: DemoNodeProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
   const [distanceToCamera, setDistanceToCamera] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load animation
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoaded(true), loadDelay);
+    return () => clearTimeout(timer);
+  }, [loadDelay]);
 
   // Animation springs
-  const { scale, intensity, rotation } = useSpring({
+  const { scale, intensity, rotation, loadScale, loadOpacity } = useSpring({
     scale: isHovered ? 1.2 : isSelected ? 1.1 : 1,
     intensity: isHovered ? 2 : isSelected ? 1.5 : 1,
     rotation: isSelected ? Math.PI * 2 : 0,
+    loadScale: isLoaded ? 1 : 0,
+    loadOpacity: isLoaded ? 1 : 0,
     config: { mass: 1, tension: 280, friction: 60 }
   });
 
@@ -119,7 +129,7 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: Demo
   });
 
   return (
-    <group ref={groupRef} position={node.position}>
+    <animated.group ref={groupRef} position={node.position} scale={loadScale} opacity={loadOpacity}>
       <animated.mesh
         ref={meshRef}
         scale={scale}
@@ -191,6 +201,6 @@ export function DemoNode({ node, isSelected, isHovered, onHover, onClick }: Demo
           />
         </mesh>
       )}
-    </group>
+    </animated.group>
   );
 }
