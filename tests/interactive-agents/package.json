@@ -1,0 +1,23 @@
+{
+  "name": "interactive-agents-tests",
+  "version": "1.0.0",
+  "description": "Test suite for the Interactive Agents demo",
+  "scripts": {
+    "test": "npx tsx run-all-tests.ts",
+    "test:agents": "npx tsx test-agent-functionality.ts",
+    "test:goals": "npx tsx test-goal-processing.ts",
+    "test:errors": "npx tsx test-error-handling.ts",
+    "test:performance": "npx tsx test-performance.ts",
+    "test:ui": "npx tsx test-ui-integration.ts",
+    "test:quick": "npx tsx test-agent-functionality.ts && npx tsx test-error-handling.ts",
+    "test:watch": "nodemon --watch '*.ts' --exec 'npm run test:quick'"
+  },
+  "keywords": ["testing", "interactive-agents", "ai", "openai"],
+  "author": "Portfolio Project",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "nodemon": "^3.0.0"
+  }
+}
