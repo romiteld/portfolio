@@ -1,18 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import DocumentLibrary from "./DocumentLibrary";
 
 export default function EnhancedRAGDemo() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<string | null>(null);
-  const [sources, setSources] = useState<string[] | null>(null);
+  const [sources, setSources] = useState<{ content: string; score: number }[] | null>(null);
   const [loading, setLoading] = useState(false);
+  const [step, setStep] = useState(0);
 
   const askQuestion = async () => {
     if (!question.trim()) return;
     setLoading(true);
     setAnswer(null);
     setSources(null);
+    setStep(1);
+    setTimeout(() => setStep(2), 600);
 
     try {
       const res = await fetch("/api/enhanced-rag-langchain/query", {
@@ -21,10 +25,13 @@ export default function EnhancedRAGDemo() {
         body: JSON.stringify({ question }),
       });
 
+      setStep(3);
+
       if (res.ok) {
         const data = await res.json();
         setAnswer(data.answer || "No answer generated.");
         setSources(Array.isArray(data.sources) ? data.sources : null);
+        setStep(4);
       } else {
         setAnswer("Error retrieving answer.");
       }
@@ -33,6 +40,7 @@ export default function EnhancedRAGDemo() {
       setAnswer("Error communicating with API.");
     } finally {
       setLoading(false);
+      setTimeout(() => setStep(0), 500);
     }
   };
 
@@ -43,6 +51,7 @@ export default function EnhancedRAGDemo() {
         Ask a question and see how LangChain retrieves relevant context before
         answering.
       </p>
+      <DocumentLibrary />
       <div className="flex space-x-2">
         <input
           type="text"
@@ -59,15 +68,31 @@ export default function EnhancedRAGDemo() {
           {loading ? "Asking..." : "Ask"}
         </button>
       </div>
+      {step > 0 && (
+        <div className="flex space-x-2 text-sm">
+          <span className={step >= 1 ? "font-semibold" : ""}>Embedding</span>
+          <span>→</span>
+          <span className={step >= 2 ? "font-semibold" : ""}>Vector search</span>
+          <span>→</span>
+          <span className={step >= 3 ? "font-semibold" : ""}>Chunk selection</span>
+          <span>→</span>
+          <span className={step >= 4 ? "font-semibold" : ""}>Answer</span>
+        </div>
+      )}
       {answer && (
         <div className="border rounded p-4 bg-neutral-50 dark:bg-neutral-800 space-y-2">
           <p>{answer}</p>
           {sources && (
             <div>
               <p className="font-semibold">Retrieved Context:</p>
-              <ul className="list-disc list-inside text-sm space-y-1">
+              <ul className="space-y-2">
                 {sources.map((src, idx) => (
-                  <li key={idx}>{src}</li>
+                  <li key={idx} className="border rounded p-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Score: {(src.score * 100).toFixed(1)}%</span>
+                    </div>
+                    <p>{src.content}</p>
+                  </li>
                 ))}
               </ul>
             </div>

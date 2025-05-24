@@ -29,12 +29,13 @@ export async function POST(req: NextRequest) {
     });
 
     const chain = RetrievalQAChain.fromLLM(model, retriever);
-    const relevantDocs = await retriever.getRelevantDocuments(question);
+    const results = await vectorStore.similaritySearchWithScore(question, 3);
+    const relevantDocs = results.map(([doc, score]) => ({ doc, score }));
     const response = await chain.call({ query: question });
 
     return NextResponse.json({
       answer: response.text,
-      sources: relevantDocs.map((d) => d.pageContent),
+      sources: relevantDocs.map((r) => ({ content: r.doc.pageContent, score: r.score })),
     });
   } catch (err) {
     console.error('RAG demo error:', err);
