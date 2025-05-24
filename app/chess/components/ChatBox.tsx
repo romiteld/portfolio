@@ -108,7 +108,7 @@ const ChatBox = ({
               {messages.length === 0 ? (
                 <div className="text-center text-gray-500 dark:text-gray-400 p-4">
                   <MessageCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p>No messages yet. I'll provide tips and analysis as the game progresses.</p>
+                  <p>No messages yet. I&apos;ll provide tips and analysis as the game progresses.</p>
                   <p className="text-sm mt-2">You can also ask me questions about chess strategies, rules, or your current position!</p>
                 </div>
               ) : (
