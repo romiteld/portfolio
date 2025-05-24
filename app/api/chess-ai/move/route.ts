@@ -27,16 +27,6 @@ interface MoveRequest {
   enPassantTargetSquare: { row: number, col: number } | null
 }
 
-// Default AI personality if none provided
-const DEFAULT_AI_PERSONALITY = {
-  aggressiveness: 0.7,
-  defensiveness: 0.6,
-  mobility: 0.8,
-  positionality: 0.9,
-  riskTaking: 0.5,
-  opening: 'versatile',
-  level: 8
-};
 
 // Supabase client initialization
 let supabase: ReturnType<typeof createClient>;
@@ -55,13 +45,11 @@ export async function POST(request: Request) {
     // Parse request body
     const body = await request.json()
     
-    const { 
-      board, 
-      turn, 
-      gamePhase, 
-      aiPersonality = DEFAULT_AI_PERSONALITY, 
-      castlingRights, 
-      aiLevel = 8, 
+    const {
+      board,
+      turn,
+      castlingRights,
+      aiLevel = 8,
       enPassantTargetSquare = null
     } = body as MoveRequest
     
@@ -82,42 +70,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Chess AI model data not found' }, { status: 500 })
     }
     
-    console.log(`Using model: ${modelData.name} (Version: ${modelData.version})`);
-    
-// Get the model URL from Supabase using environment variables
-let modelUrl = ''
-
-// Public URL as fallback
-const publicModelUrl = 'https://vzhrmffwrkgvaziiompu.supabase.co/storage/v1/object/public/chess-models//model.onnx';
-
-if (modelData.model_url && typeof modelData.model_url === 'string') {
-  try {
-    // Try to get signed URL for the model file from Supabase storage
-    const { data: urlData, error: urlError } = await supabase
-      .storage
-      .from('chess-models')
-      .createSignedUrl(modelData.model_url, 60) // 60 seconds expiry
-        
-    if (urlError) {
-      console.error('Error getting signed URL:', urlError)
-      // Fall back to public URL on error
-      modelUrl = publicModelUrl;
-      console.log('Using public URL as fallback:', modelUrl);
-    } else if (urlData) {
-      modelUrl = urlData.signedUrl
-      console.log('Using signed URL for model access');
-    }
-  } catch (error) {
-    console.error('Exception when getting signed URL:', error);
-    // Fall back to public URL on exception
-    modelUrl = publicModelUrl;
-    console.log('Using public URL as fallback after exception:', modelUrl);
-  }
-} else {
-  // If no model_url in database, use the public URL
-  modelUrl = publicModelUrl;
-  console.log('No model_url found, using public URL as fallback:', modelUrl);
-}
+  console.log(`Using model: ${modelData.name} (Version: ${modelData.version})`);
     
     // --- Move Selection Logic ---
     try {
@@ -254,46 +207,4 @@ if (modelData.model_url && typeof modelData.model_url === 'string') {
     console.error('Error processing chess AI move request:', error);
     return NextResponse.json({ error: 'Internal server error', details: String(error) }, { status: 500 });
   }
-}
-
-// --- Utility functions ---
-function generateFEN(
-  board: Board, 
-  turn: PieceColor, 
-  castlingRights: CastlingRights, 
-  enPassantTarget: { row: number, col: number } | null
-): string {
-  let fen = ''
-  for (let r = 0; r < 8; r++) {
-    let emptyCount = 0
-    for (let c = 0; c < 8; c++) {
-      const piece = board[r][c]
-      if (piece) {
-        if (emptyCount > 0) { fen += emptyCount; emptyCount = 0; }
-        let pieceChar: string = piece.type; 
-        if (piece.color === 'w') { pieceChar = pieceChar.toUpperCase(); }
-        fen += pieceChar;
-      } else {
-        emptyCount++;
-      }
-    }
-    if (emptyCount > 0) { fen += emptyCount; }
-    if (r < 7) fen += '/';
-  }
-  fen += ' ' + turn;
-  let castlingStr = '';
-  if (castlingRights.w.kingside) castlingStr += 'K';
-  if (castlingRights.w.queenside) castlingStr += 'Q';
-  if (castlingRights.b.kingside) castlingStr += 'k';
-  if (castlingRights.b.queenside) castlingStr += 'q';
-  fen += ' ' + (castlingStr || '-');
-  if (enPassantTarget) {
-    const file = String.fromCharCode('a'.charCodeAt(0) + enPassantTarget.col);
-    const rank = 8 - enPassantTarget.row;
-    fen += ' ' + file + rank;
-  } else {
-    fen += ' -';
-  }
-  fen += ' 0 1'; // Simplified halfmove clock and fullmove number
-  return fen;
 }
