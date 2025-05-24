@@ -21,8 +21,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ text: responseText });
   } catch (error) {
     console.error("Error processing voice query:", error);
+    let message = "Failed to process voice query";
+    if (error instanceof Error) {
+      message += `: ${error.message}`;
+    }
     return NextResponse.json(
-      { error: "Failed to process voice query", text: "I'm sorry, I couldn't process your request. Please try again." },
+      { error: message, text: "I'm sorry, I couldn't process your request. Please try again." },
       { status: 500 }
     );
   }

@@ -26,8 +26,12 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error generating speech:", error);
+    let message = "Failed to generate speech";
+    if (error instanceof Error) {
+      message += `: ${error.message}`;
+    }
     return NextResponse.json(
-      { error: "Failed to generate speech" },
+      { error: message },
       { status: 500 }
     );
   }

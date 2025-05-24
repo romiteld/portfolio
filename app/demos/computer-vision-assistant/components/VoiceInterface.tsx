@@ -120,16 +120,17 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           query: transcript,
           imageAnalysisResult: imageAnalysisResult // Pass image analysis results if available
         }),
       });
-      
+
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to get response");
       }
-      
+
       const data = await response.json();
       setResponse(data.text);
       
@@ -137,7 +138,8 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
       await generateSpeech(data.text);
     } catch (error) {
       console.error("Error processing voice input:", error);
-      setResponse("I'm sorry, I couldn't process your request. Please try again.");
+      const message = error instanceof Error ? error.message : "I'm sorry, I couldn't process your request. Please try again.";
+      setResponse(message);
     } finally {
       setIsLoading(false);
     }
@@ -155,9 +157,10 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
       });
       
       if (!response.ok) {
-        throw new Error("Failed to generate speech");
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to generate speech");
       }
-      
+
       const audioBlob = await response.blob();
       const audioUrl = URL.createObjectURL(audioBlob);
       setAudioSrc(audioUrl);
@@ -169,6 +172,9 @@ export default function VoiceInterface({ onImageAnalysisRequest, imageAnalysisRe
       }
     } catch (error) {
       console.error("Error generating speech:", error);
+      // Optional: surface TTS errors to the user
+      const msg = error instanceof Error ? error.message : 'Failed to generate speech';
+      setResponse(msg);
     }
   };
 
