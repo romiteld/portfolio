@@ -50,28 +50,12 @@ const demos = [
     icon: <TrendingUp strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
-    slug: "computer-vision-assistant",
-    title: "Computer Vision Assistant",
-    description:
-      "Analyze and interpret visual data with our AI-powered vision system.",
-    gradient: "from-emerald-500 to-teal-500",
-    icon: <ScanEye strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
-  },
-  {
     slug: "chess-ai-magnus",
     title: "Advanced Chess AI Engine",
     description:
       "Play against a neural network chess engine trained with deep reinforcement learning techniques.",
     gradient: "from-amber-500 to-orange-500",
     icon: <Crown strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
-  },
-  {
-    slug: "generative-ai",
-    title: "Generative AI (Text & Image Creation)",
-    description:
-      "Create unique text and images using cutting-edge generative AI models.",
-    gradient: "from-pink-500 to-rose-500",
-    icon: <Sparkles strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "knowledge-graph",

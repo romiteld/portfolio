@@ -12,19 +12,9 @@ const demos = [
     description: "Get real-time financial analysis, market insights, and investment advice.",
   },
   {
-    slug: "computer-vision-assistant",
-    title: "Computer Vision Assistant",
-    description: "Analyze and interpret visual data with our AI-powered vision system.",
-  },
-  {
     slug: "chess-ai-magnus",
     title: "Advanced Chess AI Engine",
     description: "Play against a neural network chess engine trained with deep reinforcement learning techniques.",
-  },
-  {
-    slug: "generative-ai",
-    title: "Generative AI (Text & Image Creation)",
-    description: "Create unique text and images using cutting-edge generative AI models.",
   },
   {
     slug: "knowledge-graph",
