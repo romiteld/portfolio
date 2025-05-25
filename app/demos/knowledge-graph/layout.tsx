@@ -16,7 +16,10 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 5
+  maximumScale: 5,
+  minimumScale: 1,
+  userScalable: true,
+  viewportFit: 'cover'
 };
 
 export default function KnowledgeGraphLayout({
@@ -25,7 +28,27 @@ export default function KnowledgeGraphLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="knowledge-graph-demo overflow-x-hidden">
+    <div className="knowledge-graph-demo overflow-hidden touch-manipulation">
+      <style jsx global>{`
+        body {
+          overflow: hidden;
+          touch-action: none;
+          -webkit-overflow-scrolling: touch;
+        }
+        .knowledge-graph-demo * {
+          -webkit-tap-highlight-color: transparent;
+          -webkit-touch-callout: none;
+          -webkit-user-select: none;
+          user-select: none;
+        }
+        .knowledge-graph-demo button,
+        .knowledge-graph-demo input,
+        .knowledge-graph-demo select {
+          -webkit-user-select: auto;
+          user-select: auto;
+          touch-action: manipulation;
+        }
+      `}</style>
       {children}
     </div>
   );

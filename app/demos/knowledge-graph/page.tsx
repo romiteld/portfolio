@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { demoNodes, connections } from './utils/demoData';
 import { useKnowledgeGraphPersistence } from '@/hooks/use-knowledge-graph-persistence';
+import { useMobileControls } from './hooks/useMobileControls';
 import { Save, FolderOpen, Trash2, Download, Upload, Cpu, Network, Zap } from 'lucide-react';
 import { GraphExportImport } from './utils/exportImport';
 
@@ -17,10 +18,15 @@ export default function KnowledgeGraphPage() {
   const [showLoadDialog, setShowLoadDialog] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [isMobile, setIsMobile] = useState(false);
+  const [showMobileInstructions, setShowMobileInstructions] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(1);
   const [zoom, setZoom] = useState(1);
+  const [isPanning, setIsPanning] = useState(false);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     savedStates,
@@ -32,6 +38,8 @@ export default function KnowledgeGraphPage() {
     trackSearch,
     trackFilterUsage
   } = useKnowledgeGraphPersistence();
+  
+  const { isMobile: mobileControlsDetected } = useMobileControls();
 
   // Particle system for sci-fi background
   const particles = useRef<Array<{
@@ -46,7 +54,13 @@ export default function KnowledgeGraphPage() {
   useEffect(() => {
     setIsClient(true);
     const checkMobile = () => {
-      setIsMobile(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768);
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+      setIsMobile(isMobileDevice);
+      
+      // Show mobile instructions on first mobile visit
+      if (isMobileDevice && !localStorage.getItem('knowledgeGraph_mobileInstructionsSeen')) {
+        setTimeout(() => setShowMobileInstructions(true), 1000);
+      }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
@@ -55,8 +69,20 @@ export default function KnowledgeGraphPage() {
     initParticles();
     animate();
     
+    // Add pinch-to-zoom support
+    const handlePinchZoom = (e: CustomEvent) => {
+      const scale = e.detail.scale;
+      setZoom(prevZoom => {
+        const newZoom = prevZoom * scale;
+        return Math.min(2.5, Math.max(0.3, newZoom));
+      });
+    };
+    
+    window.addEventListener('pinchZoom', handlePinchZoom as EventListener);
+    
     return () => {
       window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('pinchZoom', handlePinchZoom as EventListener);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -156,47 +182,53 @@ export default function KnowledgeGraphPage() {
   // Calculate positions for filtered nodes with responsive layout
   const nodePositions = filteredNodes.map((node, index) => {
     if (isMobile) {
-      // Grid layout on mobile screens to prevent overlap
-      const cols = 3;
+      // Improved grid layout on mobile screens with better spacing
+      const cols = Math.min(3, filteredNodes.length);
       const rows = Math.ceil(filteredNodes.length / cols);
       const col = index % cols;
       const row = Math.floor(index / cols);
-      const x = ((col + 0.5) * 100) / cols;
-      const y = ((row + 0.5) * 100) / rows;
-      const padding = 5;
-      const clampedX = Math.min(100 - padding, Math.max(padding, x));
-      const clampedY = Math.min(100 - padding, Math.max(padding, y));
-      return { ...node, x: clampedX, y: clampedY };
+      
+      // Better padding and spacing for mobile
+      const paddingX = 15; // Increased padding
+      const paddingY = 20;
+      const availableWidth = 100 - (2 * paddingX);
+      const availableHeight = 100 - (2 * paddingY);
+      
+      const x = paddingX + ((col + 0.5) * availableWidth) / cols;
+      const y = paddingY + ((row + 0.5) * availableHeight) / rows;
+      
+      return { ...node, x, y };
     }
 
-    // Custom positioning for specific nodes to avoid overlaps on larger screens
+    // Improved positioning for desktop with better edge constraints
     const customPositions: { [key: string]: { x: number; y: number } } = {
-      'financial-assistant': { x: 20, y: 25 },
-      'computer-vision': { x: 80, y: 25 },
-      'chess-ai': { x: 25, y: 60 },
-      'generative-ai': { x: 75, y: 75 },
-      'sales-agent': { x: 80, y: 50 },
-      'interactive-agents': { x: 50, y: 45 },
-      'youtube-summarizer': { x: 15, y: 80 },
-      'data-analyst': { x: 85, y: 80 },
-      'enhanced-rag': { x: 50, y: 75 }
+      'financial-assistant': { x: 25, y: 30 },      // Moved away from left edge
+      'computer-vision': { x: 75, y: 30 },          // Moved away from right edge
+      'chess-ai': { x: 30, y: 60 },                 // Better left positioning
+      'generative-ai': { x: 70, y: 75 },            // Moved away from right edge
+      'sales-agent': { x: 75, y: 50 },              // Better right positioning
+      'interactive-agents': { x: 50, y: 45 },       // Center remains
+      'youtube-summarizer': { x: 25, y: 80 },       // Moved away from left edge
+      'data-analyst': { x: 75, y: 80 },             // Moved away from right edge
+      'enhanced-rag': { x: 50, y: 75 }              // Center bottom
     };
 
     if (customPositions[node.id]) {
       const { x, y } = customPositions[node.id];
-      const padding = 5;
+      // Ensure nodes stay well within bounds
+      const padding = 12; // Increased padding for better visibility
       const clampedX = Math.min(100 - padding, Math.max(padding, x));
       const clampedY = Math.min(100 - padding, Math.max(padding, y));
       return { ...node, x: clampedX, y: clampedY };
     }
 
-    // Fallback to circular arrangement for any additional nodes
+    // Improved circular arrangement with better spacing
     const totalNodes = filteredNodes.length;
     const angle = (2 * Math.PI * index) / totalNodes;
-    const radius = 30;
+    const radius = Math.min(35, 40 - totalNodes); // Dynamic radius based on node count
     const x = 50 + Math.cos(angle) * radius;
     const y = 50 + Math.sin(angle) * radius;
-    const padding = 5;
+    const padding = 12;
     const clampedX = Math.min(100 - padding, Math.max(padding, x));
     const clampedY = Math.min(100 - padding, Math.max(padding, y));
     return { ...node, x: clampedX, y: clampedY };
@@ -301,10 +333,39 @@ export default function KnowledgeGraphPage() {
         </div>
 
         {/* Main Neural Network Visualization */}
-        <div className="flex-1 relative min-h-0">
+        <div className="flex-1 relative min-h-0 overflow-hidden">
           <div
-            className="absolute inset-0 overflow-visible"
-            style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+            ref={containerRef}
+            className="absolute inset-0 transition-transform duration-300 ease-out"
+            style={{ 
+              transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`, 
+              transformOrigin: 'center center',
+              width: '100%',
+              height: '100%'
+            }}
+            onTouchStart={(e) => {
+              if (isMobile && e.touches.length === 1) {
+                setIsPanning(true);
+                setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+              }
+            }}
+            onTouchMove={(e) => {
+              if (isMobile && isPanning && e.touches.length === 1) {
+                e.preventDefault();
+                const deltaX = e.touches[0].clientX - lastPanPoint.x;
+                const deltaY = e.touches[0].clientY - lastPanPoint.y;
+                setPanOffset(prev => ({
+                  x: prev.x + deltaX / zoom,
+                  y: prev.y + deltaY / zoom
+                }));
+                setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+              }
+            }}
+            onTouchEnd={() => {
+              if (isMobile) {
+                setIsPanning(false);
+              }
+            }}
           >
             {/* Connection Grid */}
             <svg className="absolute inset-0 w-full h-full">
@@ -377,9 +438,15 @@ export default function KnowledgeGraphPage() {
                   }}
                   onMouseEnter={() => !isMobile && setHoveredNode(node.id)}
                   onMouseLeave={() => !isMobile && setHoveredNode(null)}
-                  onTouchStart={() => isMobile && setHoveredNode(node.id)}
+                  onTouchStart={(e) => {
+                    if (isMobile) {
+                      e.stopPropagation();
+                      setHoveredNode(node.id);
+                    }
+                  }}
                   onTouchEnd={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     if (isMobile) {
                       setSelectedNode(selectedNode === node.id ? null : node.id);
                       trackNodeClick(node.id);
@@ -395,7 +462,7 @@ export default function KnowledgeGraphPage() {
                 >
                   {/* Node Core */}
                   <div 
-                    className={`relative ${isMobile ? 'w-24 h-24' : 'w-20 h-20'} rounded-full flex items-center justify-center cursor-pointer transition-all duration-500`}
+                    className={`relative ${isMobile ? 'w-20 h-20' : 'w-20 h-20'} rounded-full flex items-center justify-center cursor-pointer transition-all duration-500`}
                     style={{ 
                       background: `
                         radial-gradient(circle at 30% 30%, ${node.color}40, ${node.color}),
@@ -473,25 +540,45 @@ export default function KnowledgeGraphPage() {
             })}
           </div>
 
-          {/* Zoom Controls */}
-          <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20 pointer-events-auto">
-            <button
-              onClick={() => setZoom(z => Math.min(2, z + 0.1))}
-              className="w-10 h-10 bg-black/70 border border-cyan-500/50 rounded-full text-cyan-400 hover:bg-black/90 transition-colors flex items-center justify-center"
-            >
-              +
-            </button>
-            <button
-              onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}
-              className="w-10 h-10 bg-black/70 border border-cyan-500/50 rounded-full text-cyan-400 hover:bg-black/90 transition-colors flex items-center justify-center"
-            >
-              -
-            </button>
+          {/* Enhanced Zoom Controls */}
+          <div className={`absolute ${isMobile ? 'bottom-20 right-2' : 'bottom-4 right-4'} flex flex-col gap-2 z-20 pointer-events-auto ${selectedNode && isMobile ? 'hidden' : ''}`}>
+            <div className="bg-black/70 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-2">
+              <div className="text-cyan-400 text-xs font-mono mb-2 text-center">ZOOM</div>
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setZoom(z => Math.min(2.5, z + 0.2))}
+                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-sm font-bold active:scale-95 touch-manipulation"
+                  title="Zoom In"
+                >
+                  +
+                </button>
+                <div className="text-cyan-400 text-xs font-mono text-center px-1">
+                  {Math.round(zoom * 100)}%
+                </div>
+                <button
+                  onClick={() => setZoom(z => Math.max(0.3, z - 0.2))}
+                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-sm font-bold active:scale-95 touch-manipulation"
+                  title="Zoom Out"
+                >
+                  −
+                </button>
+                <button
+                  onClick={() => {
+                    setZoom(1);
+                    setPanOffset({ x: 0, y: 0 });
+                  }}
+                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-xs font-mono active:scale-95 touch-manipulation"
+                  title="Reset View"
+                >
+                  ⌂
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Advanced Node Information Panel */}
           {selectedNode && (
-            <div className={`absolute ${isMobile ? 'bottom-0 left-0 right-0 rounded-t-xl max-h-[50vh]' : 'top-4 right-4 w-96 rounded-xl max-h-[80vh]'} bg-black/95 backdrop-blur-xl border border-cyan-500/50 shadow-2xl z-30 overflow-y-auto`}>
+            <div className={`absolute ${isMobile ? 'bottom-0 left-0 right-0 rounded-t-xl max-h-[60vh] transform transition-transform duration-300' : 'top-4 right-4 w-96 rounded-xl max-h-[80vh]'} bg-black/95 backdrop-blur-xl border border-cyan-500/50 shadow-2xl z-30 overflow-y-auto`}>
               {(() => {
                 const node = demoNodes.find(n => n.id === selectedNode);
                 if (!node) return null;
@@ -619,10 +706,10 @@ export default function KnowledgeGraphPage() {
           )}
 
           {/* System Status */}
-          <div className={`absolute ${isMobile ? 'bottom-4 left-2 flex-col gap-2' : 'bottom-4 left-4 flex gap-4'} ${selectedNode && isMobile ? 'hidden' : 'flex'}`}>
-            <div className="p-3 bg-black/70 backdrop-blur-sm rounded border border-cyan-500/30">
-              <div className="text-cyan-400 text-xs font-mono font-bold mb-1">SYSTEM STATUS</div>
-              <div className="text-cyan-300 text-xs font-mono space-y-0.5">
+          <div className={`absolute ${isMobile ? 'bottom-2 left-2 flex-col gap-1' : 'bottom-4 left-4 flex gap-4'} ${selectedNode && isMobile ? 'hidden' : 'flex'}`}>
+            <div className={`${isMobile ? 'p-2' : 'p-3'} bg-black/70 backdrop-blur-sm rounded border border-cyan-500/30`}>
+              <div className={`text-cyan-400 ${isMobile ? 'text-xs' : 'text-xs'} font-mono font-bold mb-1`}>SYSTEM STATUS</div>
+              <div className={`text-cyan-300 ${isMobile ? 'text-xs' : 'text-xs'} font-mono space-y-0.5`}>
                 <div>NODES: {filteredNodes.length}/{demoNodes.length}</div>
                 <div>LINKS: {connections.filter(c => 
                   filteredNodes.some(n => n.id === c.source) && 
@@ -631,22 +718,24 @@ export default function KnowledgeGraphPage() {
               </div>
             </div>
 
-            <div className="p-3 bg-black/70 backdrop-blur-sm rounded border border-cyan-500/30">
-              <div className="text-cyan-400 text-xs font-mono font-bold mb-1">DATA STREAMS</div>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { name: 'DATA', color: '#00D9FF' },
-                  { name: 'API', color: '#FFD700' },
-                  { name: 'AI', color: '#FF00FF' },
-                  { name: 'SYS', color: '#00FF00' }
-                ].map(({ name, color }) => (
-                  <div key={name} className="flex items-center gap-1">
-                    <div className="w-3 h-0.5" style={{ backgroundColor: color }} />
-                    <span className="text-xs font-mono" style={{ color }}>{name}</span>
-                  </div>
-                ))}
+            {!isMobile && (
+              <div className="p-3 bg-black/70 backdrop-blur-sm rounded border border-cyan-500/30">
+                <div className="text-cyan-400 text-xs font-mono font-bold mb-1">DATA STREAMS</div>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { name: 'DATA', color: '#00D9FF' },
+                    { name: 'API', color: '#FFD700' },
+                    { name: 'AI', color: '#FF00FF' },
+                    { name: 'SYS', color: '#00FF00' }
+                  ].map(({ name, color }) => (
+                    <div key={name} className="flex items-center gap-1">
+                      <div className="w-3 h-0.5" style={{ backgroundColor: color }} />
+                      <span className="text-xs font-mono" style={{ color }}>{name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Save Dialog */}
@@ -742,6 +831,50 @@ export default function KnowledgeGraphPage() {
                   className="mt-4 w-full px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-600 font-mono"
                 >
                   CLOSE
+                </button>
+              </div>
+            </div>
+          )}
+          
+          {/* Mobile Instructions Overlay */}
+          {showMobileInstructions && isMobile && (
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
+              <div className="bg-black/90 border border-cyan-500/50 p-6 rounded-xl shadow-2xl max-w-sm mx-4">
+                <h3 className="text-cyan-400 font-mono font-bold mb-4 text-center">MOBILE CONTROLS</h3>
+                <div className="space-y-3 text-cyan-300 text-sm font-mono">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
+                      👆
+                    </div>
+                    <span>Tap nodes to select and view details</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
+                      🤏
+                    </div>
+                    <span>Pinch to zoom in/out</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
+                      ✋
+                    </div>
+                    <span>Pan with single finger drag</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
+                      🎯
+                    </div>
+                    <span>Use zoom controls in bottom right</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowMobileInstructions(false);
+                    localStorage.setItem('knowledgeGraph_mobileInstructionsSeen', 'true');
+                  }}
+                  className="mt-6 w-full px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-500 font-mono transition-colors"
+                >
+                  GOT IT
                 </button>
               </div>
             </div>
