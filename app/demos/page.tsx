@@ -34,6 +34,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 const demos = [
   {
+    slug: "../ai-demo",
+    title: "AI Vision Studio",
+    description:
+      "Experience cutting-edge computer vision AI with multi-provider support, object detection, and image generation.",
+    gradient: "from-purple-500 to-pink-500",
+    icon: <Eye strokeWidth={1.5} className="w-10 h-10" />,
+  },
+  {
     slug: "financial-assistant",
     title: "Financial Market Assistant",
     description:

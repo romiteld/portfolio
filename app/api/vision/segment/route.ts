@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiService } from '@/lib/ai-service';
+import { replicateService } from '@/lib/replicate-service';
+import { ImageUtils } from '@/lib/image-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, points, labels } = await request.json();
+    const body = await request.json();
+    const { image, points, boxes } = body;
 
     if (!image) {
       return NextResponse.json(
@@ -12,17 +14,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Segment image using SAM 2 via Replicate
+    // Clean base64 if needed
+    const imageBase64 = image.startsWith('data:') ? image.split(',')[1] : image;
+
+    // Get image dimensions
+    const dimensions = await ImageUtils.getImageDimensions(imageBase64);
+
+    // Segment image using SAM 2
     const startTime = Date.now();
-    const result = await aiService.segmentImage(image, points, labels);
-    const endTime = Date.now();
+    const segments = await replicateService.segmentImage(imageBase64, points, boxes);
+    const processingTime = Date.now() - startTime;
 
     return NextResponse.json({
       success: true,
-      masks: result.masks,
-      scores: result.scores,
-      processingTime: endTime - startTime,
-      model: 'sam-2'
+      segments,
+      count: segments.length,
+      processingTime,
+      model: 'sam-2',
+      imageInfo: {
+        width: dimensions.width,
+        height: dimensions.height
+      }
     });
   } catch (error) {
     console.error('Segmentation error:', error);

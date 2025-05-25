@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiService, AIProvider } from '@/lib/ai-service';
+import { aiProviders, VisionProvider } from '@/lib/ai-providers';
+import { ImageUtils } from '@/lib/image-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, provider = 'openai', prompt } = await request.json();
+    const body = await request.json();
+    const { image, provider = 'openai', prompt, systemPrompt, compareAll = false } = body;
 
     if (!image) {
       return NextResponse.json(
@@ -12,22 +14,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate provider
-    const validProviders: AIProvider[] = ['openai', 'google', 'anthropic'];
+    // Clean base64 if needed
+    const imageBase64 = image.startsWith('data:') ? image.split(',')[1] : image;
+
+    // Get image info
+    const imageSize = ImageUtils.calculateBase64Size(imageBase64);
+    const dimensions = await ImageUtils.getImageDimensions(imageBase64);
+
+    // If compareAll is true, analyze with all providers
+    if (compareAll) {
+      const results = await aiProviders.compareProviders(imageBase64, prompt);
+      return NextResponse.json({
+        success: true,
+        comparison: results,
+        imageInfo: {
+          size: imageSize,
+          sizeFormatted: ImageUtils.formatFileSize(imageSize),
+          dimensions
+        }
+      });
+    }
+
+    // Single provider analysis
+    const validProviders: VisionProvider[] = ['openai', 'google', 'anthropic'];
     const selectedProvider = validProviders.includes(provider) ? provider : 'openai';
 
-    // Analyze image with selected provider
-    const startTime = Date.now();
-    const result = await aiService.analyzeImage(image, selectedProvider, prompt);
-    const endTime = Date.now();
+    const result = await aiProviders.analyzeImage(
+      imageBase64,
+      selectedProvider,
+      prompt,
+      systemPrompt
+    );
+
+    // Calculate estimated cost
+    const estimatedCost = aiProviders.estimateCost(selectedProvider, imageSize);
 
     return NextResponse.json({
       success: true,
       analysis: result.text,
       provider: result.provider,
       model: result.model,
-      processingTime: endTime - startTime,
+      processingTime: result.processingTime,
       usage: result.usage,
+      estimatedCost,
+      imageInfo: {
+        size: imageSize,
+        sizeFormatted: ImageUtils.formatFileSize(imageSize),
+        dimensions
+      }
     });
   } catch (error) {
     console.error('Vision analysis error:', error);

@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { aiService } from '@/lib/ai-service';
+import { replicateService } from '@/lib/replicate-service';
+import { ImageUtils } from '@/lib/image-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    const { image, labels } = await request.json();
+    const body = await request.json();
+    const { image, prompt = "all objects" } = body;
 
     if (!image) {
       return NextResponse.json(
@@ -12,16 +14,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Detect objects using Grounding DINO via Replicate
+    // Clean base64 if needed
+    const imageBase64 = image.startsWith('data:') ? image.split(',')[1] : image;
+
+    // Get image dimensions for coordinate mapping
+    const dimensions = await ImageUtils.getImageDimensions(imageBase64);
+
+    // Detect objects using Grounding DINO
     const startTime = Date.now();
-    const result = await aiService.detectObjects(image, labels);
-    const endTime = Date.now();
+    const detections = await replicateService.detectObjects(imageBase64, prompt);
+    const processingTime = Date.now() - startTime;
+
+    // Format results with normalized coordinates
+    const formattedDetections = detections.map(det => ({
+      ...det,
+      boxNormalized: [
+        det.box[0] / dimensions.width,
+        det.box[1] / dimensions.height,
+        det.box[2] / dimensions.width,
+        det.box[3] / dimensions.height
+      ]
+    }));
 
     return NextResponse.json({
       success: true,
-      detections: result.labels,
-      processingTime: endTime - startTime,
-      model: 'grounding-dino'
+      detections: formattedDetections,
+      count: detections.length,
+      processingTime,
+      model: 'grounding-dino',
+      imageInfo: {
+        width: dimensions.width,
+        height: dimensions.height
+      }
     });
   } catch (error) {
     console.error('Object detection error:', error);
