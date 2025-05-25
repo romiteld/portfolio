@@ -152,19 +152,30 @@ export default function KnowledgeGraphPage() {
     return matchesSearch && matchesCategory;
   });
 
-  // Calculate positions for filtered nodes with better spacing
+  // Calculate positions for filtered nodes with responsive layout
   const nodePositions = filteredNodes.map((node, index) => {
-    // Custom positioning for specific nodes to avoid overlaps
+    if (isMobile) {
+      // Grid layout on mobile screens to prevent overlap
+      const cols = 3;
+      const rows = Math.ceil(filteredNodes.length / cols);
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = ((col + 0.5) * 100) / cols;
+      const y = ((row + 0.5) * 100) / rows;
+      return { ...node, x, y };
+    }
+
+    // Custom positioning for specific nodes to avoid overlaps on larger screens
     const customPositions: { [key: string]: { x: number; y: number } } = {
       'financial-assistant': { x: 20, y: 25 },
       'computer-vision': { x: 80, y: 25 },
-      'chess-ai': { x: 25, y: 60 }, // Moved left to avoid overlap
+      'chess-ai': { x: 25, y: 60 },
       'generative-ai': { x: 75, y: 75 },
       'sales-agent': { x: 80, y: 50 },
-      'interactive-agents': { x: 50, y: 45 }, // Centered to avoid overlap
+      'interactive-agents': { x: 50, y: 45 },
       'youtube-summarizer': { x: 15, y: 80 },
       'data-analyst': { x: 85, y: 80 },
-      'enhanced-rag': { x: 50, y: 75 } // Moved down to avoid overlap with multi-agent
+      'enhanced-rag': { x: 50, y: 75 }
     };
 
     if (customPositions[node.id]) {
@@ -174,7 +185,7 @@ export default function KnowledgeGraphPage() {
     // Fallback to circular arrangement for any additional nodes
     const totalNodes = filteredNodes.length;
     const angle = (2 * Math.PI * index) / totalNodes;
-    const radius = isMobile ? 25 : 30;
+    const radius = 30;
     const x = 50 + Math.cos(angle) * radius;
     const y = 50 + Math.sin(angle) * radius;
     return { ...node, x, y };
