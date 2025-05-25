@@ -31,8 +31,8 @@ Please provide a detailed and helpful response based on the image and conversati
     const result = await aiProvider.analyzeImage(image, provider, prompt);
 
     return NextResponse.json({
-      response: result.analysis,
-      cost: result.cost,
+      response: result.text,
+      cost: 0.001, // Estimate
       processingTime: result.processingTime
     });
 

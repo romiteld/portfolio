@@ -237,3 +237,6 @@ export class AIProviders {
 
 // Export singleton instance
 export const aiProviders = new AIProviders();
+
+// Alias for backward compatibility
+export const AIProviderService = AIProviders;
