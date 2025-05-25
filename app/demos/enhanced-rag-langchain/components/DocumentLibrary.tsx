@@ -115,10 +115,15 @@ export default function DocumentLibrary() {
     }
   };
 
-  const filtered = docs.filter((d) =>
-    d.title.toLowerCase().includes(query.toLowerCase()) ||
-    d.content.toLowerCase().includes(query.toLowerCase())
-  );
+  const filtered = docs.filter((d) => {
+    const title = typeof d.title === "string" ? d.title : "";
+    const content = typeof d.content === "string" ? d.content : "";
+    const lowerQuery = query.toLowerCase();
+    return (
+      title.toLowerCase().includes(lowerQuery) ||
+      content.toLowerCase().includes(lowerQuery)
+    );
+  });
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "Unknown";
