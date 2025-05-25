@@ -18,6 +18,7 @@ export default function KnowledgeGraphPage() {
   const [saveName, setSaveName] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(1);
+  const [zoom, setZoom] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
 
@@ -162,7 +163,10 @@ export default function KnowledgeGraphPage() {
       const row = Math.floor(index / cols);
       const x = ((col + 0.5) * 100) / cols;
       const y = ((row + 0.5) * 100) / rows;
-      return { ...node, x, y };
+      const padding = 5;
+      const clampedX = Math.min(100 - padding, Math.max(padding, x));
+      const clampedY = Math.min(100 - padding, Math.max(padding, y));
+      return { ...node, x: clampedX, y: clampedY };
     }
 
     // Custom positioning for specific nodes to avoid overlaps on larger screens
@@ -179,7 +183,11 @@ export default function KnowledgeGraphPage() {
     };
 
     if (customPositions[node.id]) {
-      return { ...node, ...customPositions[node.id] };
+      const { x, y } = customPositions[node.id];
+      const padding = 5;
+      const clampedX = Math.min(100 - padding, Math.max(padding, x));
+      const clampedY = Math.min(100 - padding, Math.max(padding, y));
+      return { ...node, x: clampedX, y: clampedY };
     }
 
     // Fallback to circular arrangement for any additional nodes
@@ -188,7 +196,10 @@ export default function KnowledgeGraphPage() {
     const radius = 30;
     const x = 50 + Math.cos(angle) * radius;
     const y = 50 + Math.sin(angle) * radius;
-    return { ...node, x, y };
+    const padding = 5;
+    const clampedX = Math.min(100 - padding, Math.max(padding, x));
+    const clampedY = Math.min(100 - padding, Math.max(padding, y));
+    return { ...node, x: clampedX, y: clampedY };
   });
 
   const categories = ['all', ...new Set(demoNodes.map(node => node.category))];
@@ -205,7 +216,7 @@ export default function KnowledgeGraphPage() {
   const connectedNodes = selectedNode ? getConnectedNodes(selectedNode) : new Set();
 
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-gray-900 via-black to-blue-900 overflow-hidden relative">
+    <div className="w-full h-screen bg-gradient-to-br from-gray-900 via-black to-blue-900 overflow-visible relative">
       {/* Animated Background Canvas */}
       <canvas
         ref={canvasRef}
@@ -291,7 +302,10 @@ export default function KnowledgeGraphPage() {
 
         {/* Main Neural Network Visualization */}
         <div className="flex-1 relative min-h-0">
-          <div className="absolute inset-0 overflow-hidden">
+          <div
+            className="absolute inset-0 overflow-visible"
+            style={{ transform: `scale(${zoom})`, transformOrigin: 'center center' }}
+          >
             {/* Connection Grid */}
             <svg className="absolute inset-0 w-full h-full">
               {connections.map(conn => {
@@ -457,6 +471,22 @@ export default function KnowledgeGraphPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* Zoom Controls */}
+          <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-20 pointer-events-auto">
+            <button
+              onClick={() => setZoom(z => Math.min(2, z + 0.1))}
+              className="w-10 h-10 bg-black/70 border border-cyan-500/50 rounded-full text-cyan-400 hover:bg-black/90 transition-colors flex items-center justify-center"
+            >
+              +
+            </button>
+            <button
+              onClick={() => setZoom(z => Math.max(0.5, z - 0.1))}
+              className="w-10 h-10 bg-black/70 border border-cyan-500/50 rounded-full text-cyan-400 hover:bg-black/90 transition-colors flex items-center justify-center"
+            >
+              -
+            </button>
           </div>
 
           {/* Advanced Node Information Panel */}
