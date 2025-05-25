@@ -8,6 +8,13 @@ import { useKnowledgeGraphPersistence } from '@/hooks/use-knowledge-graph-persis
 import { useMobileControls } from './hooks/useMobileControls';
 import { Save, FolderOpen, Trash2, Download, Cpu, Network, Zap } from 'lucide-react';
 import { GraphExportImport } from './utils/exportImport';
+import { ErrorBoundary } from './components/ErrorBoundary';
+
+// Dynamic import for 2D fallback
+const KnowledgeGraph2D = dynamic(
+  () => import('./components/KnowledgeGraph2D').then(mod => ({ default: mod.KnowledgeGraph2D })),
+  { ssr: false }
+);
 
 // Dynamic import for 3D component to avoid SSR issues
 const KnowledgeGraph3D = dynamic(
@@ -38,6 +45,7 @@ export default function KnowledgeGraphPage() {
   const [saveName, setSaveName] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
+  const [supportsWebGL, setSupportsWebGL] = useState(true);
 
   const {
     savedStates,
@@ -54,6 +62,16 @@ export default function KnowledgeGraphPage() {
 
   useEffect(() => {
     setIsClient(true);
+    
+    // Check WebGL support
+    try {
+      const canvas = document.createElement('canvas');
+      const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      setSupportsWebGL(!!gl);
+    } catch (e) {
+      setSupportsWebGL(false);
+    }
+    
     const checkMobile = () => {
       const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
       setIsMobile(isMobileDevice);
@@ -181,16 +199,29 @@ export default function KnowledgeGraphPage() {
 
         {/* Main 3D Neural Network Visualization */}
         <div className="flex-1 relative min-h-0 overflow-hidden">
-          {/* 3D Visualization */}
+          {/* 3D/2D Visualization */}
           <div className="absolute inset-0">
-            <KnowledgeGraph3D
-              selectedNode={selectedNode}
-              hoveredNode={hoveredNode}
-              onSelectNode={handleNodeClick}
-              onHoverNode={setHoveredNode}
-              searchTerm={searchTerm}
-              selectedCategory={selectedCategory}
-            />
+            <ErrorBoundary>
+              {supportsWebGL ? (
+                <KnowledgeGraph3D
+                  selectedNode={selectedNode}
+                  hoveredNode={hoveredNode}
+                  onSelectNode={handleNodeClick}
+                  onHoverNode={setHoveredNode}
+                  searchTerm={searchTerm}
+                  selectedCategory={selectedCategory}
+                />
+              ) : (
+                <KnowledgeGraph2D
+                  selectedNode={selectedNode}
+                  hoveredNode={hoveredNode}
+                  onSelectNode={handleNodeClick}
+                  onHoverNode={setHoveredNode}
+                  searchTerm={searchTerm}
+                  selectedCategory={selectedCategory}
+                />
+              )}
+            </ErrorBoundary>
           </div>
 
           {/* Advanced Node Information Panel */}
@@ -332,7 +363,7 @@ export default function KnowledgeGraphPage() {
                   filteredNodes.some(n => n.id === c.source) && 
                   filteredNodes.some(n => n.id === c.target)
                 ).length}</div>
-                <div>MODE: 3D</div>
+                <div>MODE: {supportsWebGL ? '3D' : '2D'}</div>
               </div>
             </div>
 

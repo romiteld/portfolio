@@ -5,7 +5,6 @@ import { Inter, Poppins } from "next/font/google"
 import { usePathname } from "next/navigation"
 import Navbar from "./components/Navbar"
 import Footer from "./components/Footer"
-import ChatWidget from "./components/ChatWidget"
 import BackgroundAnimation from "./components/BackgroundAnimation"
 import { AnimatePresence } from "framer-motion"
 import { ThemeProvider } from "next-themes"
@@ -121,7 +120,6 @@ export default function RootLayoutClient({
               <main className="flex-grow">{children}</main>
             </AnimatePresence>
             <Footer />
-            <ChatWidget />
           </div>
         </ThemeProvider>
       </body>
