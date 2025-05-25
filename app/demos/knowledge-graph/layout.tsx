@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+import { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: {
@@ -13,13 +13,19 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5
+};
+
 export default function KnowledgeGraphLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   return (
-    <div className="knowledge-graph-demo">
+    <div className="knowledge-graph-demo overflow-x-hidden">
       {children}
     </div>
   );
