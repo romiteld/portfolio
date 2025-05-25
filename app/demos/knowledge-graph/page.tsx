@@ -1,12 +1,31 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { demoNodes, connections } from './utils/demoData';
 import { useKnowledgeGraphPersistence } from '@/hooks/use-knowledge-graph-persistence';
 import { useMobileControls } from './hooks/useMobileControls';
-import { Save, FolderOpen, Trash2, Download, Upload, Cpu, Network, Zap } from 'lucide-react';
+import { Save, FolderOpen, Trash2, Download, Cpu, Network, Zap } from 'lucide-react';
 import { GraphExportImport } from './utils/exportImport';
+
+// Dynamic import for 3D component to avoid SSR issues
+const KnowledgeGraph3D = dynamic(
+  () => import('./components/KnowledgeGraph3D').then(mod => ({ default: mod.KnowledgeGraph3D })),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        <div className="text-cyan-400 text-lg font-mono">
+          <div className="flex items-center gap-3">
+            <Cpu className="w-6 h-6 animate-pulse" />
+            Loading 3D Neural Matrix...
+          </div>
+        </div>
+      </div>
+    )
+  }
+);
 
 export default function KnowledgeGraphPage() {
   const [isClient, setIsClient] = useState(false);
@@ -19,14 +38,6 @@ export default function KnowledgeGraphPage() {
   const [saveName, setSaveName] = useState('');
   const [isMobile, setIsMobile] = useState(false);
   const [showMobileInstructions, setShowMobileInstructions] = useState(false);
-  const [animationSpeed, setAnimationSpeed] = useState(1);
-  const [zoom, setZoom] = useState(1);
-  const [isPanning, setIsPanning] = useState(false);
-  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-  const [lastPanPoint, setLastPanPoint] = useState({ x: 0, y: 0 });
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationRef = useRef<number>();
-  const containerRef = useRef<HTMLDivElement>(null);
 
   const {
     savedStates,
@@ -41,16 +52,6 @@ export default function KnowledgeGraphPage() {
   
   const { isMobile: mobileControlsDetected } = useMobileControls();
 
-  // Particle system for sci-fi background
-  const particles = useRef<Array<{
-    x: number;
-    y: number;
-    vx: number;
-    vy: number;
-    alpha: number;
-    size: number;
-  }>>([]);
-
   useEffect(() => {
     setIsClient(true);
     const checkMobile = () => {
@@ -58,101 +59,17 @@ export default function KnowledgeGraphPage() {
       setIsMobile(isMobileDevice);
       
       // Show mobile instructions on first mobile visit
-      if (isMobileDevice && !localStorage.getItem('knowledgeGraph_mobileInstructionsSeen')) {
+      if (isMobileDevice && !localStorage.getItem('knowledgeGraph_3D_mobileInstructionsSeen')) {
         setTimeout(() => setShowMobileInstructions(true), 1000);
       }
     };
     checkMobile();
     window.addEventListener('resize', checkMobile);
     
-    // Initialize particles
-    initParticles();
-    animate();
-    
-    // Add pinch-to-zoom support
-    const handlePinchZoom = (e: CustomEvent) => {
-      const scale = e.detail.scale;
-      setZoom(prevZoom => {
-        const newZoom = prevZoom * scale;
-        return Math.min(2.5, Math.max(0.3, newZoom));
-      });
-    };
-    
-    window.addEventListener('pinchZoom', handlePinchZoom as EventListener);
-    
     return () => {
       window.removeEventListener('resize', checkMobile);
-      window.removeEventListener('pinchZoom', handlePinchZoom as EventListener);
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     };
   }, []);
-
-  const initParticles = () => {
-    particles.current = [];
-    const count = isMobile ? 30 : 60;
-    for (let i = 0; i < count; i++) {
-      particles.current.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        vx: (Math.random() - 0.5) * 0.5,
-        vy: (Math.random() - 0.5) * 0.5,
-        alpha: Math.random() * 0.5 + 0.2,
-        size: Math.random() * 2 + 1
-      });
-    }
-  };
-
-  const animate = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Update and draw particles
-    particles.current.forEach(particle => {
-      particle.x += particle.vx * animationSpeed;
-      particle.y += particle.vy * animationSpeed;
-
-      if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
-      if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
-
-      ctx.save();
-      ctx.globalAlpha = particle.alpha;
-      ctx.fillStyle = '#00D9FF';
-      ctx.beginPath();
-      ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-    });
-
-    // Draw connections between nearby particles
-    ctx.strokeStyle = 'rgba(0, 217, 255, 0.1)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i < particles.current.length; i++) {
-      for (let j = i + 1; j < particles.current.length; j++) {
-        const p1 = particles.current[i];
-        const p2 = particles.current[j];
-        const distance = Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
-        
-        if (distance < 100) {
-          ctx.beginPath();
-          ctx.moveTo(p1.x, p1.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.stroke();
-        }
-      }
-    }
-
-    animationRef.current = requestAnimationFrame(animate);
-  };
 
   if (!isClient) {
     return (
@@ -160,14 +77,23 @@ export default function KnowledgeGraphPage() {
         <div className="text-cyan-400 text-lg font-mono">
           <div className="flex items-center gap-3">
             <Cpu className="w-6 h-6 animate-pulse" />
-            Initializing Knowledge Graph Matrix...
+            Initializing 3D Knowledge Graph Matrix...
           </div>
         </div>
       </div>
     );
   }
 
-  // Filter nodes based on search and category
+  const categories = ['all', ...new Set(demoNodes.map(node => node.category))];
+
+  const handleNodeClick = (nodeId: string | null) => {
+    setSelectedNode(nodeId);
+    if (nodeId) {
+      trackNodeClick(nodeId);
+    }
+  };
+
+  // Filter nodes for counting
   const filteredNodes = demoNodes.filter(node => {
     const matchesSearch = searchTerm === '' || 
       node.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -179,93 +105,14 @@ export default function KnowledgeGraphPage() {
     return matchesSearch && matchesCategory;
   });
 
-  // Calculate positions for filtered nodes with responsive layout
-  const nodePositions = filteredNodes.map((node, index) => {
-    if (isMobile) {
-      // Improved grid layout on mobile screens with better spacing
-      const cols = Math.min(3, filteredNodes.length);
-      const rows = Math.ceil(filteredNodes.length / cols);
-      const col = index % cols;
-      const row = Math.floor(index / cols);
-      
-      // Better padding and spacing for mobile
-      const paddingX = 15; // Increased padding
-      const paddingY = 20;
-      const availableWidth = 100 - (2 * paddingX);
-      const availableHeight = 100 - (2 * paddingY);
-      
-      const x = paddingX + ((col + 0.5) * availableWidth) / cols;
-      const y = paddingY + ((row + 0.5) * availableHeight) / rows;
-      
-      return { ...node, x, y };
-    }
-
-    // Improved positioning for desktop with better edge constraints
-    const customPositions: { [key: string]: { x: number; y: number } } = {
-      'financial-assistant': { x: 25, y: 30 },      // Moved away from left edge
-      'computer-vision': { x: 75, y: 30 },          // Moved away from right edge
-      'chess-ai': { x: 30, y: 60 },                 // Better left positioning
-      'generative-ai': { x: 70, y: 75 },            // Moved away from right edge
-      'sales-agent': { x: 75, y: 50 },              // Better right positioning
-      'interactive-agents': { x: 50, y: 45 },       // Center remains
-      'youtube-summarizer': { x: 25, y: 80 },       // Moved away from left edge
-      'data-analyst': { x: 75, y: 80 },             // Moved away from right edge
-      'enhanced-rag': { x: 50, y: 75 }              // Center bottom
-    };
-
-    if (customPositions[node.id]) {
-      const { x, y } = customPositions[node.id];
-      // Ensure nodes stay well within bounds
-      const padding = 12; // Increased padding for better visibility
-      const clampedX = Math.min(100 - padding, Math.max(padding, x));
-      const clampedY = Math.min(100 - padding, Math.max(padding, y));
-      return { ...node, x: clampedX, y: clampedY };
-    }
-
-    // Improved circular arrangement with better spacing
-    const totalNodes = filteredNodes.length;
-    const angle = (2 * Math.PI * index) / totalNodes;
-    const radius = Math.min(35, 40 - totalNodes); // Dynamic radius based on node count
-    const x = 50 + Math.cos(angle) * radius;
-    const y = 50 + Math.sin(angle) * radius;
-    const padding = 12;
-    const clampedX = Math.min(100 - padding, Math.max(padding, x));
-    const clampedY = Math.min(100 - padding, Math.max(padding, y));
-    return { ...node, x: clampedX, y: clampedY };
-  });
-
-  const categories = ['all', ...new Set(demoNodes.map(node => node.category))];
-
-  const getConnectedNodes = (nodeId: string) => {
-    const connected = new Set<string>();
-    connections.forEach(conn => {
-      if (conn.source === nodeId) connected.add(conn.target);
-      if (conn.target === nodeId) connected.add(conn.source);
-    });
-    return connected;
-  };
-
-  const connectedNodes = selectedNode ? getConnectedNodes(selectedNode) : new Set();
-
   return (
-    <div className="w-full h-screen bg-gradient-to-br from-gray-900 via-black to-blue-900 overflow-visible relative">
-      {/* Animated Background Canvas */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 pointer-events-none"
-        style={{ zIndex: 1 }}
-      />
-
-      {/* Grid Pattern Overlay */}
+    <div className="w-full h-screen bg-gradient-to-br from-gray-900 via-black to-blue-900 overflow-hidden relative">
+      {/* Background gradient */}
       <div 
-        className="absolute inset-0 opacity-20"
+        className="absolute inset-0"
         style={{
-          backgroundImage: `
-            linear-gradient(rgba(0, 217, 255, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0, 217, 255, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px',
-          zIndex: 2
+          background: 'radial-gradient(ellipse at center, #0a0a1f 0%, #000510 100%)',
+          zIndex: 0
         }}
       />
 
@@ -277,7 +124,7 @@ export default function KnowledgeGraphPage() {
               <div className="flex items-center gap-3 mb-2">
                 <Network className="w-8 h-8 text-cyan-400" />
                 <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent font-mono">
-                  AI NEURAL MATRIX
+                  3D AI NEURAL MATRIX
                 </h1>
                 <div className="flex gap-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -286,7 +133,7 @@ export default function KnowledgeGraphPage() {
                 </div>
               </div>
               <p className="text-cyan-300 text-sm font-mono hidden sm:block">
-                Interactive Neural Network Topology // {filteredNodes.length} NODES ACTIVE
+                Interactive 3D Neural Network Topology // {filteredNodes.length} NODES ACTIVE
               </p>
             </div>
             
@@ -332,248 +179,18 @@ export default function KnowledgeGraphPage() {
           )}
         </div>
 
-        {/* Main Neural Network Visualization */}
+        {/* Main 3D Neural Network Visualization */}
         <div className="flex-1 relative min-h-0 overflow-hidden">
-          <div
-            ref={containerRef}
-            className="absolute inset-0 transition-transform duration-300 ease-out"
-            style={{ 
-              transform: `scale(${zoom}) translate(${panOffset.x}px, ${panOffset.y}px)`, 
-              transformOrigin: 'center center',
-              width: '100%',
-              height: '100%'
-            }}
-            onTouchStart={(e) => {
-              if (isMobile && e.touches.length === 1) {
-                setIsPanning(true);
-                setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-              }
-            }}
-            onTouchMove={(e) => {
-              if (isMobile && isPanning && e.touches.length === 1) {
-                e.preventDefault();
-                const deltaX = e.touches[0].clientX - lastPanPoint.x;
-                const deltaY = e.touches[0].clientY - lastPanPoint.y;
-                setPanOffset(prev => ({
-                  x: prev.x + deltaX / zoom,
-                  y: prev.y + deltaY / zoom
-                }));
-                setLastPanPoint({ x: e.touches[0].clientX, y: e.touches[0].clientY });
-              }
-            }}
-            onTouchEnd={() => {
-              if (isMobile) {
-                setIsPanning(false);
-              }
-            }}
-          >
-            {/* Connection Grid */}
-            <svg className="absolute inset-0 w-full h-full">
-              {connections.map(conn => {
-                const source = nodePositions.find(n => n.id === conn.source);
-                const target = nodePositions.find(n => n.id === conn.target);
-                if (!source || !target) return null;
-
-                const isHighlighted = selectedNode === conn.source || selectedNode === conn.target;
-                const opacity = selectedNode ? (isHighlighted ? 0.9 : 0.1) : 0.4;
-
-                return (
-                  <g key={conn.id}>
-                    <defs>
-                      <linearGradient id={`gradient-${conn.id}`} x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor={conn.type === 'data' ? '#00D9FF' : 
-                                   conn.type === 'api' ? '#FFD700' :
-                                   conn.type === 'model' ? '#FF00FF' : '#00FF00'} />
-                        <stop offset="100%" stopColor={conn.type === 'data' ? '#0099CC' : 
-                                   conn.type === 'api' ? '#CCB000' :
-                                   conn.type === 'model' ? '#CC00CC' : '#00CC00'} />
-                      </linearGradient>
-                    </defs>
-                    <line
-                      x1={`${source.x}%`}
-                      y1={`${source.y}%`}
-                      x2={`${target.x}%`}
-                      y2={`${target.y}%`}
-                      stroke={`url(#gradient-${conn.id})`}
-                      strokeWidth={isHighlighted ? 3 : 1}
-                      opacity={opacity}
-                      className="transition-all duration-500"
-                      style={{
-                        filter: isHighlighted ? 'drop-shadow(0 0 6px currentColor)' : 'none'
-                      }}
-                    />
-                    {isHighlighted && (
-                      <circle
-                        cx={`${source.x + (target.x - source.x) * 0.5}%`}
-                        cy={`${source.y + (target.y - source.y) * 0.5}%`}
-                        r="3"
-                        fill={conn.type === 'data' ? '#00D9FF' : 
-                             conn.type === 'api' ? '#FFD700' :
-                             conn.type === 'model' ? '#FF00FF' : '#00FF00'}
-                        className="animate-pulse"
-                      />
-                    )}
-                  </g>
-                );
-              })}
-            </svg>
-
-            {/* Neural Nodes */}
-            {nodePositions.map(node => {
-              const isSelected = selectedNode === node.id;
-              const isHovered = hoveredNode === node.id;
-              const isConnected = connectedNodes.has(node.id);
-              const shouldHighlight = isSelected || isConnected || !selectedNode;
-
-              return (
-                <div
-                  key={node.id}
-                  className="absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out group"
-                  style={{ 
-                    left: `${node.x}%`, 
-                    top: `${node.y}%`,
-                    opacity: shouldHighlight ? 1 : 0.3,
-                    transform: `translate(-50%, -50%) scale(${isSelected ? 1.3 : isHovered ? 1.15 : 1})`,
-                    zIndex: isSelected ? 20 : isHovered ? 15 : 10
-                  }}
-                  onMouseEnter={() => !isMobile && setHoveredNode(node.id)}
-                  onMouseLeave={() => !isMobile && setHoveredNode(null)}
-                  onTouchStart={(e) => {
-                    if (isMobile) {
-                      e.stopPropagation();
-                      setHoveredNode(node.id);
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (isMobile) {
-                      setSelectedNode(selectedNode === node.id ? null : node.id);
-                      trackNodeClick(node.id);
-                      setHoveredNode(null);
-                    }
-                  }}
-                  onClick={() => {
-                    if (!isMobile) {
-                      setSelectedNode(selectedNode === node.id ? null : node.id);
-                      trackNodeClick(node.id);
-                    }
-                  }}
-                >
-                  {/* Node Core */}
-                  <div 
-                    className={`relative ${isMobile ? 'w-20 h-20' : 'w-20 h-20'} rounded-full flex items-center justify-center cursor-pointer transition-all duration-500`}
-                    style={{ 
-                      background: `
-                        radial-gradient(circle at 30% 30%, ${node.color}40, ${node.color}),
-                        conic-gradient(from 0deg, ${node.color}, ${node.color}80, ${node.color})
-                      `,
-                      boxShadow: `
-                        0 0 20px ${node.color}60,
-                        inset 0 0 20px ${node.color}20,
-                        ${isSelected ? `0 0 40px ${node.color}, 0 0 60px ${node.color}50` : ''}
-                      `,
-                      border: `2px solid ${node.color}80`
-                    }}
-                  >
-                    {/* Pulsing Ring */}
-                    {(isSelected || isHovered) && (
-                      <div 
-                        className="absolute inset-0 rounded-full animate-ping"
-                        style={{
-                          border: `2px solid ${node.color}60`,
-                          animation: 'ping 2s cubic-bezier(0, 0, 0.2, 1) infinite'
-                        }}
-                      />
-                    )}
-                    
-                    {/* Icon */}
-                    <span className="text-3xl relative z-10 filter drop-shadow-lg">
-                      {node.icon}
-                    </span>
-                    
-                    {/* Status Indicator */}
-                    <div 
-                      className={`absolute -top-1 -right-1 w-5 h-5 rounded-full border-2 border-black ${
-                        node.status === 'active' ? 'bg-green-400' : 
-                        node.status === 'beta' ? 'bg-yellow-400' : 'bg-red-400'
-                      } shadow-lg`}
-                      style={{
-                        boxShadow: `0 0 10px ${
-                          node.status === 'active' ? '#10B981' : 
-                          node.status === 'beta' ? '#F59E0B' : '#EF4444'
-                        }`
-                      }}
-                    />
-
-                    {/* Complexity Rings */}
-                    {Array.from({ length: node.complexity }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="absolute rounded-full border opacity-30"
-                        style={{
-                          width: `${100 + (i + 1) * 15}%`,
-                          height: `${100 + (i + 1) * 15}%`,
-                          borderColor: node.color,
-                          animation: `spin ${20 + i * 5}s linear infinite ${isSelected ? '' : 'paused'}`
-                        }}
-                      />
-                    ))}
-                  </div>
-                  
-                  {/* Node Label */}
-                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 whitespace-nowrap pointer-events-none">
-                    <div 
-                      className="px-3 py-1 rounded-full text-xs font-mono font-bold backdrop-blur-sm border"
-                      style={{
-                        background: `linear-gradient(45deg, ${node.color}20, ${node.color}10)`,
-                        borderColor: `${node.color}40`,
-                        color: node.color,
-                        textShadow: `0 0 10px ${node.color}`
-                      }}
-                    >
-                      {node.name.length > 18 ? node.name.substring(0, 18) + '...' : node.name}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Enhanced Zoom Controls */}
-          <div className={`absolute ${isMobile ? 'bottom-20 right-2' : 'bottom-4 right-4'} flex flex-col gap-2 z-20 pointer-events-auto ${selectedNode && isMobile ? 'hidden' : ''}`}>
-            <div className="bg-black/70 backdrop-blur-sm rounded-lg border border-cyan-500/30 p-2">
-              <div className="text-cyan-400 text-xs font-mono mb-2 text-center">ZOOM</div>
-              <div className="flex flex-col gap-1">
-                <button
-                  onClick={() => setZoom(z => Math.min(2.5, z + 0.2))}
-                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-sm font-bold active:scale-95 touch-manipulation"
-                  title="Zoom In"
-                >
-                  +
-                </button>
-                <div className="text-cyan-400 text-xs font-mono text-center px-1">
-                  {Math.round(zoom * 100)}%
-                </div>
-                <button
-                  onClick={() => setZoom(z => Math.max(0.3, z - 0.2))}
-                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-sm font-bold active:scale-95 touch-manipulation"
-                  title="Zoom Out"
-                >
-                  −
-                </button>
-                <button
-                  onClick={() => {
-                    setZoom(1);
-                    setPanOffset({ x: 0, y: 0 });
-                  }}
-                  className="w-8 h-8 bg-black/50 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/20 transition-colors flex items-center justify-center text-xs font-mono active:scale-95 touch-manipulation"
-                  title="Reset View"
-                >
-                  ⌂
-                </button>
-              </div>
-            </div>
+          {/* 3D Visualization */}
+          <div className="absolute inset-0">
+            <KnowledgeGraph3D
+              selectedNode={selectedNode}
+              hoveredNode={hoveredNode}
+              onSelectNode={handleNodeClick}
+              onHoverNode={setHoveredNode}
+              searchTerm={searchTerm}
+              selectedCategory={selectedCategory}
+            />
           </div>
 
           {/* Advanced Node Information Panel */}
@@ -688,9 +305,9 @@ export default function KnowledgeGraphPage() {
                   const json = GraphExportImport.exportToJSON({
                     selectedNode,
                     filter: { categories: [selectedCategory], techStack: [], searchTerm },
-                    viewMode: 'default'
+                    viewMode: '3d'
                   });
-                  GraphExportImport.downloadFile(json, `neural-matrix-${new Date().toISOString().split('T')[0]}.json`, 'json');
+                  GraphExportImport.downloadFile(json, `neural-matrix-3d-${new Date().toISOString().split('T')[0]}.json`, 'json');
                 }, title: "Export Data" }
               ].map(({ icon: Icon, action, title }, i) => (
                 <button
@@ -715,6 +332,7 @@ export default function KnowledgeGraphPage() {
                   filteredNodes.some(n => n.id === c.source) && 
                   filteredNodes.some(n => n.id === c.target)
                 ).length}</div>
+                <div>MODE: 3D</div>
               </div>
             </div>
 
@@ -758,7 +376,7 @@ export default function KnowledgeGraphPage() {
                         await saveCurrentState(saveName, {
                           selectedNode,
                           filter: { categories: [selectedCategory], techStack: [], searchTerm },
-                          viewMode: 'default'
+                          viewMode: '3d'
                         });
                         setShowSaveDialog(false);
                         setSaveName('');
@@ -840,7 +458,7 @@ export default function KnowledgeGraphPage() {
           {showMobileInstructions && isMobile && (
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50">
               <div className="bg-black/90 border border-cyan-500/50 p-6 rounded-xl shadow-2xl max-w-sm mx-4">
-                <h3 className="text-cyan-400 font-mono font-bold mb-4 text-center">MOBILE CONTROLS</h3>
+                <h3 className="text-cyan-400 font-mono font-bold mb-4 text-center">3D MOBILE CONTROLS</h3>
                 <div className="space-y-3 text-cyan-300 text-sm font-mono">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
@@ -856,21 +474,21 @@ export default function KnowledgeGraphPage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
-                      ✋
+                      🔄
                     </div>
-                    <span>Pan with single finger drag</span>
+                    <span>Drag to rotate the 3D view</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400">
-                      🎯
+                      ✋
                     </div>
-                    <span>Use zoom controls in bottom right</span>
+                    <span>Two-finger drag to pan</span>
                   </div>
                 </div>
                 <button
                   onClick={() => {
                     setShowMobileInstructions(false);
-                    localStorage.setItem('knowledgeGraph_mobileInstructionsSeen', 'true');
+                    localStorage.setItem('knowledgeGraph_3D_mobileInstructionsSeen', 'true');
                   }}
                   className="mt-6 w-full px-4 py-2 bg-cyan-600 text-white rounded hover:bg-cyan-500 font-mono transition-colors"
                 >
