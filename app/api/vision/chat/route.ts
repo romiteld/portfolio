@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AIProviderService } from '@/lib/ai-providers';
+import { aiProviders } from '@/lib/ai-providers';
 
 export const runtime = 'edge';
-
-const aiProvider = new AIProviderService();
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,7 +26,7 @@ User's new question: ${message}
 
 Please provide a detailed and helpful response based on the image and conversation history.`;
 
-    const result = await aiProvider.analyzeImage(image, provider, prompt);
+    const result = await aiProviders.analyzeImage(image, provider, prompt);
 
     return NextResponse.json({
       response: result.text,
