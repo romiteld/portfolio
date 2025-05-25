@@ -57,9 +57,9 @@ const demos = [
 export function DemoSelector({ selectedMode, onModeChange }: DemoSelectorProps) {
   return (
     <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
-      <h3 className="text-xl font-bold text-white mb-4">Select Demo</h3>
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-4">Select Demo</h3>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {demos.map((demo, index) => {
           const Icon = demo.icon;
           const isSelected = selectedMode === demo.id;
@@ -122,20 +122,22 @@ export function DemoSelector({ selectedMode, onModeChange }: DemoSelectorProps) 
               )}
 
               {/* Content */}
-              <div className="relative z-10 text-center">
+              <div className="relative z-10 flex sm:flex-col items-center sm:text-center gap-3 sm:gap-0">
                 <div className={`
-                  mx-auto mb-3 w-12 h-12 rounded-xl bg-gradient-to-br ${demo.color}
+                  flex-shrink-0 sm:mx-auto sm:mb-3 w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br ${demo.color}
                   flex items-center justify-center shadow-lg
                   ${isSelected ? 'scale-110' : ''}
                   transition-transform
                 `}>
-                  <Icon className="w-6 h-6 text-white" />
+                  <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <div className="font-semibold text-white text-sm">
-                  {demo.name}
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {demo.description}
+                <div className="flex-1 sm:flex-none">
+                  <div className="font-semibold text-white text-sm sm:text-sm">
+                    {demo.name}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5 sm:mt-1">
+                    {demo.description}
+                  </div>
                 </div>
               </div>
 

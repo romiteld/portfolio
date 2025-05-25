@@ -27,12 +27,12 @@ export function ResultsDisplay({ results, mode, provider }: ResultsDisplayProps)
           perspective: '1000px'
         }}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
-            <Brain className="w-5 h-5 text-white" />
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+          <div className="p-1.5 sm:p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500">
+            <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <h3 className="text-xl font-bold text-white">Analysis Results</h3>
-          <span className="ml-auto text-sm px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30">
+          <h3 className="text-lg sm:text-xl font-bold text-white flex-1">Analysis Results</h3>
+          <span className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30">
             {provider.toUpperCase()}
           </span>
         </div>
@@ -95,15 +95,15 @@ export function ResultsDisplay({ results, mode, provider }: ResultsDisplayProps)
         animate={{ opacity: 1, scale: 1 }}
         className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
       >
-        <div className="flex items-center gap-3 mb-4">
-          <Box className="w-5 h-5 text-green-400" />
-          <h3 className="text-xl font-bold text-white">Detected Objects</h3>
-          <span className="ml-auto text-sm text-gray-400">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+          <Box className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+          <h3 className="text-lg sm:text-xl font-bold text-white flex-1">Detected Objects</h3>
+          <span className="text-xs sm:text-sm text-gray-400">
             {results.detections.length} objects found
           </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {results.detections.map((detection: any, index: number) => (
             <motion.div
               key={index}
@@ -119,7 +119,7 @@ export function ResultsDisplay({ results, mode, provider }: ResultsDisplayProps)
                   {(detection.confidence * 100).toFixed(1)}%
                 </span>
               </div>
-              <div className="text-xs text-gray-400">
+              <div className="text-xs text-gray-400 break-all">
                 Box: [{detection.box.join(', ')}]
               </div>
             </motion.div>
@@ -140,9 +140,9 @@ export function ResultsDisplay({ results, mode, provider }: ResultsDisplayProps)
         className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
         style={{ transformStyle: 'preserve-3d' }}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <Eye className="w-5 h-5 text-purple-400" />
-          <h3 className="text-xl font-bold text-white">Generated Images</h3>
+        <div className="flex items-center gap-2 sm:gap-3 mb-4">
+          <Eye className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
+          <h3 className="text-lg sm:text-xl font-bold text-white">Generated Images</h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -187,10 +187,10 @@ export function ResultsDisplay({ results, mode, provider }: ResultsDisplayProps)
             transition={{ delay: index * 0.1 }}
             className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
           >
-            <div className="flex items-center gap-3 mb-3">
-              <Layers className="w-5 h-5 text-indigo-400" />
-              <h4 className="text-lg font-bold text-white capitalize">{provider}</h4>
-              <div className="ml-auto flex gap-2">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-3">
+              <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+              <h4 className="text-base sm:text-lg font-bold text-white capitalize flex-1">{provider}</h4>
+              <div className="flex gap-2">
                 <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-300">
                   {data.processingTime}ms
                 </span>
