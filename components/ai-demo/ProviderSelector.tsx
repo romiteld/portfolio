@@ -41,9 +41,9 @@ const providers = [
 
 export function ProviderSelector({ selectedProvider, onProviderChange }: ProviderSelectorProps) {
   return (
-    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-6">
-      <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-        <Brain className="w-5 h-5 text-purple-400" />
+    <div className="bg-gray-900/50 backdrop-blur-xl rounded-2xl border border-gray-800 p-4 sm:p-6">
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 flex items-center gap-2">
+        <Brain className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
         Select AI Provider
       </h3>
 
@@ -62,7 +62,7 @@ export function ProviderSelector({ selectedProvider, onProviderChange }: Provide
               whileTap={{ scale: 0.98 }}
               onClick={() => onProviderChange(provider.id)}
               className={`
-                relative w-full p-4 rounded-xl border transition-all
+                relative w-full p-3 sm:p-4 rounded-xl border transition-all
                 ${isSelected 
                   ? 'border-white/20 shadow-lg' 
                   : 'border-gray-700 hover:border-gray-600'
@@ -80,21 +80,21 @@ export function ProviderSelector({ selectedProvider, onProviderChange }: Provide
 
               {/* Content */}
               <div className="relative z-10 flex items-center justify-between">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3">
                   <div className={`
-                    p-2 rounded-lg bg-gradient-to-r ${provider.color}
+                    p-1.5 sm:p-2 rounded-lg bg-gradient-to-r ${provider.color}
                     ${isSelected ? 'shadow-lg' : ''}
                   `}>
-                    <Icon className="w-5 h-5 text-white" />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
-                  <div className="text-left">
-                    <div className="font-semibold text-white flex items-center gap-2">
-                      {provider.name}
-                      <span className="text-xs px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
+                  <div className="text-left flex-1">
+                    <div className="font-semibold text-white flex flex-wrap items-center gap-1 sm:gap-2">
+                      <span className="text-sm sm:text-base">{provider.name}</span>
+                      <span className="text-xs px-1.5 sm:px-2 py-0.5 rounded-full bg-white/10 text-gray-300">
                         {provider.model}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-400">
+                    <div className="text-xs sm:text-sm text-gray-400">
                       {provider.description}
                     </div>
                   </div>
@@ -107,9 +107,9 @@ export function ProviderSelector({ selectedProvider, onProviderChange }: Provide
                     scale: isSelected ? 1 : 0,
                     opacity: isSelected ? 1 : 0
                   }}
-                  className="w-6 h-6 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-r from-green-400 to-emerald-400 flex items-center justify-center"
                 >
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                   </svg>
                 </motion.div>

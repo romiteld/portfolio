@@ -39,7 +39,7 @@ const demos = [
     description:
       "Experience cutting-edge computer vision AI with multi-provider support, object detection, and image generation.",
     gradient: "from-purple-500 to-pink-500",
-    icon: <Eye strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Eye strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "financial-assistant",
@@ -47,7 +47,7 @@ const demos = [
     description:
       "Get real-time financial analysis, market insights, and investment advice.",
     gradient: "from-blue-500 to-purple-500",
-    icon: <TrendingUp strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <TrendingUp strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "computer-vision-assistant",
@@ -55,7 +55,7 @@ const demos = [
     description:
       "Analyze and interpret visual data with our AI-powered vision system.",
     gradient: "from-emerald-500 to-teal-500",
-    icon: <ScanEye strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <ScanEye strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "chess-ai-magnus",
@@ -63,7 +63,7 @@ const demos = [
     description:
       "Play against a neural network chess engine trained with deep reinforcement learning techniques.",
     gradient: "from-amber-500 to-orange-500",
-    icon: <Crown strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Crown strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "generative-ai",
@@ -71,7 +71,7 @@ const demos = [
     description:
       "Create unique text and images using cutting-edge generative AI models.",
     gradient: "from-pink-500 to-rose-500",
-    icon: <Sparkles strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Sparkles strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "knowledge-graph",
@@ -79,7 +79,7 @@ const demos = [
     description:
       "Explore complex relationships in data with our intelligent knowledge graph.",
     gradient: "from-fuchsia-500 to-purple-500",
-    icon: <Share2 strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Share2 strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "ai-sales-agent",
@@ -87,7 +87,7 @@ const demos = [
     description:
       "Experience an AI-driven sales conversation powered by OpenAI agents.",
     gradient: "from-red-500 to-orange-500",
-    icon: <MessagesSquareIcon strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <MessagesSquareIcon strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "interactive-agents",
@@ -95,14 +95,14 @@ const demos = [
     description:
       "See multiple AI agents collaborate on complex tasks using OpenAI agents.",
     gradient: "from-lime-500 to-green-500",
-    icon: <Group strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Group strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "youtube-summarizer",
     title: "YouTube Summarizer & Insights",
     description: "Get quick summaries, bullet-point insights, and video details from YouTube links.",
     gradient: "from-sky-500 to-blue-500",
-    icon: <Clapperboard strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <Clapperboard strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "data-analyst-assistant",
@@ -110,7 +110,7 @@ const demos = [
     description:
       "Let AI help you analyze and interpret complex datasets with interactive charts, statistics, and automated insights.",
     gradient: "from-violet-500 to-indigo-500",
-    icon: <AreaChart strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <AreaChart strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
   {
     slug: "enhanced-rag-langchain",
@@ -118,7 +118,7 @@ const demos = [
     description:
       "Experience advanced retrieval-augmented generation using LangChain.",
     gradient: "from-cyan-500 to-blue-500",
-    icon: <SearchCheck strokeWidth={1.5} className="w-10 h-10" />,
+    icon: <SearchCheck strokeWidth={1.5} className="w-8 h-8 sm:w-10 sm:h-10" />,
   },
 ];
 
@@ -260,7 +260,7 @@ export default function DemosPage() {
       transition={{ duration: 0.5 }}
     >
       <motion.h1
-        className="text-4xl font-bold mb-8 text-primary-600 dark:text-primary-400 font-heading"
+        className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-6 sm:mb-8 text-primary-600 dark:text-primary-400 font-heading"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -274,12 +274,12 @@ export default function DemosPage() {
         {demos.map((demo) => (
           <Link key={demo.slug} href={`/demos/${demo.slug}`} className="flex">
             <motion.div
-              className="demo-card group bg-white dark:bg-neutral-800/50 backdrop-blur-sm rounded-xl border border-neutral-200/50 dark:border-neutral-700/50 p-6 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col flex-grow h-full"
+              className="demo-card group bg-white dark:bg-neutral-800/50 backdrop-blur-sm rounded-xl border border-neutral-200/50 dark:border-neutral-700/50 p-4 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 flex flex-col flex-grow h-full"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
             >
               <motion.div className="demo-icon mb-6">
-                <div className="relative w-16 h-16 transform transition-transform group-hover:scale-110">
+                <div className="relative w-12 h-12 sm:w-16 sm:h-16 transform transition-transform group-hover:scale-110">
                   <div
                     className={`absolute inset-0 bg-gradient-to-br ${demo.gradient} rounded-xl opacity-20 group-hover:opacity-30 transition-opacity`}
                   />
@@ -289,15 +289,15 @@ export default function DemosPage() {
                 </div>
               </motion.div>
               <div className="flex flex-col flex-grow">
-                <h2 className="text-2xl font-semibold mb-3 text-primary-600 dark:text-primary-400 group-hover:text-primary-500 transition-colors">
+                <h2 className="text-lg sm:text-xl lg:text-2xl font-semibold mb-2 sm:mb-3 text-primary-600 dark:text-primary-400 group-hover:text-primary-500 transition-colors">
                   {demo.title}
                 </h2>
-                <p className="text-neutral-600 dark:text-neutral-300 mb-4 line-clamp-2">
+                <p className="text-sm sm:text-base text-neutral-600 dark:text-neutral-300 mb-3 sm:mb-4 line-clamp-2">
                   {demo.description}
                 </p>
               </div>
               <motion.span
-                className={`inline-flex items-center px-4 py-2 rounded-lg bg-gradient-to-r ${demo.gradient} text-white font-medium shadow-lg transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px]`}
+                className={`inline-flex items-center px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg bg-gradient-to-r ${demo.gradient} text-white text-sm sm:text-base font-medium shadow-lg transition-all duration-300 hover:shadow-xl hover:translate-y-[-2px]`}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

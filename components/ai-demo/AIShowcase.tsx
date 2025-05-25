@@ -152,22 +152,22 @@ export function AIShowcase({ className = '' }: AIShowcaseProps) {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <div className="flex justify-center items-center gap-3 mb-4">
-            <Brain className="w-10 h-10 text-purple-400" />
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
+          <div className="flex justify-center items-center gap-2 sm:gap-3 mb-4">
+            <Brain className="w-6 h-6 sm:w-10 sm:h-10 text-purple-400" />
+            <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-indigo-400 bg-clip-text text-transparent">
               AI Vision Showcase
             </h1>
-            <Sparkles className="w-10 h-10 text-pink-400" />
+            <Sparkles className="w-6 h-6 sm:w-10 sm:h-10 text-pink-400" />
           </div>
-          <p className="text-xl text-gray-300">
+          <p className="text-sm sm:text-lg md:text-xl text-gray-300 px-4 sm:px-0">
             Experience the power of cutting-edge AI vision models
           </p>
         </motion.div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Left Panel - Upload and Controls */}
-          <div className="lg:col-span-1 space-y-6">
+          <div className="lg:col-span-1 space-y-4 sm:space-y-6">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
@@ -213,10 +213,10 @@ export function AIShowcase({ className = '' }: AIShowcaseProps) {
               <button
                 onClick={handleAnalyze}
                 disabled={loading || (!selectedImage && demoMode !== 'generate')}
-                className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 p-4 text-white font-semibold text-lg shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 p-3 sm:p-4 text-white font-semibold text-base sm:text-lg shadow-xl hover:shadow-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
-                  <Zap className="w-5 h-5" />
+                  <Zap className="w-4 h-4 sm:w-5 sm:h-5" />
                   {loading ? 'Processing...' : 'Run Analysis'}
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-purple-700 to-pink-700 opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -81,16 +81,16 @@ export function VisionChat({ image, provider, initialAnalysis }: VisionChatProps
       animate={{ opacity: 1, y: 0 }}
       className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
     >
-      <div className="flex items-center gap-3 mb-4">
-        <MessageSquare className="w-5 h-5 text-indigo-400" />
-        <h3 className="text-xl font-bold text-white">Vision Chat</h3>
-        <span className="ml-auto text-sm px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+        <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-400" />
+        <h3 className="text-lg sm:text-xl font-bold text-white flex-1">Vision Chat</h3>
+        <span className="text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-indigo-500/20 text-indigo-300">
           {provider.toUpperCase()}
         </span>
       </div>
 
       {/* Chat messages */}
-      <div className="h-96 overflow-y-auto mb-4 space-y-4 pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
+      <div className="h-64 sm:h-96 overflow-y-auto mb-4 space-y-3 sm:space-y-4 pr-1 sm:pr-2 scrollbar-thin scrollbar-thumb-gray-700 scrollbar-track-transparent">
         <AnimatePresence>
           {messages.map((message) => (
             <motion.div
@@ -98,19 +98,19 @@ export function VisionChat({ image, provider, initialAnalysis }: VisionChatProps
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              className={`flex gap-2 sm:gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {message.role === 'assistant' && (
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                    <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                 </div>
               )}
               
-              <div className={`max-w-[80%] ${message.role === 'user' ? 'order-1' : ''}`}>
+              <div className={`max-w-[85%] sm:max-w-[80%] ${message.role === 'user' ? 'order-1' : ''}`}>
                 <div className={`
-                  rounded-2xl px-4 py-3 
+                  rounded-2xl px-3 sm:px-4 py-2 sm:py-3 
                   ${message.role === 'user' 
                     ? 'bg-blue-600 text-white' 
                     : 'bg-gray-800 text-gray-100'
@@ -125,8 +125,8 @@ export function VisionChat({ image, provider, initialAnalysis }: VisionChatProps
               
               {message.role === 'user' && (
                 <div className="flex-shrink-0 order-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
+                  <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 flex items-center justify-center">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                 </div>
               )}
@@ -138,12 +138,12 @@ export function VisionChat({ image, provider, initialAnalysis }: VisionChatProps
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex gap-3"
+            className="flex gap-2 sm:gap-3"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-white" />
+            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+              <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
-            <div className="bg-gray-800 rounded-2xl px-4 py-3">
+            <div className="bg-gray-800 rounded-2xl px-3 sm:px-4 py-2 sm:py-3">
               <div className="flex gap-1">
                 {[...Array(3)].map((_, i) => (
                   <motion.div
@@ -160,26 +160,26 @@ export function VisionChat({ image, provider, initialAnalysis }: VisionChatProps
       </div>
 
       {/* Input area */}
-      <div className="flex gap-3">
+      <div className="flex gap-2 sm:gap-3">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
           placeholder="Ask about the image..."
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
+          className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-white placeholder-gray-400 focus:outline-none focus:border-indigo-500 transition-colors"
         />
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           onClick={sendMessage}
           disabled={loading || !input.trim()}
-          className="p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2.5 sm:p-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
-            <Sparkles className="w-5 h-5 animate-spin" />
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 animate-spin" />
           ) : (
-            <Send className="w-5 h-5" />
+            <Send className="w-4 h-4 sm:w-5 sm:h-5" />
           )}
         </motion.button>
       </div>

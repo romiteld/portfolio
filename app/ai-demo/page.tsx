@@ -46,7 +46,7 @@ export default function AIDemoPage() {
           <div className="max-w-4xl mx-auto">
             {/* Animated Logo */}
             <motion.div
-              className="flex items-center justify-center gap-4 mb-6"
+              className="flex items-center justify-center gap-2 sm:gap-4 mb-6"
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
               transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
@@ -54,12 +54,13 @@ export default function AIDemoPage() {
               <motion.div
                 animate={{ rotate: 360 }}
                 transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                className="hidden sm:block"
               >
-                <Brain className="w-12 h-12 text-purple-500" />
+                <Brain className="w-8 h-8 sm:w-12 sm:h-12 text-purple-500" />
               </motion.div>
               
               <motion.h1
-                className={`text-5xl sm:text-6xl md:text-7xl font-bold ${theme.effects.textGradient}`}
+                className={`text-4xl sm:text-6xl md:text-7xl font-bold ${theme.effects.textGradient}`}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
@@ -70,8 +71,9 @@ export default function AIDemoPage() {
               <motion.div
                 animate={{ rotate: -360 }}
                 transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className="hidden sm:block"
               >
-                <Sparkles className="w-12 h-12 text-blue-500" />
+                <Sparkles className="w-8 h-8 sm:w-12 sm:h-12 text-blue-500" />
               </motion.div>
             </motion.div>
 

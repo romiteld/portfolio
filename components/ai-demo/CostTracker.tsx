@@ -28,28 +28,28 @@ export function CostTracker({ totalCost }: CostTrackerProps) {
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-6"
+      className="bg-gradient-to-br from-gray-900/90 to-gray-800/90 backdrop-blur-xl rounded-2xl border border-gray-700 p-4 sm:p-6"
     >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={`p-2 rounded-lg bg-gradient-to-r ${getStatusColor()}`}>
-            <DollarSign className="w-5 h-5 text-white" />
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className={`p-1.5 sm:p-2 rounded-lg bg-gradient-to-r ${getStatusColor()}`}>
+            <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
           </div>
-          <h3 className="text-lg font-bold text-white">Cost Tracker</h3>
+          <h3 className="text-base sm:text-lg font-bold text-white">Cost Tracker</h3>
         </div>
         {percentage > 80 && (
           <motion.div
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            <AlertCircle className="w-5 h-5 text-yellow-400" />
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-yellow-400" />
           </motion.div>
         )}
       </div>
 
       {/* Progress bar */}
-      <div className="mb-4">
-        <div className="flex justify-between text-sm mb-2">
+      <div className="mb-3 sm:mb-4">
+        <div className="flex justify-between text-xs sm:text-sm mb-1.5 sm:mb-2">
           <span className="text-gray-400">Used</span>
           <span className="text-white font-semibold">${totalCost.toFixed(4)}</span>
         </div>
@@ -76,20 +76,20 @@ export function CostTracker({ totalCost }: CostTrackerProps) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-gray-800/50 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp className="w-4 h-4 text-blue-400" />
+        <div className="bg-gray-800/50 rounded-lg p-2.5 sm:p-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-blue-400" />
             <span className="text-xs text-gray-400">Remaining</span>
           </div>
-          <div className="text-lg font-semibold text-white">${remaining.toFixed(4)}</div>
+          <div className="text-base sm:text-lg font-semibold text-white">${remaining.toFixed(4)}</div>
         </div>
         
-        <div className="bg-gray-800/50 rounded-lg p-3">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="bg-gray-800/50 rounded-lg p-2.5 sm:p-3">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-0.5 sm:mb-1">
             <div className={`w-2 h-2 rounded-full bg-gradient-to-r ${getStatusColor()}`} />
             <span className="text-xs text-gray-400">Status</span>
           </div>
-          <div className="text-lg font-semibold text-white">{getStatusText()}</div>
+          <div className="text-base sm:text-lg font-semibold text-white">{getStatusText()}</div>
         </div>
       </div>
 
@@ -98,7 +98,7 @@ export function CostTracker({ totalCost }: CostTrackerProps) {
         <motion.div
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
-          className="mt-4 pt-4 border-t border-gray-700"
+          className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-700"
         >
           <h4 className="text-sm font-semibold text-gray-400 mb-2">Recent Costs</h4>
           <div className="space-y-1">
